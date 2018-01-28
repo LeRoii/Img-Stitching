@@ -35,7 +35,7 @@ public:
         }
 
         GPIO_SetOutput(DevHandle[0],0xFFFF,0);
-        GPIO_Write(DevHandle[0], 0x100, 0x100);
+        GPIO_Write(DevHandle[0], 0xFFFF, 0xFFFF);
 
         return 0;
     }
@@ -43,10 +43,10 @@ public:
     int trigger()
     {
         int ret;
-        ret = GPIO_Write(DevHandle[0], 0x100, 0);
+        ret = GPIO_Write(DevHandle[0], 0xFFFF, 0);
         printf("ret1:%d\n", ret);
         usleep(1000*500*2);
-        ret = GPIO_Write(DevHandle[0], 0x100, 0x100);
+        ret = GPIO_Write(DevHandle[0], 0xFFFF, 0xFFFF);
         printf("ret2:%d\n", ret);
 
         return 0;   

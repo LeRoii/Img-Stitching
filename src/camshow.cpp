@@ -51,13 +51,15 @@ void serverCap()
 
     Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
     recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
+    spdlog::debug("size:[{},{}], channels:{}", recvedFrame.size().width, recvedFrame.size().height, recvedFrame.channels());
     if (recvedFrame.size().width == 0) {
         spdlog::warn("decode failure!");
         // continue;
     }
     // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
     // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // imgs[6] = recvedFrame(Rect(0,0,undistorWidth, undistorHeight)).clone();
+    // imgs[7] = recvedFrame(Rect(undistorWidth,0,undistorWidth, undistorHeight)).clone();
     imgs[6] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
     imgs[7] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
     // imwrite("7.png", downImgs[2]);
@@ -192,6 +194,7 @@ imageProcessor *nvProcessor = nullptr;
 int main(int argc, char *argv[])
 {
     YAML::Node config = YAML::LoadFile(defaultcfgpath);
+    spdlog::info("defaultcfgpath:{}", defaultcfgpath);
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
 
@@ -320,15 +323,6 @@ int main(int argc, char *argv[])
     while(1)
     {
         sdkResetTimer(&timer);
-        // cameras[0]->read_frame();
-        // cameras[1]->read_frame();
-        // cameras[2]->read_frame();
-        // cameras[3]->read_frame();
-        // cameras[4]->read_frame();
-        // cameras[5]->read_frame();
-
-        // return 0;
-
         /*slow */
         // std::vector<std::thread> threads;
         // for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -344,12 +338,20 @@ int main(int argc, char *argv[])
             spdlog::info("wait for slave");
             std::thread server(serverCap);
             server.join();
-#endif
             spdlog::info("wait for slave end");
+            // cv::resize(imgs[6], imgs[6], cv::Size(stitcherinputWidth, stitcherinputHeight));
+            // cv::resize(imgs[7], imgs[7], cv::Size(stitcherinputWidth, stitcherinputHeight));
+            // cv::cvtColor(imgs[6], imgs[6], cv::COLOR_RGBA2RGB);
+            // cv::cvtColor(imgs[7], imgs[7], cv::COLOR_RGBA2RGB);
+            // spdlog::info("imgs[7] channels:{}", imgs[7].channels());
+            // continue;
+
+#endif
+            
             for(int i=0;i<USED_CAMERA_NUM;i++)
             {
                 // cameras[i]->read_frame();
-                cameras[i]->getFrame(imgs[i]);
+                cameras[i]->getFrame(imgs[i], false);
                 if(withnum)
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
@@ -362,6 +364,7 @@ int main(int argc, char *argv[])
             else
             {          
                 cv::Mat up,down;
+                spdlog::info("imgs[4] channel:{}, imgs[6]:{}", imgs[4].channels(), imgs[6].channels());
                 cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
                 cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
                 cv::vconcat(up, down, ret);

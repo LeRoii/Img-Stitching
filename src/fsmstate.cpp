@@ -219,9 +219,6 @@ namespace panoAPP{
             pRenderer->drawIndicator();
         lastDisplayMode = displaymode;
 
-        
-
-
         if(pPanocam->sysStatus().zoomTrigger)
         {
             cv::Mat innerFrame;

@@ -975,7 +975,7 @@ int main()
 	// psender->sendTest();
 	while(1)
 	{
-
+		SendAcc();
 	}
 	return 0;
 }

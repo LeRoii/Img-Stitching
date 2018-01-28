@@ -80,6 +80,7 @@ int main(int argc, char *argv[])
     renderHeight = config["renderHeight"].as<int>();
     renderX = config["renderX"].as<int>();
     renderY = config["renderY"].as<int>();
+    renderMode = RENDER_EGL;
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     pRenderer = new nvrender(rendercfg);
 

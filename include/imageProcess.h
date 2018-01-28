@@ -60,6 +60,7 @@ class imageProcessor
     public:
     imageProcessor(std::string net, std::string canname = "can0", int batchsize = 1);
     cv::Mat Process(cv::Mat &img);
+    cv::Mat ProcessOnce(cv::Mat &img, std::vector<int> &ret);
     cv::Mat ProcessOnce(cv::Mat &img);
     void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
     cv::Mat SSR(cv::Mat input);     //图像增强

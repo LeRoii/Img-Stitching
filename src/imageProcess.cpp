@@ -321,26 +321,26 @@ cv::Mat imageProcessor::Process(cv::Mat &img){
     return yolo_result;
 }
 
-cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
+cv::Mat imageProcessor::ProcessOnce(cv::Mat &img, std::vector<int> &detr){
     std::vector<cv::Mat>  ceil_img;
     cv::Mat  yolo_result;
 
-    std::vector<int> detret_all;
+    // std::vector<int> detret_all;
     char center_str[10]={0};
-    cv::Mat ret = ImageDetect(img, detret_all);
+    cv::Mat ret = ImageDetect(img, detr);
 
     //=======get target bbox, and send it to server========//
     sendData.target_header=0xFFEEAABB;
-    sendData.target_num = detret_all.size()/6;
-    if(detret_all.size()>=6 ){
-        for(int i=0;i<detret_all.size()/6;i++){
+    sendData.target_num = detr.size()/6;
+    if(detr.size()>=6 ){
+        for(int i=0;i<detr.size()/6;i++){
             sendData.target_id[i]=i;
-            sendData.target_x[i]=detret_all[6*i];
-            sendData.target_y[i]=detret_all[6*i+1];
-            sendData.target_w[i]=detret_all[6*i+2];
-            sendData.target_h[i]=detret_all[6*i+3];
-            sendData.target_class[i]=detret_all[6*i+4]; 
-            sendData.target_prob[i]=detret_all[6*i+5];
+            sendData.target_x[i]=detr[6*i];
+            sendData.target_y[i]=detr[6*i+1];
+            sendData.target_w[i]=detr[6*i+2];
+            sendData.target_h[i]=detr[6*i+3];
+            sendData.target_class[i]=detr[6*i+4]; 
+            sendData.target_prob[i]=detr[6*i+5];
         }
     }
 
@@ -348,8 +348,46 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
     // canSend(detret_all);
     // pCanSender->sendObjDetRet(detret_all);
 
-    if(detret_all.size()>=6){
-        cv::Point p = cv::Point(detret_all[0]+detret_all[2]/2,detret_all[1]+detret_all[3]/2);
+    if(detr.size()>=6){
+        cv::Point p = cv::Point(detr[0]+detr[2]/2,detr[1]+detr[3]/2);
+        sprintf(center_str,"%d, %d", angle_x/10, angle_y/10);
+        cv::putText(ret, center_str, p, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(0,255, 0), 1, CV_AA);
+    }
+
+    // yolo_result = processImage(ceil_img);
+    // publishImage(yolo_result);
+    return ret;
+}
+
+cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
+    std::vector<cv::Mat>  ceil_img;
+    cv::Mat  yolo_result;
+
+    std::vector<int> detr;
+    char center_str[10]={0};
+    cv::Mat ret = ImageDetect(img, detr);
+
+    //=======get target bbox, and send it to server========//
+    sendData.target_header=0xFFEEAABB;
+    sendData.target_num = detr.size()/6;
+    if(detr.size()>=6 ){
+        for(int i=0;i<detr.size()/6;i++){
+            sendData.target_id[i]=i;
+            sendData.target_x[i]=detr[6*i];
+            sendData.target_y[i]=detr[6*i+1];
+            sendData.target_w[i]=detr[6*i+2];
+            sendData.target_h[i]=detr[6*i+3];
+            sendData.target_class[i]=detr[6*i+4]; 
+            sendData.target_prob[i]=detr[6*i+5];
+        }
+    }
+
+    nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
+    // canSend(detret_all);
+    // pCanSender->sendObjDetRet(detret_all);
+
+    if(detr.size()>=6){
+        cv::Point p = cv::Point(detr[0]+detr[2]/2,detr[1]+detr[3]/2);
         sprintf(center_str,"%d, %d", angle_x/10, angle_y/10);
         cv::putText(ret, center_str, p, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(0,255, 0), 1, CV_AA);
     }
@@ -365,7 +403,7 @@ void imageProcessor::publishImage(cv::Mat img)
 
 
     cv::Mat yuvImg;
-    cv::resize(img, img, cv::Size(1920,720));
+    cv::resize(img, img, cv::Size(1920,400));
     cvtColor(img, yuvImg,CV_BGR2YUV_I420);
 
     nvEncoder.encodeFrame(yuvImg.data);

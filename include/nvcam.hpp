@@ -569,7 +569,7 @@ public:
         if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
                 spdlog::critical("Failed to create NvBuffer 1920");
 
-        m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        m_argb = cv::Mat(m_camSrcHeight, m_camSrcWidth, CV_8UC4);
         // m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
         m_ret = cv::Mat(m_stitcherInputHeight, m_stitcherInputWidth, CV_8UC3);
 
@@ -723,7 +723,7 @@ public:
             /***** cpu undistor *****/
             // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
             cv::Mat tmp;
-            cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
+            cv::resize(m_argb, tmp, cv::Size(m_distoredWidth, m_distoredHeight));
             cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
             // m_distoredImg = tmp.clone();
             // // /*undistored*********/
@@ -742,7 +742,9 @@ public:
         {
             cv::Mat tmp;
             cv::cvtColor(m_argb, tmp, cv::COLOR_RGBA2RGB);
+            // cv::imwrite("b.png", tmp);
             cv::resize(tmp, m_ret, cv::Size(m_undistoredWidth, m_undistoredHeight));
+            // cv::imwrite("a.png", m_ret);
         }
 
 

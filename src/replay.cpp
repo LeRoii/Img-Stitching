@@ -81,7 +81,12 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
+std::string cfgpath;
+#if CAM_IMX390
 std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
+#else if CAM_IMX424
+std::string stitchercfgpath = "../cfg/stitcher-imx424cfg.yaml";
+#endif
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -260,21 +265,21 @@ int main(int argc, char *argv[])
     // downImgs.push_back(imread("/home/nvidia/ssd/img/7.png"));
     // downImgs.push_back(imread("/home/nvidia/ssd/img/8.png"));
 
+    upImgs.clear(); 
+    upImgs.push_back(imread("../1.png"));
+    upImgs.push_back(imread("../2.png"));
+    upImgs.push_back(imread("../3.png"));
+    upImgs.push_back(imread("../4.png"));
+
+    downImgs.clear();
+    downImgs.push_back(imread("../5.png"));
+    downImgs.push_back(imread("../6.png"));
+    downImgs.push_back(imread("../7.png"));
+    downImgs.push_back(imread("../8.png"));
+
     // upImgs.clear(); 
     // upImgs.push_back(imread("./1.png"));
     // upImgs.push_back(imread("./2.png"));
-    // upImgs.push_back(imread("./3.png"));
-    // upImgs.push_back(imread("./4.png"));
-
-    // downImgs.clear();
-    // downImgs.push_back(imread("./5.png"));
-    // downImgs.push_back(imread("./6.png"));
-    // downImgs.push_back(imread("./7.png"));
-    // downImgs.push_back(imread("./8.png"));
-
-    upImgs.clear(); 
-    upImgs.push_back(imread("./1.png"));
-    upImgs.push_back(imread("./2.png"));
 
     // upImgs.clear(); 
     // upImgs.push_back(imread("./5.png"));

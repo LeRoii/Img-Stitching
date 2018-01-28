@@ -18,7 +18,7 @@ int renderWidth = 1920;
 int renderHeight = 1080;
 int renderX = 0;
 int renderY = 0;
-int renderMode = 0;
+int renderMode = 1;
 
 // output render buffer, in general it's fixed
 int renderBufWidth = 1920; 

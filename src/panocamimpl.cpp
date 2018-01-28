@@ -155,7 +155,9 @@ panocamimpl::panocamimpl(std::string yamlpath):framecnt(0)
     pImgProc = new imageProcessor(net, canname, batchSize);
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
-    // pRenderer = new nvrender(rendercfg);
+#if EXPORT_SO
+    m_pRenderer = new nvrender(rendercfg);
+#endif
 
     pCANMessenger = new canmessenger("can0");
     pCANMessenger->sendTest();
@@ -405,7 +407,9 @@ int panocamimpl::render(cv::Mat &img)
         spdlog::critical("img is empty! exit");
         return RET_ERR;
     }
-    // pRenderer->render(img);
+#if EXPORT_SO
+    m_pRenderer->render(img);
+#endif
 
     return RET_OK;
 }
@@ -468,7 +472,7 @@ bool panocamimpl::verify()
 #else
     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 #endif
-    printf("p::%s\n", p);
+    // printf("p::%s\n", p);
 
     if(strcmp(gt, p) == 0)
     {

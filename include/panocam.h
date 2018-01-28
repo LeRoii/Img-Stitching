@@ -11,8 +11,6 @@ public:
     panocam(std::string yamlpath);
     ~panocam();
     int init();
-    // int captureFrames();
-    int getCamFrame(int id, unsigned char *pData, unsigned int nDataSize);
     int getCamFrame(int id, cv::Mat &frame);
     int getPanoFrame(cv::Mat &ret);
     int detect(cv::Mat &img, std::vector<int> &ret);
@@ -20,7 +18,6 @@ public:
     int imgEnhancement(cv::Mat &img);
     int render(cv::Mat &img);
     int drawCross(cv::Mat &img);
-    bool verify();
     int saveAndSend(cv::Mat &img);
     uint8_t getStatus();
     

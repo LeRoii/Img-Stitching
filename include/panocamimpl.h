@@ -9,6 +9,7 @@
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
 #include "canmessenger.hpp"
+#include "nvrender.h"
 
 class panocamimpl
 {
@@ -40,6 +41,9 @@ private:
     unsigned char m_StatusCode;
     canmessenger *pCANMessenger;
     stSysStatus m_stSysStatus;
+#if EXPORT_SO
+    nvrender *m_pRenderer;
+#endif
 };
 
 

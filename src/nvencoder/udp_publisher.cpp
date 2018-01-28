@@ -62,7 +62,7 @@ namespace udp_publisher
     // }
 
     servPort = Socket::resolveService("9000", "udp");
-    servAddress = "192.168.1.100";
+    servAddress = "192.168.1.120";
   }
   
 

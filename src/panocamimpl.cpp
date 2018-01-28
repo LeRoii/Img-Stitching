@@ -427,6 +427,24 @@ int panocamimpl::drawCross(cv::Mat &img)
     return RET_OK;
 }
 
+int panocamimpl::drawCamCross(cv::Mat &img)
+{
+    int w = img.cols;
+    int h = img.rows;
+    int x1 = w/2;
+    int y1 = h/2;
+    int y2 = h/4*3;
+    
+    cv::line(img, cv::Point(x1-20,y1), cv::Point(x1+20,y1), cv::Scalar(0,255,0), 2);
+    cv::line(img, cv::Point(x1,y1-20), cv::Point(x1,y1+20), cv::Scalar(0,255,0), 2);
+
+    // cv::line(img, cv::Point(x1-10,y2), cv::Point(x1+10,y2), cv::Scalar(0,255,0), 2);
+    // cv::line(img, cv::Point(x1,y2-10), cv::Point(x1,y2+10), cv::Scalar(0,255,0), 2);
+
+    return RET_OK;
+}
+
+
 int panocamimpl::saveAndSend(cv::Mat &img)
 {
     pImgProc->publishImage(img);

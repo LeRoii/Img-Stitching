@@ -206,15 +206,24 @@ namespace panoAPP{
         if(pPanocam->sysStatus().enhancementTrigger)
             pPanocam->imgEnhancement(frame);
         if(pPanocam->sysStatus().detectionTrigger)
+        {
             pPanocam->detect(frame);
+            pPanocam->saveAndSend(frame);
+        }
         if(pPanocam->sysStatus().crossTrigger)
             pPanocam->drawCross(frame);
-        if(pPanocam->sysStatus().saveTrigger)
-        {
-            // cv::resize(frame, frame, cv::Size(1280, 720));
-            pPanocam->saveAndSend(frame);
-            pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
-        }
+        // if(pPanocam->sysStatus().saveTrigger)
+        // {
+        //     // cv::resize(frame, frame, cv::Size(1280, 720));
+        //     pPanocam->saveAndSend(frame);
+        //     pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
+        // }
+
+        if(displaymode == 0xCA)
+            pPanocam->drawCross(frame);
+        else
+            pPanocam->drawCamCross(frame);
+
         if(lastDisplayMode != displaymode && displaymode == 0xCA)
             pRenderer->drawIndicator();
         lastDisplayMode = displaymode;

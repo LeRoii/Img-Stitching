@@ -7,10 +7,6 @@
 #include "usb2gpio.hpp"
 
 
-#define reversebit(x,y)  x^=(1<<y)
-#define getbit(x,y)   ((x) >> (y)&1)
-#define setbit(x,y) x|=(1<<y)
-#define clrbit(x,y) x&=~(1<<y)
 
 const int SETTING_IMGENHANCE = 0;
 const int SETTING_DETECTION = 1;

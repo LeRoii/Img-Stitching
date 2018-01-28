@@ -219,13 +219,14 @@ namespace panoAPP{
         if(pPanocam->sysStatus().detectionTrigger)
             pPanocam->detect(frame);
         if(pPanocam->sysStatus().crossTrigger)
-            pPanocam->drawCross(frame);
-        if(displaymode == 0xCA)
-            pPanocam->drawCross(frame);
-        else
-            pPanocam->drawCamCross(frame);
-        // if(pPanocam->sysStatus().saveTrigger)
-        if(1)
+        {
+            if(displaymode == 0xCA)
+                pPanocam->drawCross(frame);
+            else
+                pPanocam->drawCamCross(frame);
+        }
+        
+        if(pPanocam->sysStatus().saveTrigger)
         {
             // cv::resize(frame, frame, cv::Size(1280, 720));
             pPanocam->saveAndSend(frame);

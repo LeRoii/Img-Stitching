@@ -19,7 +19,7 @@ int save_id = 0;
 
 static int write_encoder_output_frame(ofstream * stream, NvBuffer * buffer)
 {
-    // stream->write((char *) buffer->planes[0].data, buffer->planes[0].bytesused);
+    stream->write((char *) buffer->planes[0].data, buffer->planes[0].bytesused);
     udp_pub.sendimage(buffer->planes[0].data,buffer->planes[0].bytesused);
     // char *socketData;
     // udp_pub.getSocketData(socketData);

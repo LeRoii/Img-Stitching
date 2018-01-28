@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <thread>
+#include "udp_publisher.h"
 
 
 nvrender *pRenderer;
@@ -75,6 +76,9 @@ int main(int argc, char *argv[])
         spdlog::set_level(spdlog::level::debug);
     else
         spdlog::set_level(spdlog::level::info);
+
+    UDP_PORT = config["port"].as<std::string>();
+    UDP_SERVADD = config["servAddress"].as<std::string>();
     
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();

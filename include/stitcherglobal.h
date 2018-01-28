@@ -35,6 +35,9 @@ extern int renderX;
 extern int renderY;
 extern int renderMode;
 
+extern std::string UDP_PORT;
+extern std::string UDP_SERVADD;
+
 // output render buffer, in general it's fixed
 extern int renderBufWidth; 
 extern int renderBufHeight;

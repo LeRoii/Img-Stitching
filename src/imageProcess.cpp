@@ -406,7 +406,10 @@ void imageProcessor::publishImage(cv::Mat img)
     cv::resize(img, img, cv::Size(1920,400));
     cvtColor(img, yuvImg,CV_BGR2YUV_I420);
 
-    nvEncoder.encodeFrame(yuvImg.data);
+
+    // spdlog::warn("yuvImg size:{}", yuvImg.total()*yuvImg.elemSize());
+
+    nvEncoder.encodeFrame(yuvImg.data); 
 
 }
 

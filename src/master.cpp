@@ -118,7 +118,7 @@ void serverCap2()
 #endif
 
 bool saveret = false;
-bool detect = false;
+bool detect = true;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
@@ -304,6 +304,12 @@ int main(int argc, char *argv[])
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
+    std::vector<std::thread> threads;
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    for(auto& th:threads)
+        th.detach();
+
     if (detect)
         nvProcessor = new imageProcessor(net, canname, batchSize);  
 
@@ -424,8 +430,9 @@ int main(int argc, char *argv[])
         downImgs.clear();
         for(int i=0;i<4;i++)
         {
-            cameras[i+4]->read_frame();
-            downImgs.push_back(cameras[i+4]->m_ret);
+            // cameras[i+4]->read_frame();
+            // downImgs.push_back(cameras[i+4]->m_ret);
+            cameras[i+4]->getFrame(downImgs[i], false);
         }
 #elif CAM_IMX424
         serverCap();
@@ -442,11 +449,11 @@ int main(int argc, char *argv[])
 
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
-    std::vector<std::thread> threads;
-    for(int i=0;i<USED_CAMERA_NUM;i++)
-        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    for(auto& th:threads)
-        th.detach();
+    // std::vector<std::thread> threads;
+    // for(int i=0;i<USED_CAMERA_NUM;i++)
+    //     threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    // for(auto& th:threads)
+    //     th.detach();
 
     // imageProcessor nvProcessor(net);     //图像处理类
 
@@ -489,8 +496,8 @@ int main(int argc, char *argv[])
         cameras[4]->getFrame(downImgs[0], false);
         cameras[5]->getFrame(downImgs[1], false);
 #if CAM_IMX390
-        cameras[6]->getFrame(downImgs[2]);
-        cameras[7]->getFrame(downImgs[3]);
+        cameras[6]->getFrame(downImgs[2], false);
+        cameras[7]->getFrame(downImgs[3], false);
 #endif
         
 #if CAM_IMX424
@@ -564,7 +571,8 @@ int main(int argc, char *argv[])
             // yoloRet = nvProcessor.Process(ret);
             ret = nvProcessor->ProcessOnce(ret);
         //    if(ctl_command.use_detect || detect){
-        //         nvProcessor.publishImage(yoloRet);
+                nvProcessor->publishImage(ret);
+                // detect = !detect;
         //     } else{
                 // nvProcessor.publishImage(ret);
             // }

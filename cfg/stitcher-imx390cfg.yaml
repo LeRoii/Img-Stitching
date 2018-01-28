@@ -41,8 +41,8 @@ loglvl: "debug"
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
 stitcherBlenderStrength: 0
-stitcherCameraExThres: 30e2
-stitcherCameraInThres: 100e2
+stitcherCameraExThres: 30
+stitcherCameraInThres: 100
 
 # init mode, 1:initall, 2:use default, init seam, 3:read cfg, init seam
 initMode: 1

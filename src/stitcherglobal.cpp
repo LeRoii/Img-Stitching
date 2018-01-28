@@ -1,6 +1,9 @@
 
 #include <string>
 
+std::string UDP_PORT = "9000";
+std::string UDP_SERVADD = "192.168.1.120";
+
 //208
 // int vendor = 0;
 // int camSrcWidth = 3840;

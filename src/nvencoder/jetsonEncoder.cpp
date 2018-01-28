@@ -247,6 +247,7 @@ void jetsonEncoder::copyYuvToBuffer(uint8_t *yuv_bytes, NvBuffer &buffer)
             dst += (plane.fmt.stride - bytes_per_row);
         }
         plane.bytesused = plane.fmt.stride * plane.fmt.height;
+        // spdlog::warn("i:{},plane.bytesused:{}", i, plane.bytesused);
     }
 }
 

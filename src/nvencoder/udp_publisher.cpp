@@ -1,3 +1,4 @@
+#include "stitcherglobal.h"
 #include "udp_publisher.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -10,6 +11,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include "spdlog/spdlog.h"
+
 
 
 using namespace std;
@@ -61,8 +63,15 @@ namespace udp_publisher
     //   return;
     // }
 
-    servPort = Socket::resolveService("9000", "udp");
-    servAddress = "192.168.1.100";
+    servPort = Socket::resolveService(UDP_PORT, "udp");
+    servAddress = "127.0.0.1";
+    servAddress = UDP_SERVADD;
+  }
+
+  void UdpPublisher::setAddr()
+  {
+    servPort = Socket::resolveService(UDP_PORT, "udp");
+    servAddress = UDP_SERVADD;
   }
   
 
@@ -102,7 +111,7 @@ namespace udp_publisher
     ibuf[0] = total_pack;
     sock.sendTo(ibuf, sizeof(int), servAddress, servPort);
     // sendto(m_sockfd,ibuf,sizeof(int),0,(sockaddr *)&send_addr,sizeof(send_addr));
-    spdlog::critical("length:{}, pack number :{}",length, total_pack);
+    spdlog::debug("udp buf length:{}, pack number :{}",length, total_pack);
     for(int i = 0; i<total_pack; i++){
       // sendto(m_sockfd,&image[i*UP_UDP_PACK_SIZE],UP_UDP_PACK_SIZE,0,(sockaddr *)&send_addr,sizeof(send_addr)) ;
       sock.sendTo( & image[i * UP_UDP_PACK_SIZE], UP_UDP_PACK_SIZE, servAddress, servPort);

@@ -213,7 +213,7 @@ namespace panoAPP{
         {
             // cv::resize(frame, frame, cv::Size(1280, 720));
             pPanocam->saveAndSend(frame);
-            pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
+            // pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
         }
         if(lastDisplayMode != displaymode && displaymode == 0xCA)
             pRenderer->drawIndicator();

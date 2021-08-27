@@ -27,12 +27,12 @@ message(STATUS "    库文件目录：${OpenCV_LIB_DIR}")
 message(STATUS "    库文件列表：${OpenCV_LIBS}")
 
 add_compile_options(-std=c++11 -g)
-add_definitions(-DDEBUG)
+# add_definitions(-DDEBUG)
 
 add_executable(cvtest cvstitching.cpp)
 add_executable(camera camera.cpp)
-# add_executable(main main.cpp )
+add_executable(main main.cpp )
 target_link_libraries(cvtest ${OpenCV_LIBS} ${CUDA_LIBRARIES})
-# target_link_libraries(main ${OpenCV_LIBS} ${CUDA_LIBRARIES})
+target_link_libraries(main ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 target_link_libraries(camera ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
  -L/opt/MVS/lib/64 MvCameraControl.so)

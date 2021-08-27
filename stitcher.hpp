@@ -1,4 +1,5 @@
 #include <opencv2/opencv.hpp>
+#include <thread>
 
 typedef struct
 {
@@ -9,6 +10,10 @@ typedef struct
 }four_corners_t;
 
 four_corners_t corners;
+
+cv::Mat homoMat = (cv::Mat_<double>(3,3)<< 0.3463709518587066, -0.02987517114120686, 845.4015037615147, 
+                    -0.1465717446443165, 0.9797299227981282, -11.69288605445955,
+                    -0.0006891269642287213, 4.812735460740427e-05, 1);
 
 void CalcCorners(const cv::Mat& H, const cv::Mat& src)
 {
@@ -97,22 +102,37 @@ struct stitcherCfg
     int imgHeight;
 };
 
+#define DEBUG 1
+
 class stitcher
 {
 public:
     stitcher(stitcherCfg &cfg, const float scale = 2):m_stCfg(cfg), m_fScale(scale)
     {
+        // m_pORB = cv::cuda::ORB::create(500, 1.2f, 6, 31, 0, 2, 0, 31, 20,true);
+        m_pORB = cv::cuda::ORB::create(500, 1.2f, 6, 31, 0, 2, 0, 31, 20,true);
+        m_pORB = cv::cuda::ORB::create(1000);
+        // m_pMatcher = cv::cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L2);
+
         m_pSURF = new cv::cuda::SURF_CUDA(400);
         m_pMatcher = cv::cuda::DescriptorMatcher::createBFMatcher(m_pSURF->defaultNorm());
 
+        m_stCfg.imgWidth = m_stCfg.imgWidth/m_fScale;
+        m_stCfg.imgHeight = m_stCfg.imgHeight/m_fScale;
+        int maskWidth = m_stCfg.imgWidth/4;
+
         // construct mask
         cv::Mat mask = cv::Mat::zeros(cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight), CV_8UC1);
-        int maskWidth = m_stCfg.imgWidth/2;
         mask(cv::Rect(0, 0, maskWidth, m_stCfg.imgHeight)).setTo(255);
         m_gmMaskR = cv::cuda::GpuMat(mask);
         mask.setTo(0);
-        mask(cv::Rect(maskWidth, 0, maskWidth, m_stCfg.imgHeight)).setTo(255);
+        mask(cv::Rect(m_stCfg.imgWidth - maskWidth, 0, maskWidth, m_stCfg.imgHeight)).setTo(255);
         m_gmMaskL = cv::cuda::GpuMat(mask);
+
+        // m_gmDst = cv::cuda::GpuMat(cv::Mat::zeros(1080, 5240, CV_8UC3));
+        // dst = cv::Mat::zeros(1080, 5240, CV_8UC3);
+        // tr = cv::Mat::zeros(1080, 5240, CV_8UC3);
+
     }
 
     ~stitcher()
@@ -123,26 +143,59 @@ public:
             m_pSURF = nullptr;
         }
     }
-    
+
+    void dete(int imgid)
+    {
+        if(imgid == 0)  //left
+        {
+           (*m_pSURF)(m_gmImgGrayL, m_gmMaskL, m_gmKeyPtsL, m_gmDescriptorL); 
+        }
+        else if(imgid)
+        {
+            (*m_pSURF)(m_gmImgGrayR, m_gmMaskR, m_gmKeyPtsR, m_gmDescriptorR);
+        }
+        printf("det imgid:%d\n", imgid);
+    }
+
     void process(cv::Mat &imgRight, cv::Mat &imgLeft, cv::Mat &ret)
     {
+        auto startTime= std::chrono::steady_clock::now();
+
+        cv::resize(imgRight, imgRight, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        cv::resize(imgLeft, imgLeft, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+
         m_gmImgR.upload(imgRight);
         m_gmImgL.upload(imgLeft);
 
+        // cv::cuda::resize(m_gmImgR, m_gmImgR, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        // cv::cuda::resize(m_gmImgL, m_gmImgL, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
         cv::cuda::cvtColor(m_gmImgR, m_gmImgGrayR, CV_RGB2GRAY);
 	    cv::cuda::cvtColor(m_gmImgL, m_gmImgGrayL, CV_RGB2GRAY);
 
         (*m_pSURF)(m_gmImgGrayR, m_gmMaskR, m_gmKeyPtsR, m_gmDescriptorR);
         (*m_pSURF)(m_gmImgGrayL, m_gmMaskL, m_gmKeyPtsL, m_gmDescriptorL);
 
+        // std::thread th1(&stitcher::dete, this, 0);
+        // std::thread th2(&stitcher::dete, this, 1);
+        // // th1.detach();
+        // // th2.detach();
+        // th1.join();
+        // th2.join();
+#if DEBUG
         std::cout << "FOUND " << m_gmKeyPtsL.cols << " keypoints on right image" << std::endl;
         std::cout << "FOUND " << m_gmKeyPtsL.cols << " keypoints on left image" << std::endl;
+#endif
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout<<"feature det SpendTime = "<<  duration.count() <<"ms"<<std::endl;
+
+        startTime= std::chrono::steady_clock::now();
 
         std::vector<cv::DMatch> goodMatches;
         std::vector<std::vector<cv::DMatch> > matchePts;
         m_pMatcher->knnMatch(m_gmDescriptorL, m_gmDescriptorR, matchePts, 2);
 
-        std::cout << "matches size:" << matchePts.size() << std::endl;
+        // std::cout << "matches size:" << matchePts.size() << std::endl;
 
         for (int i = 0; i < matchePts.size(); i++)
         {
@@ -151,9 +204,7 @@ public:
                 goodMatches.push_back(matchePts[i][0]);
             }
         }
-
-        std::cout << "goodMatches size:" << goodMatches.size() << std::endl;
-
+        
         // downloading results
         std::vector<cv::KeyPoint> keypointsRight, keypointsLeft;
         std::vector<float> descriptors1, descriptors2;
@@ -169,25 +220,28 @@ public:
             imagePointsLeft.push_back(keypointsLeft[goodMatches[i].queryIdx].pt);
             imagePointsRight.push_back(keypointsRight[goodMatches[i].trainIdx].pt);
         }
-
-        cv::Mat homo = findHomography(imagePointsRight, imagePointsLeft, CV_RANSAC);
-
-        // std::cout << "homo：\n" << homo << std::endl;
-
+#if DEBUG
+        std::cout << "goodMatches size:" << goodMatches.size() << std::endl;
         cv::Mat imgleftkeypts;
         cv::drawKeypoints(imgLeft, keypointsLeft, imgleftkeypts);
-        // cv::imwrite("imgleftkeypts.png ", imgleftkeypts);
+        cv::imwrite("imgleftkeypts.png ", imgleftkeypts);
 
         cv::Mat first_match;
         cv::drawMatches(imgLeft, keypointsLeft, imgRight, keypointsRight, goodMatches, first_match);
-        // cv::imwrite("first_match.png ", first_match);
+        cv::imwrite("first_match.png ", first_match);
+#endif
+        cv::Mat homo = findHomography(imagePointsRight, imagePointsLeft, CV_RANSAC);
+        
 
         CalcCorners(homo, imgRight);
         //图像配准  
         cv::Mat imageTransformRight;
         cv::warpPerspective(imgRight, imageTransformRight, homo, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
         //warpPerspective(imageRight, imageTransformLeft, adjustMat*homo, Size(imageLeft.cols*1.3, imageLeft.rows*1.8));
-
+#if DEBUG
+        std::cout << "homo：\n" << homo << std::endl;
+        cv::imwrite("imageTransformRight.png", imageTransformRight);
+#endif
         // cv::cuda::GpuMat imageTransformRightGpu;
         // cv::cuda::warpPerspective(m_gmImgR, imageTransformRightGpu, homo, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
         // cv::Mat imageTransformRight(imageTransformRightGpu);
@@ -203,17 +257,205 @@ public:
 
         // imwrite("b_dst.jpg", dst);
         OptimizeSeam(imgLeft, imageTransformRight, dst);
+#if DEBUG
         cv::imwrite("dst.jpg", dst);
+#endif
+        endTime = std::chrono::steady_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout<<"frame SpendTime = "<<  duration.count() <<"ms"<<std::endl;
+
+    }
+
+    void processorb(cv::Mat &imgRight, cv::Mat &imgLeft, cv::Mat &ret)
+    {
+        auto startTime= std::chrono::steady_clock::now();
+
+        cv::resize(imgRight, imgRight, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        cv::resize(imgLeft, imgLeft, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+
+        m_gmImgR.upload(imgRight);
+        m_gmImgL.upload(imgLeft);
+
+        // cv::cuda::resize(m_gmImgR, m_gmImgR, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        // cv::cuda::resize(m_gmImgL, m_gmImgL, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        cv::cuda::cvtColor(m_gmImgR, m_gmImgGrayR, CV_RGB2GRAY);
+	    cv::cuda::cvtColor(m_gmImgL, m_gmImgGrayL, CV_RGB2GRAY);
+
+        m_pORB->detectAndComputeAsync(m_gmImgGrayR, m_gmMaskR, m_gmKeyPtsR, m_gmDescriptorR);
+        m_pORB->detectAndComputeAsync(m_gmImgGrayL, m_gmMaskL, m_gmKeyPtsL, m_gmDescriptorL);
+
+#if DEBUG
+        std::cout << "FOUND " << m_gmKeyPtsL.cols << " keypoints on right image" << std::endl;
+        std::cout << "FOUND " << m_gmKeyPtsL.cols << " keypoints on left image" << std::endl;
+#endif
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout<<"feature det SpendTime = "<<  duration.count() <<"ms"<<std::endl;
+        startTime= std::chrono::steady_clock::now();
+
+        // downloading results
+        std::vector<cv::KeyPoint> keypointsRight, keypointsLeft;
+        std::vector<float> descriptors1, descriptors2;
+        m_pORB->convert(m_gmKeyPtsR, keypointsRight);
+        m_pORB->convert(m_gmKeyPtsL, keypointsLeft);
+        m_gmDescriptorR.convertTo(m_gmDescriptorR32, CV_32F);
+        m_gmDescriptorL.convertTo(m_gmDescriptorL32, CV_32F);
+
+        std::vector<cv::DMatch> goodMatches;
+        std::vector<cv::DMatch> matches;
+        std::vector<std::vector<cv::DMatch> > matchePts;
+        m_pMatcher->match(m_gmDescriptorL32, m_gmDescriptorR32, matches);
+
+        int sz = matches.size();
+		double max_dist = 0; double min_dist = 100;
+        for (int i = 0; i < sz; i++)
+		{
+			double dist = matches[i].distance;
+			if (dist < min_dist) min_dist = dist;
+			if (dist > max_dist) max_dist = dist;
+		}
+ #if DEBUG
+		std::cout << "\n-- Max dist : " << max_dist << std::endl;
+		std::cout << "\n-- Min dist : " << min_dist << std::endl;
+#endif
+ 
+		for (int i = 0; i < sz; i++)
+		{
+			if (matches[i].distance < 0.6*max_dist)
+			{
+				goodMatches.push_back(matches[i]);
+			}
+		}
+
+        // std::cout << "matches size:" << matchePts.size() << std::endl;
+
+        // m_pSURF->downloadKeypoints(m_gmKeyPtsR, keypointsRight);
+        // m_pSURF->downloadKeypoints(m_gmKeyPtsL, keypointsLeft);
+        // surf.downloadDescriptors(descriptors1GPU, descriptors1);
+        // surf.downloadDescriptors(descriptors2GPU, descriptors2);
+
+        std::vector<cv::Point2f> imagePointsRight, imagePointsLeft;
+
+        for (int i = 0; i<goodMatches.size(); i++)
+        {
+            imagePointsLeft.push_back(keypointsLeft[goodMatches[i].queryIdx].pt);
+            imagePointsRight.push_back(keypointsRight[goodMatches[i].trainIdx].pt);
+        }
+#if DEBUG
+        std::cout << "goodMatches size:" << goodMatches.size() << std::endl;
+        cv::Mat imgleftkeypts;
+        cv::drawKeypoints(imgLeft, keypointsLeft, imgleftkeypts);
+        cv::imwrite("imgleftkeypts.png ", imgleftkeypts);
+
+        cv::Mat first_match;
+        cv::drawMatches(imgLeft, keypointsLeft, imgRight, keypointsRight, goodMatches, first_match);
+        cv::imwrite("first_match.png ", first_match);
+#endif
+        cv::Mat homo = findHomography(imagePointsRight, imagePointsLeft, CV_RANSAC);
+        // std::cout << "homo：\n" << homo << std::endl;
+
+        CalcCorners(homo, imgRight);
+        //图像配准  
+        cv::Mat imageTransformRight;
+        cv::warpPerspective(imgRight, imageTransformRight, homo, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
+        //warpPerspective(imageRight, imageTransformLeft, adjustMat*homo, Size(imageLeft.cols*1.3, imageLeft.rows*1.8));
+#if DEBUG
+        cv::imwrite("imageTransformRight.png", imageTransformRight);
+#endif
+        // cv::cuda::GpuMat imageTransformRightGpu;
+        // cv::cuda::warpPerspective(m_gmImgR, imageTransformRightGpu, homo, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
+        // cv::Mat imageTransformRight(imageTransformRightGpu);
+        //创建拼接后的图,需提前计算图的大小
+        int dst_width = imageTransformRight.cols;  //取最右点的长度为拼接图的长度
+        int dst_height = imgLeft.rows;
+
+        cv::Mat dst(dst_height, dst_width, CV_8UC3);
+        dst.setTo(0);
+
+        imageTransformRight.copyTo(dst(cv::Rect(0, 0, imageTransformRight.cols, imageTransformRight.rows)));
+        imgLeft.copyTo(dst(cv::Rect(0, 0, imgLeft.cols, imgLeft.rows)));
+
+        // imwrite("b_dst.jpg", dst);
+        OptimizeSeam(imgLeft, imageTransformRight, dst);
+#if DEBUG
+        cv::imwrite("dst.jpg", dst);
+#endif
+        endTime = std::chrono::steady_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout<<"frame SpendTime = "<<  duration.count() <<"ms"<<std::endl;
+
+    }
+
+    void processnodet(cv::Mat &imgRight, cv::Mat &imgLeft, cv::Mat &ret)
+    {
+        auto startTime= std::chrono::steady_clock::now();
+
+        if(m_fScale != 1)
+        {
+            cv::resize(imgRight, imgRight, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+            cv::resize(imgLeft, imgLeft, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        }
+
+        m_gmImgR.upload(imgRight);
+        m_gmImgL.upload(imgLeft);
+
+        // cv::cuda::resize(m_gmImgR, m_gmImgR, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        // cv::cuda::resize(m_gmImgL, m_gmImgL, cv::Size(m_stCfg.imgWidth, m_stCfg.imgHeight));
+        cv::cuda::cvtColor(m_gmImgR, m_gmImgGrayR, CV_RGB2GRAY);
+	    cv::cuda::cvtColor(m_gmImgL, m_gmImgGrayL, CV_RGB2GRAY);
+
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout<<"upload SpendTime = "<<  duration.count() <<"ms"<<std::endl;
+
+        startTime= std::chrono::steady_clock::now();
+        CalcCorners(homoMat, imgRight);
+        //图像配准  
+        // cv::Mat imageTransformRight;
+        // cv::warpPerspective(imgRight, imageTransformRight, homoMat, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
+        //warpPerspective(imageRight, imageTransformLeft, adjustMat*homo, Size(imageLeft.cols*1.3, imageLeft.rows*1.8));
+ 
+        cv::cuda::warpPerspective(m_gmImgR, m_gmImgTransformRight, homoMat, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
+
+#if DEBUG
+        std::cout << "homo：\n" << homoMat << std::endl;
+        cv::imwrite("imageTransformRight.png", cv::Mat(m_gmImgTransformRight));
+#endif
+
+        int dst_width = m_gmImgTransformRight.cols;  //取最右点的长度为拼接图的长度
+        int dst_height = imgLeft.rows;
+        m_gmDst = cv::cuda::GpuMat(cv::Mat::zeros(dst_height, dst_width, CV_8UC3));
+        
+        m_gmImgTransformRight.copyTo(m_gmDst(cv::Rect(0, 0, m_gmImgTransformRight.cols, m_gmImgTransformRight.rows)));
+        m_gmImgL.copyTo(m_gmDst(cv::Rect(0, 0, m_gmImgL.cols, m_gmImgL.rows)));
+        
+        // cv::Mat tr;
+        m_gmImgTransformRight.download(tr);
+        m_gmDst.download(dst);
+        
+        // imwrite("b_dst.jpg", dst);
+        OptimizeSeam(imgLeft, tr, dst);
+#if DEBUG
+        cv::imwrite("dst.jpg", dst);
+#endif
+        endTime = std::chrono::steady_clock::now();
+        duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout<<"OptimizeSeam SpendTime = "<<  duration.count() <<"ms"<<std::endl;
+         
     }
 
 private:
     stitcherCfg m_stCfg;
     float m_fScale;
     cv::cuda::SURF_CUDA *m_pSURF;
+    cv::Ptr<cv::cuda::ORB> m_pORB;
     cv::Ptr<cv::cuda::DescriptorMatcher> m_pMatcher;
     cv::cuda::GpuMat m_gmImgR, m_gmImgL;
     cv::cuda::GpuMat m_gmMaskR, m_gmMaskL;
     cv::cuda::GpuMat m_gmImgGrayR, m_gmImgGrayL;
     cv::cuda::GpuMat m_gmKeyPtsR, m_gmKeyPtsL;
     cv::cuda::GpuMat m_gmDescriptorR, m_gmDescriptorL;
+    cv::cuda::GpuMat m_gmDescriptorR32, m_gmDescriptorL32;
+    cv::cuda::GpuMat m_gmDst, m_gmImgTransformRight;
+    cv::Mat tr, dst;
 };

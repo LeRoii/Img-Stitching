@@ -6,8 +6,8 @@ int main()
 {
     Mat imageRight, imageLeft, homo, ret;
 
-    imageRight = imread("/space/code/Img-Stitching/imgs/11.png", 1);    //右图
-    imageLeft  = imread("/space/code/Img-Stitching/imgs/22.png", 1);    //左图
+    imageRight = imread("./1-dist.png", 1);    //右图
+    imageLeft  = imread("./2-dist.png", 1);    //左图
     // imwrite("5.png", imageRight);
     // imwrite("6.png", imageLeft);
     // imageRight = imread("/space/code/Img-Stitching/imgs/01.png", 1);    //右图
@@ -20,8 +20,6 @@ int main()
     // imwrite("44.png", imageLeft);
 
     stitcherCfg cfg;
-    cfg.imgHeight = 1944;
-    cfg.imgWidth = 2592;
     cfg.imgHeight = 1080;
     cfg.imgWidth = 1920;
 

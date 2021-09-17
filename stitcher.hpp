@@ -1,5 +1,12 @@
+#ifndef _STITCHER_H_
+#define _STITCHER_H_
+
 #include <opencv2/opencv.hpp>
 #include <thread>
+#include <fstream>
+#include <opencv2/stitching.hpp>
+
+#include"gmslcam.hpp"
 
 typedef struct
 {
@@ -11,12 +18,13 @@ typedef struct
 
 four_corners_t corners;
 
-cv::Mat homoMat = (cv::Mat_<double>(3,3)<< 0.3463709518587066, -0.02987517114120686, 845.4015037615147, 
+cv::Mat gHomoMat = (cv::Mat_<double>(3,3)<< 0.3463709518587066, -0.02987517114120686, 845.4015037615147, 
                     -0.1465717446443165, 0.9797299227981282, -11.69288605445955,
                     -0.0006891269642287213, 4.812735460740427e-05, 1);
 
 void CalcCorners(const cv::Mat& H, const cv::Mat& src)
 {
+    std::cout << "H: " << H << std::endl;
     double v2[] = { 0, 0, 1 };//左上角
     double v1[3];//变换后的坐标值
     cv::Mat V2 = cv::Mat(3, 1, CV_64FC1, v2);  //列向量
@@ -24,8 +32,8 @@ void CalcCorners(const cv::Mat& H, const cv::Mat& src)
 
     V1 = H * V2;
     //左上角(0,0,1)
-    // cout << "V2: " << V2 << endl;
-    // cout << "V1: " << V1 << endl;
+    std::cout << "V2: " << V2 << std::endl;
+    std::cout << "V1: " << V1 << std::endl;
     corners.left_top.x = v1[0] / v1[2];
     corners.left_top.y = v1[1] / v1[2];
 
@@ -48,6 +56,9 @@ void CalcCorners(const cv::Mat& H, const cv::Mat& src)
     V1 = H * V2;
     corners.right_top.x = v1[0] / v1[2];
     corners.right_top.y = v1[1] / v1[2];
+
+    std::cout << "V2: " << V2 << std::endl;
+    std::cout << "V1: " << V1 << std::endl;
 
     //右下角(src.cols,src.rows,1)
     v2[0] = src.cols;
@@ -96,13 +107,50 @@ void OptimizeSeam(cv::Mat& img1, cv::Mat& trans, cv::Mat& dst)
 
 }
 
+void OptimizeSeamv2(cv::Mat& left, cv::Mat& right, cv::Mat& dst, int offset, int start, int end)
+{
+    // int start = MIN(corners.left_top.x, corners.left_bottom.x);//开始位置，即重叠区域的左边界  
+
+    double processWidth = left.cols - start;//重叠区域的宽度  
+    int rows = left.rows;
+    int cols = left.cols; //注意，是列数*通道数
+    double alpha = 1;//img1中像素的权重  
+    for (int i = 0; i < rows; i++)
+    {
+        uchar* p = left.ptr<uchar>(i);  //获取第i行的首地址
+        uchar* t = right.ptr<uchar>(i);
+        uchar* d = dst.ptr<uchar>(i);
+        for (int j = start; j < end; j++)
+        {
+            //如果遇到图像trans中无像素的黑点，则完全拷贝img1中的数据
+            if (0)
+            {
+                alpha = 1;
+            }
+            else
+            {
+                //img1中像素的权重，与当前处理点距重叠区域左边界的距离成正比，实验证明，这种方法确实好  
+                alpha = (processWidth - (j - start)) / processWidth;
+            }
+
+            d[(j+offset) * 3] = p[j * 3] * alpha + t[(j-start) * 3] * (1 - alpha);
+            d[(j+offset) * 3 + 1] = p[j * 3 + 1] * alpha + t[(j-start) * 3 + 1] * (1 - alpha);
+            d[(j+offset) * 3 + 2] = p[j * 3 + 2] * alpha + t[(j-start) * 3 + 2] * (1 - alpha);
+
+        }
+    }
+
+}
+
 struct stitcherCfg
 {
     int imgWidth;
     int imgHeight;
 };
 
-#define DEBUG 1
+#define DEBUG 0
+
+cv::Stitcher cvStitcher = cv::Stitcher::createDefault(false);
 
 class stitcher
 {
@@ -132,6 +180,30 @@ public:
         // m_gmDst = cv::cuda::GpuMat(cv::Mat::zeros(1080, 5240, CV_8UC3));
         // dst = cv::Mat::zeros(1080, 5240, CV_8UC3);
         // tr = cv::Mat::zeros(1080, 5240, CV_8UC3);
+
+        std::ifstream fin("Homography.txt", std::ios::in);
+        if(fin.is_open())
+        {
+            std::string a;
+            double homoMat[9];
+            m_homo = cv::Mat(cv::Size(3, 3), CV_64FC1);
+            double *ptr = (double*)m_homo.data;
+            for(int i=0;i<9;i++)
+            {
+                std::string str;
+                fin >> str;
+                if(i==0)
+                {
+                    str = str.substr(1);
+                }
+                str.pop_back();
+                // std::cout << str << std::endl;
+                *(ptr+i) = stod(str);
+            }
+            
+            // m_homo = gHomoMat;
+            std::cout << m_homo << std::endl;
+        }
 
     }
 
@@ -409,16 +481,23 @@ public:
         std::cout<<"upload SpendTime = "<<  duration.count() <<"ms"<<std::endl;
 
         startTime= std::chrono::steady_clock::now();
-        CalcCorners(homoMat, imgRight);
+        CalcCorners(m_homo, imgRight);
+#if DEBUG
+        std::cout << "left_top:" << corners.left_top << std::endl;
+        std::cout << "left_bottom:" << corners.left_bottom << std::endl;
+        std::cout << "right_top:" << corners.right_top << std::endl;
+        std::cout << "right_bottom:" << corners.right_bottom << std::endl;
+#endif
         //图像配准  
         // cv::Mat imageTransformRight;
         // cv::warpPerspective(imgRight, imageTransformRight, homoMat, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
         //warpPerspective(imageRight, imageTransformLeft, adjustMat*homo, Size(imageLeft.cols*1.3, imageLeft.rows*1.8));
  
-        cv::cuda::warpPerspective(m_gmImgR, m_gmImgTransformRight, homoMat, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
+        // cv::cuda::warpPerspective(m_gmImgR, m_gmImgTransformRight, m_homo, cv::Size(MAX(corners.right_top.x, corners.right_bottom.x), imgLeft.rows));
+        cv::cuda::warpPerspective(m_gmImgR, m_gmImgTransformRight, m_homo, cv::Size(imgLeft.cols*2, imgLeft.rows));
 
 #if DEBUG
-        std::cout << "homo：\n" << homoMat << std::endl;
+        std::cout << "homo：\n" << m_homo << std::endl;
         cv::imwrite("imageTransformRight.png", cv::Mat(m_gmImgTransformRight));
 #endif
 
@@ -431,17 +510,59 @@ public:
         
         // cv::Mat tr;
         m_gmImgTransformRight.download(tr);
-        m_gmDst.download(dst);
-        
-        // imwrite("b_dst.jpg", dst);
-        OptimizeSeam(imgLeft, tr, dst);
+        m_gmDst.download(ret);
+#if DEBUG      
+        cv::imwrite("b_dst.jpg", ret);
+#endif
+        OptimizeSeam(imgLeft, tr, ret);
 #if DEBUG
-        cv::imwrite("dst.jpg", dst);
+        cv::imwrite("dst.jpg", ret);
 #endif
         endTime = std::chrono::steady_clock::now();
         duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
         std::cout<<"OptimizeSeam SpendTime = "<<  duration.count() <<"ms"<<std::endl;
          
+    }
+
+    void processall(gmslCamera cams[], int num, cv::Mat &final)
+    {
+        auto startTime= std::chrono::steady_clock::now();
+        // cv::Mat ret = cv::Mat(2160, 3840, CV_8UC3);
+        cv::Mat ret = cv::Mat(1080, 3840, CV_8UC3);
+        // cv::imshow("m_dev_name", cams[2].m_ret);
+        // cv::waitKey(33);
+
+        int seam12 = 700;
+        int seam01 = 695;
+        cams[2].m_ret.copyTo(ret(cv::Rect(0,0, 960, 540)));
+        cams[1].m_ret.copyTo(ret(cv::Rect(seam12, 0, 960, 540)));
+        OptimizeSeamv2(cams[2].m_ret, cams[1].m_ret, ret, 0, seam12, 960);
+        cams[0].m_ret.copyTo(ret(cv::Rect(seam12+seam01, 0, 960, 540)));
+        OptimizeSeamv2(cams[1].m_ret, cams[0].m_ret, ret, seam12, seam01, 960);
+        final=ret;
+        // cv::resize(ret, final, cv::Size(1920,1080));
+
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        std::cout<<"processall SpendTime = "<<  duration.count() <<"ms"<<std::endl;
+
+    }
+
+    void stitcherProcess(gmslCamera cams[], int num, cv::Mat &final)
+    {
+        cv::Mat pano;
+        std::vector<cv::Mat> imgs;
+        for(int i=0;i<num;i++)
+            imgs.push_back(cams[i].m_ret);
+
+        // cv::Stitcher cvStitcher = cv::Stitcher::createDefault(false);
+        cv::Stitcher::Status status = cvStitcher.stitch(imgs, final);
+
+        if (status != cv::Stitcher::OK) 
+        {   
+            std::cout << "Can't stitch images, error code = " << int(status) << std::endl;   
+            return;   
+        }   
     }
 
 private:
@@ -457,5 +578,8 @@ private:
     cv::cuda::GpuMat m_gmDescriptorR, m_gmDescriptorL;
     cv::cuda::GpuMat m_gmDescriptorR32, m_gmDescriptorL32;
     cv::cuda::GpuMat m_gmDst, m_gmImgTransformRight;
-    cv::Mat tr, dst;
+    cv::Mat tr, dst, m_homo;
+    // cv::Stitcher *cvStitcher;
 };
+
+#endif

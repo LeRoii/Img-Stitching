@@ -11,8 +11,8 @@ void imgStitch(const cv::Mat &leftimg, const cv::Mat &rightimg, cv::Mat &ret);
 
 int main(int argc, char *argv[])
 {
-    Mat imageRight = imread("/space/code/Img-Stitching/imgs/33.png", 1);    //右图
-    Mat imageLeft = imread("/space/code/Img-Stitching/imgs/44.png", 1);    //左图
+    Mat imageRight = imread("./3-undist.png", 1);    //右图
+    Mat imageLeft = imread("./2-undist.png", 1);    //左图
 
     // cv::resize(imageRight, imageRight, cv::Size(1920,1080));
     // cv::resize(imageLeft, imageLeft, cv::Size(1920,1080));
@@ -31,6 +31,13 @@ int main(int argc, char *argv[])
     cvtColor(imageRight, imageRightGray, CV_RGB2GRAY);
     cvtColor(imageLeft, imageLeftGray, CV_RGB2GRAY);
 
+    cv::Mat mask = cv::Mat::zeros(cv::Size(960, 540), CV_8UC1);
+    mask(cv::Rect(0, 0, 480, 540)).setTo(255);
+    cv::Mat maskR = mask.clone();
+    mask.setTo(0);
+    mask(cv::Rect(960 - 480, 0, 480, 540)).setTo(255).clone();
+    cv::Mat maskL = mask.clone();
+
     //提取特征点    
     int minHessian = 400;
     cv::Ptr<cv::xfeatures2d::SURF> Detector = cv::xfeatures2d::SURF::create(minHessian);
@@ -43,8 +50,8 @@ int main(int argc, char *argv[])
     // Detector->compute(imageRightGray, keyPointRight, imageDescRight);
     // Detector->compute(imageLeftGray, keyPointLeft, imageDescLeft);
 
-    Detector->detectAndCompute(imageRightGray, cv::Mat(), keyPointRight, imageDescRight);
-    Detector->detectAndCompute(imageLeftGray, cv::Mat(), keyPointLeft, imageDescLeft);
+    Detector->detectAndCompute(imageRightGray, maskR, keyPointRight, imageDescRight);
+    Detector->detectAndCompute(imageLeftGray, maskL, keyPointLeft, imageDescLeft);
 
     cout<<"right key pt size:"<<keyPointRight.size()<<endl;
     cout<<"left key pt size:"<<keyPointLeft.size()<<endl;
@@ -56,7 +63,7 @@ int main(int argc, char *argv[])
     cv::Ptr<cv::BFMatcher> matcher = cv::BFMatcher::create(NORM_L2);
     // cv::Ptr<cv::FlannBasedMatcher> matcher = cv::FlannBasedMatcher::create();
     vector<vector<DMatch> > knnMatchePoints;
-    vector<DMatch> matchePoints;
+    // vector<DMatch> matchePoints;
     vector<DMatch> GoodMatchePoints;
 
     //useless for bfmatcher
@@ -67,13 +74,13 @@ int main(int argc, char *argv[])
 
     // matcher->match(imageDescLeft, imageDescRight, GoodMatchePoints);
     matcher->knnMatch(imageDescLeft, imageDescRight, knnMatchePoints, 2);
-    cout << "total match points: " << matchePoints.size() << endl;
+    // cout << "total match points: " << matchePoints.size() << endl;
     cout << "total knn match points: " << knnMatchePoints.size() << endl;
 
     // // Lowe's algorithm,获取优秀匹配点
     for (int i = 0; i < knnMatchePoints.size(); i++)
     {
-        if (knnMatchePoints[i][0].distance < 0.4 * knnMatchePoints[i][1].distance)
+        if (knnMatchePoints[i][0].distance < 0.5 * knnMatchePoints[i][1].distance)
         {
             GoodMatchePoints.push_back(knnMatchePoints[i][0]);
         }
@@ -118,7 +125,11 @@ int main(int argc, char *argv[])
     Mat homo = findHomography(imagePointsRight, imagePointsLeft, CV_RANSAC);
     ////也可以使用getPerspectiveTransform方法获得透视变换矩阵，不过要求只能有4个点，效果稍差  
     //Mat   homo=getPerspectiveTransform(imagePointsRight,imagePointsLeft);  
-    cout << "homo：\n" << homo << endl << endl; //输出映射矩阵      
+    cout << "homo：\n" << homo << endl << endl; //输出映射矩阵   
+
+    ofstream fout("Homography.txt", std::ofstream::out);
+    fout << homo;
+    fout.close();
 
    //计算配准图的四个顶点坐标
     CalcCorners(homo, imageRight);
@@ -129,7 +140,8 @@ int main(int argc, char *argv[])
 
     //图像配准  
     Mat imageTransformRight, imageTransformLeft;
-    warpPerspective(imageRight, imageTransformRight, homo, Size(MAX(corners.right_top.x, corners.right_bottom.x), imageLeft.rows));
+    // warpPerspective(imageRight, imageTransformRight, homo, Size(MAX(corners.right_top.x, corners.right_bottom.x), imageLeft.rows));
+    warpPerspective(imageRight, imageTransformRight, homo, Size(imageLeft.cols*2, imageLeft.rows));
     //warpPerspective(imageRight, imageTransformLeft, adjustMat*homo, Size(imageLeft.cols*1.3, imageLeft.rows*1.8));
     
     //创建拼接后的图,需提前计算图的大小

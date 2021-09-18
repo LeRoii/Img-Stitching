@@ -808,10 +808,7 @@ int main(int argc, char* argv[])
                 sizes[i] = roi.size();
             }
         }
-        if (abs(compose_scale - 1) > 1e-1)
-            resize(full_img, img, Size(), compose_scale, compose_scale, INTER_LINEAR_EXACT);
-        else
-            img = full_img;
+        img = full_img;
         full_img.release();
         Size img_size = img.size();
 

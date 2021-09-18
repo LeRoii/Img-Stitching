@@ -161,230 +161,10 @@ string result_name = "result.jpg";
 bool timelapse = false;
 int range_width = -1;
 
-
-static int parseCmdArgs(int argc, char** argv)
-{
-    // if (argc == 1)
-    // {
-    //     printUsage();
-    //     return -1;
-    // }
-    for (int i = 1; i < argc; ++i)
-    {
-        if (string(argv[i]) == "--help" || string(argv[i]) == "/?")
-        {
-            printUsage();
-            return -1;
-        }
-        else if (string(argv[i]) == "--preview")
-        {
-            preview = true;
-        }
-        else if (string(argv[i]) == "--try_cuda")
-        {
-            if (string(argv[i + 1]) == "no")
-                try_cuda = false;
-            else if (string(argv[i + 1]) == "yes")
-                try_cuda = true;
-            else
-            {
-                cout << "Bad --try_cuda flag value\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--work_megapix")
-        {
-            work_megapix = atof(argv[i + 1]);
-            i++;
-        }
-        else if (string(argv[i]) == "--seam_megapix")
-        {
-            seam_megapix = atof(argv[i + 1]);
-            i++;
-        }
-        else if (string(argv[i]) == "--compose_megapix")
-        {
-            compose_megapix = atof(argv[i + 1]);
-            i++;
-        }
-        else if (string(argv[i]) == "--result")
-        {
-            result_name = argv[i + 1];
-            i++;
-        }
-        else if (string(argv[i]) == "--features")
-        {
-            features_type = argv[i + 1];
-            if (features_type == "orb")
-                match_conf = 0.3f;
-            i++;
-        }
-        else if (string(argv[i]) == "--matcher")
-        {
-            if (string(argv[i + 1]) == "homography" || string(argv[i + 1]) == "affine")
-                matcher_type = argv[i + 1];
-            else
-            {
-                cout << "Bad --matcher flag value\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--estimator")
-        {
-            if (string(argv[i + 1]) == "homography" || string(argv[i + 1]) == "affine")
-                estimator_type = argv[i + 1];
-            else
-            {
-                cout << "Bad --estimator flag value\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--match_conf")
-        {
-            match_conf = static_cast<float>(atof(argv[i + 1]));
-            i++;
-        }
-        else if (string(argv[i]) == "--conf_thresh")
-        {
-            conf_thresh = static_cast<float>(atof(argv[i + 1]));
-            i++;
-        }
-        else if (string(argv[i]) == "--ba")
-        {
-            ba_cost_func = argv[i + 1];
-            i++;
-        }
-        else if (string(argv[i]) == "--ba_refine_mask")
-        {
-            ba_refine_mask = argv[i + 1];
-            if (ba_refine_mask.size() != 5)
-            {
-                cout << "Incorrect refinement mask length.\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--wave_correct")
-        {
-            if (string(argv[i + 1]) == "no")
-                do_wave_correct = false;
-            else if (string(argv[i + 1]) == "horiz")
-            {
-                do_wave_correct = true;
-                wave_correct = detail::WAVE_CORRECT_HORIZ;
-            }
-            else if (string(argv[i + 1]) == "vert")
-            {
-                do_wave_correct = true;
-                wave_correct = detail::WAVE_CORRECT_VERT;
-            }
-            else
-            {
-                cout << "Bad --wave_correct flag value\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--save_graph")
-        {
-            save_graph = true;
-            save_graph_to = argv[i + 1];
-            i++;
-        }
-        else if (string(argv[i]) == "--warp")
-        {
-            warp_type = string(argv[i + 1]);
-            i++;
-        }
-        else if (string(argv[i]) == "--expos_comp")
-        {
-            if (string(argv[i + 1]) == "no")
-                expos_comp_type = ExposureCompensator::NO;
-            else if (string(argv[i + 1]) == "gain")
-                expos_comp_type = ExposureCompensator::GAIN;
-            else if (string(argv[i + 1]) == "gain_blocks")
-                expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
-            else
-            {
-                cout << "Bad exposure compensation method\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--seam")
-        {
-            if (string(argv[i + 1]) == "no" ||
-                string(argv[i + 1]) == "voronoi" ||
-                string(argv[i + 1]) == "gc_color" ||
-                string(argv[i + 1]) == "gc_colorgrad" ||
-                string(argv[i + 1]) == "dp_color" ||
-                string(argv[i + 1]) == "dp_colorgrad")
-                seam_find_type = argv[i + 1];
-            else
-            {
-                cout << "Bad seam finding method\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--blend")
-        {
-            if (string(argv[i + 1]) == "no")
-                blend_type = Blender::NO;
-            else if (string(argv[i + 1]) == "feather")
-                blend_type = Blender::FEATHER;
-            else if (string(argv[i + 1]) == "multiband")
-                blend_type = Blender::MULTI_BAND;
-            else
-            {
-                cout << "Bad blending method\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--timelapse")
-        {
-            timelapse = true;
-
-            if (string(argv[i + 1]) == "as_is")
-                timelapse_type = Timelapser::AS_IS;
-            else if (string(argv[i + 1]) == "crop")
-                timelapse_type = Timelapser::CROP;
-            else
-            {
-                cout << "Bad timelapse method\n";
-                return -1;
-            }
-            i++;
-        }
-        else if (string(argv[i]) == "--rangewidth")
-        {
-            range_width = atoi(argv[i + 1]);
-            i++;
-        }
-        else if (string(argv[i]) == "--blend_strength")
-        {
-            blend_strength = static_cast<float>(atof(argv[i + 1]));
-            i++;
-        }
-        else if (string(argv[i]) == "--output")
-        {
-            result_name = argv[i + 1];
-            i++;
-        }
-        else
-            img_names.push_back(argv[i]);
-    }
-    if (preview)
-    {
-        compose_megapix = 0.6;
-    }
-    return 0;
-}
-
+int num_images = 2;
+vector<CameraParams> cameras;
+vector<Mat_<float>> camK(num_images);
+vector<Mat> blenderMask(num_images);
 
 int main(int argc, char* argv[])
 {
@@ -396,16 +176,12 @@ int main(int argc, char* argv[])
     cv::setBreakOnError(true);
 #endif
 
-    int retval = parseCmdArgs(argc, argv);
-    if (retval)
-        return retval;
-
     img_names.push_back("1-dist.png");
     img_names.push_back("2-dist.png");
     // img_names.push_back("3-dist.png");
     // img_names.push_back("4-dist.png");
     // Check if have enough images
-    int num_images = static_cast<int>(img_names.size());
+    // int num_images = static_cast<int>(img_names.size());
     if (num_images < 2)
     {
         LOGLN("Need more images");
@@ -456,21 +232,11 @@ int main(int argc, char* argv[])
             LOGLN("Can't open image " << img_names[i]);
             return -1;
         }
-        if (work_megapix < 0)
-        {
-            img = full_img;
-            work_scale = 1;
-            is_work_scale_set = true;
-        }
-        else
-        {
-            if (!is_work_scale_set)
-            {
-                work_scale = min(1.0, sqrt(work_megapix * 1e6 / full_img.size().area()));
-                is_work_scale_set = true;
-            }
-            resize(full_img, img, Size(), work_scale, work_scale, INTER_LINEAR_EXACT);
-        }
+
+        img = full_img;
+        work_scale = 1;
+        is_work_scale_set = true;
+        
         if (!is_seam_scale_set)
         {
             seam_scale = min(1.0, sqrt(seam_megapix * 1e6 / full_img.size().area()));
@@ -548,7 +314,7 @@ int main(int argc, char* argv[])
     else
         estimator = makePtr<HomographyBasedEstimator>();
 
-    vector<CameraParams> cameras;
+    // vector<CameraParams> cameras;
     if (!(*estimator)(features, pairwise_matches, cameras))
     {
         cout << "Homography estimation failed.\n";
@@ -639,8 +405,13 @@ int main(int argc, char* argv[])
 
     for (int i = 0; i < num_images; ++i)
     {
-        Mat_<float> K;
-        cameras[i].K().convertTo(K, CV_32F);
+        // Mat_<float> K;
+        cameras[i].K().convertTo(camK[i], CV_32F);
+
+        LOGLN("camK[i #" << i << ":\nK:\n" << camK[i]);
+
+        auto K = camK[i].clone();
+
         float swa = (float)seam_work_aspect;
         K(0,0) *= swa; K(0,2) *= swa;
         K(1,1) *= swa; K(1,2) *= swa;
@@ -677,71 +448,54 @@ int main(int argc, char* argv[])
 
     Mat img_warped, img_warped_s;
     Mat dilated_mask, seam_mask, mask, mask_warped;
-    Ptr<Blender> blender;
+    // Ptr<Blender> blender;
     Ptr<Timelapser> timelapser;
     //double compose_seam_aspect = 1;
     double compose_work_aspect = 1;
 
+    warper = warper_creator->create(warped_image_scale);
+    // Update corners and sizes
+    for (int i = 0; i < num_images; ++i)
+    {
+        // Update intrinsics noneed
+
+        // Update corner and size
+        Size sz = full_img_sizes[i];
+
+        // Mat K;
+         
+        // cameras[i].K().convertTo(K, CV_32F);
+        // LOGLN("ki #" << i << ":\nK:\n" << K);
+        LOGLN("camK[1111i #" << i << ":\nK:\n" << camK[i]);
+        Rect roi = warper->warpRoi(sz, camK[i], cameras[i].R);
+        // Rect roi = warper->warpRoi(sz, K, cameras[i].R);
+        corners[i] = roi.tl();
+        sizes[i] = roi.size();
+    }
+
+
+    Ptr<Blender> blender;
+    float blend_width;
     for (int img_idx = 0; img_idx < num_images; ++img_idx)
     {
         LOGLN("Compositing image #" << indices[img_idx]+1);
 
         // Read image and resize it if necessary
         full_img = imread(img_names[img_idx]);
-        if (!is_compose_scale_set)
-        {
-            if (compose_megapix > 0)
-                compose_scale = min(1.0, sqrt(compose_megapix * 1e6 / full_img.size().area()));
-            is_compose_scale_set = true;
-
-            // Compute relative scales
-            //compose_seam_aspect = compose_scale / seam_scale;
-            compose_work_aspect = compose_scale / work_scale;
-
-            // Update warped image scale
-            warped_image_scale *= static_cast<float>(compose_work_aspect);
-            warper = warper_creator->create(warped_image_scale);
-
-            // Update corners and sizes
-            for (int i = 0; i < num_images; ++i)
-            {
-                // Update intrinsics
-                cameras[i].focal *= compose_work_aspect;
-                cameras[i].ppx *= compose_work_aspect;
-                cameras[i].ppy *= compose_work_aspect;
-
-                // Update corner and size
-                Size sz = full_img_sizes[i];
-                if (std::abs(compose_scale - 1) > 1e-1)
-                {
-                    sz.width = cvRound(full_img_sizes[i].width * compose_scale);
-                    sz.height = cvRound(full_img_sizes[i].height * compose_scale);
-                }
-
-                Mat K;
-                cameras[i].K().convertTo(K, CV_32F);
-                Rect roi = warper->warpRoi(sz, K, cameras[i].R);
-                corners[i] = roi.tl();
-                sizes[i] = roi.size();
-            }
-        }
-        if (abs(compose_scale - 1) > 1e-1)
-            resize(full_img, img, Size(), compose_scale, compose_scale, INTER_LINEAR_EXACT);
-        else
-            img = full_img;
+        img = full_img;
         full_img.release();
         Size img_size = img.size();
 
-        Mat K;
-        cameras[img_idx].K().convertTo(K, CV_32F);
+        // Mat K;
+        // cameras[img_idx].K().convertTo(K, CV_32F);
 
         // Warp the current image
-        warper->warp(img, K, cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+        warper->warp(img, camK[img_idx], cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
 
         // Warp the current image mask
         mask.create(img_size, CV_8U);
         mask.setTo(Scalar::all(255));
-        warper->warp(mask, K, cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+        warper->warp(mask, camK[img_idx], cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
 
         // Compensate exposure
         compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
@@ -753,13 +507,14 @@ int main(int argc, char* argv[])
 
         dilate(masks_warped[img_idx], dilated_mask, Mat());
         resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
-        mask_warped = seam_mask & mask_warped;
+        // mask_warped = seam_mask & mask_warped;
+        blenderMask[img_idx] = seam_mask & mask_warped;
 
         if (!blender && !timelapse)
         {
             blender = Blender::createDefault(blend_type, try_cuda);
             Size dst_sz = resultRoi(corners, sizes).size();
-            float blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
+            blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
             if (blend_width < 1.f)
                 blender = Blender::createDefault(Blender::NO, try_cuda);
             else if (blend_type == Blender::MULTI_BAND)
@@ -776,44 +531,83 @@ int main(int argc, char* argv[])
             }
             blender->prepare(corners, sizes);
         }
-        else if (!timelapser && timelapse)
-        {
-            timelapser = Timelapser::createDefault(timelapse_type);
-            timelapser->initialize(corners, sizes);
-        }
 
         // Blend the current image
-        if (timelapse)
-        {
-            timelapser->process(img_warped_s, Mat::ones(img_warped_s.size(), CV_8UC1), corners[img_idx]);
-            String fixedFileName;
-            size_t pos_s = String(img_names[img_idx]).find_last_of("/\\");
-            if (pos_s == String::npos)
-            {
-                fixedFileName = "fixed_" + img_names[img_idx];
-            }
-            else
-            {
-                fixedFileName = "fixed_" + String(img_names[img_idx]).substr(pos_s + 1, String(img_names[img_idx]).length() - pos_s);
-            }
-            imwrite(fixedFileName, timelapser->getDst());
-        }
-        else
-        {
-            blender->feed(img_warped_s, mask_warped, corners[img_idx]);
-        }
+        blender->feed(img_warped_s, blenderMask[img_idx], corners[img_idx]);
     }
 
-    if (!timelapse)
-    {
-        Mat result, result_mask;
-        blender->blend(result, result_mask);
+    LOGLN(" blender->feed, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
+#if ENABLE_LOG
+    t = getTickCount();
+#endif
+    Mat result, result_mask;
+    blender->blend(result, result_mask);
 
-        LOGLN("Compositing, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
+    LOGLN("blender->blend, time: " << ((getTickCount() - t) / getTickFrequency()) << " sec");
 
-        imwrite(result_name, result);
-    }
+    imwrite(result_name, result);
 
     LOGLN("Finished, total time: " << ((getTickCount() - app_start_time) / getTickFrequency()) << " sec");
+
+    vector<Mat> imgs;
+    img = imread("1-dist.png");	
+    imgs.push_back(img);
+    img = imread("2-dist.png");	
+    imgs.push_back(img);
+
+#if ENABLE_LOG
+    t = getTickCount();
+    app_start_time = getTickCount();
+#endif
+
+    Ptr<Blender> blenderr = Blender::createDefault(blend_type, try_cuda);
+    blenderr = Blender::createDefault(Blender::NO, try_cuda);
+    // MultiBandBlender* mb = dynamic_cast<MultiBandBlender*>(blenderr.get());
+    // mb->setNumBands(static_cast<int>(ceil(log(blend_width)/log(2.)) - 1.));
+    blenderr->prepare(corners, sizes);
+
+    for (int img_idx = 0; img_idx < num_images; ++img_idx)
+    {
+        LOGLN("Compositing image #" << indices[img_idx]+1);
+        t = getTickCount();
+
+        // Read image and resize it if necessary
+        img = imgs[img_idx];
+        Size img_size = img.size();
+
+       // Warp the current image
+        warper->warp(img, camK[img_idx], cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+
+        // Warp the current image mask
+        // mask.create(img_size, CV_8U);
+        // mask.setTo(Scalar::all(255));
+        // warper->warp(mask, camK[img_idx], cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, mask_warped);
+
+        // Compensate exposure
+        // compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
+
+        img_warped.convertTo(img_warped_s, CV_16S);
+        img_warped.release();
+        img.release();
+        // mask.release();
+
+        // dilate(masks_warped[img_idx], dilated_mask, Mat());
+        // resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
+        // mask_warped = seam_mask & mask_warped;
+
+        LOGLN("blender before feed, time: " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+        t = getTickCount();
+        // Blend the current image
+        blenderr->feed(img_warped_s, blenderMask[img_idx], corners[img_idx]);
+
+        // imwrite("mask_warped.png", mask_warped);
+
+        LOGLN("blender->feed, time: " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+    }
+
+    blenderr->blend(result, result_mask);
+LOGLN("blender->blend, time: " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000<< " ms");
+    imwrite("finallll.png", result);
+
     return 0;
 }

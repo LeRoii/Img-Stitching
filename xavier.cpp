@@ -2,8 +2,9 @@
 #include <thread>
 #include "stitcher.hpp"
 #include <string>
+#include "ocvstitcher.hpp"
 
-#define USED_CAMERA_NUM 6
+#define USED_CAMERA_NUM 2
 
 int main(int argc, char *argv[])
 {
@@ -21,13 +22,23 @@ int main(int argc, char *argv[])
                                     gmslCamera{camcfgs[5]}};
     cv::Mat ret;// = cv::Mat(2160, 3840, CV_8UC3);
 
-    stitcherCfg stitchercfg;
-    stitchercfg.imgHeight = camcfgs[0].retHeight;
-    stitchercfg.imgWidth = camcfgs[0].retWidth;
+    // stitcherCfg stitchercfg;
+    // stitchercfg.imgHeight = camcfgs[0].retHeight;
+    // stitchercfg.imgWidth = camcfgs[0].retWidth;
 
-    stitcher imgstither(stitchercfg, 1);
+    // stitcher imgstither(stitchercfg, 1);
 
-    cv::Ptr<cv::Stitcher> stitcher = cv::Stitcher::create(cv::Stitcher::PANORAMA, true);
+    // cv::Ptr<cv::Stitcher> stitcher = cv::Stitcher::create(cv::Stitcher::PANORAMA, true);
+
+    ocvStitcher ostitcher;
+
+    vector<Mat> imgs;
+    imgs.push_back(imread("./calibpana/1-dist.png"));
+    imgs.push_back(imread("./calibpana/2-dist.png"));
+
+    ostitcher.init(imgs);
+    ostitcher.process(imgs, ret);
+
     while(1)
     {
         // cam0.read_frame();
@@ -39,21 +50,17 @@ int main(int argc, char *argv[])
 		for(auto& th:threads)
 			th.join();
 
+        Mat rett;
+        vector<Mat> imgss(2);
+        imgss[0] = cameras[0].m_ret.clone();
+        imgss[1] = cameras[1].m_ret.clone();
+        ostitcher.process(imgss, rett);
+            
+
         // std::thread th1(&gmslCamera::read_frame, std::ref(cameras[0]));
         // th1.join();
         // std::thread th2(&gmslCamera::read_frame, std::ref(cameras[1]));
         // th2.join();
-		// cv::Size image_size = cameras[0].m_ret.size();
-		// cv::Size undistorSize = image_size;
-		// cv::Mat mapx = cv::Mat(undistorSize,CV_32FC1);
-    	// cv::Mat mapy = cv::Mat(undistorSize,CV_32FC1);
-		// cv::Mat R = cv::Mat::eye(3,3,CV_32F);
-		// cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix, distortion_coeffs, image_size, 1, undistorSize, 0);
-		// cv::initUndistortRectifyMap(intrinsic_matrix,distortion_coeffs, R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
-		// cv::Mat t = cv::Mat(undistorSize,CV_8UC3);
-        // cv::remap(cameras[0].m_ret,t,mapx, mapy, cv::INTER_CUBIC);
-		// t = t(cv::Rect(30,75,1868,930));
-		// cv::resize(t, t, cv::Size(1920,1080));
         // imgstither.processnodet(cameras[1].m_ret, cameras[2].m_ret, ret);
 
 		// printf("%p\n", cameras);
@@ -80,13 +87,13 @@ int main(int argc, char *argv[])
         
         if(argc > 1)
         {
-            cv::imwrite("final.png", ret);
+            cv::imwrite("final.png", rett);
             return 0;
         }
         else
         {
-            cv::imshow("m_dev_name", ret);
-            cv::waitKey(33);
+            // cv::imshow("m_dev_name", rett);
+            // cv::waitKey(330);
         }
     }
     return 0;

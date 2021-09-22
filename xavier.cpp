@@ -4,7 +4,7 @@
 #include <string>
 #include "ocvstitcher.hpp"
 
-#define USED_CAMERA_NUM 2
+#define USED_CAMERA_NUM 4
 
 int main(int argc, char *argv[])
 {
@@ -33,11 +33,13 @@ int main(int argc, char *argv[])
     ocvStitcher ostitcher;
 
     vector<Mat> imgs;
-    imgs.push_back(imread("./calibpana/1-dist.png"));
-    imgs.push_back(imread("./calibpana/2-dist.png"));
+    imgs.push_back(imread("./calibpana/1-0.png"));
+    imgs.push_back(imread("./calibpana/2-1.png"));
+    imgs.push_back(imread("./calibpana/3-2.png"));
+    imgs.push_back(imread("./calibpana/4-3.png"));
 
-    ostitcher.init(imgs);
-    ostitcher.process(imgs, ret);
+    while(ostitcher.init(imgs) != 0){};
+    // ostitcher.process(imgs, ret);
 
     while(1)
     {
@@ -51,9 +53,11 @@ int main(int argc, char *argv[])
 			th.join();
 
         Mat rett;
-        vector<Mat> imgss(2);
+        vector<Mat> imgss(4);
         imgss[0] = cameras[0].m_ret.clone();
         imgss[1] = cameras[1].m_ret.clone();
+        imgss[2] = cameras[2].m_ret.clone();
+        imgss[3] = cameras[3].m_ret.clone();
         ostitcher.process(imgss, rett);
             
 
@@ -92,8 +96,8 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // cv::imshow("m_dev_name", rett);
-            // cv::waitKey(330);
+            cv::imshow("m_dev_name", rett);
+            cv::waitKey(1);
         }
     }
     return 0;

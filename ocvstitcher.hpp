@@ -25,10 +25,9 @@ using namespace cv::detail;
 
 float match_conf = 0.3f;
 float conf_thresh = .9f;
-float blend_strength = 0;
+float blend_strength = 5;
 
-int num_images = 2;
-vector<Mat> seamSizedImgs(num_images);
+int num_images = 4;
 class ocvStitcher
 {
     public:
@@ -165,7 +164,6 @@ class ocvStitcher
 
             warper->warp(masks[i], K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
 
-            imwrite("111maskwarped.png", masks_warped[i]);
         }
 
         vector<UMat> images_warped_f(num_images);
@@ -217,7 +215,7 @@ class ocvStitcher
             // // Warp the current image mask
             mask.create(img_size, CV_8U);
             mask.setTo(Scalar::all(255));
-            warper->warp(mask, camK[img_idx], cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, maskwarped);
+            warper->warp(mask, camK[img_idx], cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, compensatorMaskWarped[img_idx]);
 
             // Compensate exposure
             // compensator->apply(img_idx, corners[img_idx], img_warped, maskwarped);
@@ -230,10 +228,10 @@ class ocvStitcher
             // mask.release();
 
             dilate(masks_warped[img_idx], dilated_mask, Mat());
-            resize(dilated_mask, seam_mask, maskwarped.size(), 0, 0, INTER_LINEAR_EXACT);
+            resize(dilated_mask, seam_mask, compensatorMaskWarped[img_idx].size(), 0, 0, INTER_LINEAR_EXACT);
             // mask_warped = seam_mask & mask_warped;
-            blenderMask[img_idx] = seam_mask & maskwarped;
-            imwrite("blendmask.png", blenderMask[img_idx]);
+            blenderMask[img_idx] = seam_mask & compensatorMaskWarped[img_idx];
+            // imwrite("blendmask.png", blenderMask[img_idx]);
 
             if (!blender)
             {
@@ -258,8 +256,10 @@ class ocvStitcher
         Mat result, result_mask;
         blender->blend(result, result_mask);
 
-        LOGLN("init takes : " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000 << " ms");
+        LOGLN("init ok takes : " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000 << " ms");
         imwrite("ocv.png", result);
+
+        return 0;
     }
 
     void process(vector<Mat> &imgs, Mat &ret)
@@ -283,7 +283,7 @@ class ocvStitcher
             warper->warp(img, camK[img_idx], cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
 
             // Compensate exposure
-            // compensator->apply(img_idx, corners[img_idx], img_warped, mask_warped);
+            // compensator->apply(img_idx, corners[img_idx], img_warped, compensatorMaskWarped[img_idx]);
 
             img_warped.convertTo(img_warped_s, CV_16S);
             img_warped.release();
@@ -315,9 +315,7 @@ class ocvStitcher
         LOGLN("process takes : " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000 << " ms");
 
         result.convertTo(ret, CV_8U);
-        cv::imshow("result", ret);
-        cv::waitKey(1);
-        imwrite("ocvprocess.png", ret);
+        // imwrite("ocvprocess.png", ret);
     }
 
     public:
@@ -333,7 +331,8 @@ class ocvStitcher
     vector<Mat_<float>> camK = vector<Mat_<float>>(num_images);
     vector<Point> corners = vector<Point>(num_images);
     vector<Mat> blenderMask = vector<Mat>(num_images);
-    vector<Mat> processMaskWarped = vector<Mat>(num_images);
+    vector<Mat> compensatorMaskWarped = vector<Mat>(num_images);
+    vector<Mat> seamSizedImgs = vector<Mat>(num_images);
     int m_imgWidth, m_imgHeight;
     double seam_work_aspect;
     Size dst_sz;

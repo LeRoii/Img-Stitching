@@ -33,12 +33,17 @@ int main(int argc, char *argv[])
     ocvStitcher ostitcher;
 
     vector<Mat> imgs;
-    imgs.push_back(imread("./calibpana/1-0.png"));
-    imgs.push_back(imread("./calibpana/2-1.png"));
-    imgs.push_back(imread("./calibpana/3-2.png"));
-    imgs.push_back(imread("./calibpana/4-3.png"));
-
-    while(ostitcher.init(imgs) != 0){};
+    
+    do{
+        imgs.clear();
+        for(int i=0;i<USED_CAMERA_NUM;i++)
+        {
+            cameras[i].read_frame();
+            imgs.push_back(cameras[i].m_ret);
+        }   
+    }
+    while(ostitcher.init(imgs) != 0);
+    
     // ostitcher.process(imgs, ret);
 
     while(1)

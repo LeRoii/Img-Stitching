@@ -25,7 +25,7 @@ using namespace cv::detail;
 
 float match_conf = 0.3f;
 float conf_thresh = .9f;
-float blend_strength = 5;
+float blend_strength = 0;
 
 int num_images = 4;
 class ocvStitcher

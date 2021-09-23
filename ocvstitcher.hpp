@@ -24,19 +24,22 @@ using namespace cv::detail;
 #define LOGLN(msg) std::cout << msg << std::endl
 
 float match_conf = 0.3f;
-float conf_thresh = .9f;
+float conf_thresh = .8f;
 float blend_strength = 0;
 
 int num_images = 4;
 class ocvStitcher
 {
     public:
-    ocvStitcher()
+    ocvStitcher(int width, int height):m_imgWidth(width), m_imgHeight(height)
     {
-        if (cuda::getCudaEnabledDeviceCount() > 0)
-            finder = makePtr<SurfFeaturesFinderGpu>();
-        else
-            finder = makePtr<SurfFeaturesFinder>();
+        // auto gpu = cuda::getCudaEnabledDeviceCount();
+        // if (gpu > 0)
+        //     finder = makePtr<SurfFeaturesFinderGpu>();
+        // else
+        //     finder = makePtr<SurfFeaturesFinder>();
+
+        finder = makePtr<SurfFeaturesFinder>();
 
         seam_work_aspect = min(1.0, sqrt(1e5 / (m_imgHeight*m_imgWidth)));
 
@@ -67,7 +70,7 @@ class ocvStitcher
         finder->collectGarbage();
 
         vector<MatchesInfo> pairwise_matches;
-        matcher = makePtr<BestOf2NearestMatcher>(true, match_conf);
+        matcher = makePtr<BestOf2NearestMatcher>(false, match_conf);
 
         (*matcher)(features, pairwise_matches);
         matcher->collectGarbage();
@@ -100,8 +103,8 @@ class ocvStitcher
         adjuster->setRefinementMask(refine_mask);
         if (!(*adjuster)(features, pairwise_matches, cameras))
         {
-        cout << "Camera parameters adjusting failed.\n";
-        return -1;
+            cout << "Camera parameters adjusting failed.\n";
+            return -1;
         }
 
         // Find median focal length
@@ -189,7 +192,7 @@ class ocvStitcher
         for (int i = 0; i < num_images; ++i)
         {
             LOGLN("camK[1111i #" << i << ":\nK:\n" << camK[i]);
-            Rect roi = warper->warpRoi(Size(960,540), camK[i], cameras[i].R);
+            Rect roi = warper->warpRoi(Size(m_imgWidth,m_imgHeight), camK[i], cameras[i].R);
             // Rect roi = warper->warpRoi(sz, K, cameras[i].R);
             corners[i] = roi.tl();
             sizes[i] = roi.size();
@@ -315,7 +318,7 @@ class ocvStitcher
         LOGLN("process takes : " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000 << " ms");
 
         result.convertTo(ret, CV_8U);
-        // imwrite("ocvprocess.png", ret);
+        imwrite("ocvprocess.png", ret);
     }
 
     public:

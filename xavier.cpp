@@ -8,12 +8,12 @@
 
 int main(int argc, char *argv[])
 {
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1,"/dev/video0"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,2,"/dev/video1"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,3,"/dev/video2"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,4,"/dev/video3"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,5,"/dev/video4"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,6,"/dev/video5"}};
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,1,"/dev/video0"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,2,"/dev/video1"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,3,"/dev/video2"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,4,"/dev/video3"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,5,"/dev/video4"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,6,"/dev/video5"}};
     gmslCamera cameras[CAMERA_NUM] = {gmslCamera{camcfgs[0]},
                                     gmslCamera{camcfgs[1]},
                                     gmslCamera{camcfgs[2]},
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     // cv::Ptr<cv::Stitcher> stitcher = cv::Stitcher::create(cv::Stitcher::PANORAMA, true);
 
-    ocvStitcher ostitcher;
+    ocvStitcher ostitcher(960/2, 540/2);
 
     vector<Mat> imgs;
     

@@ -136,11 +136,11 @@ static void printUsage()
 // Default command line args
 vector<String> img_names;
 bool preview = false;
-bool try_cuda = true;
+bool try_cuda = false;
 double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
-float conf_thresh = .9f;
+float conf_thresh = .8f;
 string features_type = "surf";
 string matcher_type = "homography";
 string estimator_type = "homography";
@@ -161,7 +161,7 @@ string result_name = "result.jpg";
 bool timelapse = false;
 int range_width = -1;
 
-int num_images = 2;
+int num_images = 4;
 vector<CameraParams> cameras;
 vector<Mat_<float>> camK(num_images);
 vector<Mat> blenderMask(num_images);
@@ -176,10 +176,15 @@ int main(int argc, char* argv[])
     cv::setBreakOnError(true);
 #endif
 
-    img_names.push_back("1-dist.png");
-    img_names.push_back("2-dist.png");
-    // img_names.push_back("3-dist.png");
-    // img_names.push_back("4-dist.png");
+    // img_names.push_back("../tmp/1-dist.png");
+    // img_names.push_back("../tmp/2-dist.png");
+    // img_names.push_back("../tmp/3-dist.png");
+    // img_names.push_back("../tmp/4-dist.png");
+
+    img_names.push_back("../tmp/1.png");
+    img_names.push_back("../tmp/2.png");
+    img_names.push_back("../tmp/3.png");
+    img_names.push_back("../tmp/4.png");
     // Check if have enough images
     // int num_images = static_cast<int>(img_names.size());
     if (num_images < 2)
@@ -512,7 +517,7 @@ int main(int argc, char* argv[])
 
         if (!blender && !timelapse)
         {
-            blender = Blender::createDefault(blend_type, try_cuda);
+            blender = Blender::createDefault(blend_type, true);
             Size dst_sz = resultRoi(corners, sizes).size();
             blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
             if (blend_width < 1.f)

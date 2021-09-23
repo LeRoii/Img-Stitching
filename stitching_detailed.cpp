@@ -136,11 +136,11 @@ static void printUsage()
 // Default command line args
 vector<String> img_names;
 bool preview = false;
-bool try_cuda = false;
+bool try_cuda = true;
 double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
-float conf_thresh = .9f;
+float conf_thresh = .8f;
 string features_type = "surf";
 string matcher_type = "homography";
 string estimator_type = "homography";
@@ -400,8 +400,10 @@ int main(int argc, char* argv[])
     if (retval)
         return retval;
 
-    img_names.push_back("1-dist.png");
-    img_names.push_back("2-dist.png");
+    img_names.push_back("1.png");
+    img_names.push_back("2.png");
+    img_names.push_back("3.png");
+    img_names.push_back("4.png");
     // img_names.push_back("3-dist.png");
     // img_names.push_back("4-dist.png");
     // Check if have enough images

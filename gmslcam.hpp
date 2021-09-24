@@ -34,7 +34,7 @@
 #include <thread>
 #include <string>
 
-#define CAMERA_NUM 6
+#define CAMERA_NUM 7
 
 cv::Mat intrinsic_matrix[3];
 cv::Mat distortion_coeffs[3];
@@ -437,7 +437,7 @@ public:
         printf("[%lu.%lu]\tprocess image is ok\n", ts.tv_sec, ts.tv_usec);
 
         // cv::Mat showimg;
-        cv::resize(m_camimg, m_ret, cv::Size(m_distoredWidth, m_distoredHeight));
+        cv::resize(m_camimg, m_ret, cv::Size(m_retWidth, m_retHeight));
         cv::cvtColor(m_ret, m_ret, cv::COLOR_BGR2RGB);
 
         //undistored*********
@@ -452,12 +452,12 @@ public:
         // // cv::Mat t = cv::Mat(undistorSize,CV_8UC3);
         // cv::remap(m_ret,m_ret,mapx, mapy, cv::INTER_CUBIC);
         // m_ret = m_ret(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
-        cv::resize(m_ret, m_ret, cv::Size(m_retWidth, m_retHeight));
+        // cv::resize(m_ret, m_ret, cv::Size(m_retWidth, m_retHeight));
         // cv::imwrite(filename+"undist.png", m_ret);
         //undistored end
 		
 		
-        printf("undist ok\n");
+        printf("cap frame ok\n");
         if(m_save)
 		{
 			static int cnt = 0;

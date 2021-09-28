@@ -21,7 +21,7 @@ include_directories(
     /opt/MVS/include)
 
 set(OpenCV_DIR "/usr/local/share/OpenCV/OpenCVConfig.cmake")
-find_package( OpenCV REQUIRED )
+find_package( OpenCV 3 REQUIRED )
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 

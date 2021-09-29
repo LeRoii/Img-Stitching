@@ -26,6 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef _CAMERA_V4L2_CUDA_H_
+#define _CAMERA_V4L2_CUDA_H_
+
 #include <queue>
 #include "NvJpegDecoder.h"
 
@@ -101,3 +104,5 @@ typedef struct
     unsigned int v4l2_pixfmt;
     NvBufferColorFormat nvbuff_color;
 } nv_color_fmt;
+
+#endif

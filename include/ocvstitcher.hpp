@@ -1,3 +1,6 @@
+#ifndef _OCVSTITCHER_HPP_
+#define _OCVSTITCHER_HPP_
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -342,3 +345,5 @@ class ocvStitcher
     vector<Size> sizes = vector<Size>(num_images);
 
 };
+
+#endif

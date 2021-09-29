@@ -4,10 +4,13 @@
 #include <string>
 #include "ocvstitcher.hpp"
 #include "PracticalSocket.h"
+#include "imageProcess.h"
 #include "config.h"
 
 #define USED_CAMERA_NUM 6
 #define BUF_LEN 65540 
+
+imagePorcessor nvProcessor;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
@@ -18,6 +21,7 @@ vector<Mat> downImgs(4);
 
 void serverCap()
 {
+    downImgs.clear();
     int recvMsgSize; // Size of received message
     string sourceAddress; // Address of datagram source
     unsigned short sourcePort; // Port of datagram source
@@ -36,7 +40,8 @@ void serverCap()
         cout << "after recv msg recvMsgSize:" << recvMsgSize << endl;
         if (recvMsgSize != PACK_SIZE) {
             cerr << "Received unexpected size pack:" << recvMsgSize << endl;
-            continue;
+            free(longbuf);
+            return;
         }
         memcpy( & longbuf[i * PACK_SIZE], buffer, PACK_SIZE);
     }
@@ -190,6 +195,8 @@ int main(int argc, char *argv[])
         upImgs[3] = cameras[3].m_ret.clone();
         downImgs[0] = cameras[4].m_ret.clone();
         downImgs[1] = cameras[5].m_ret.clone();
+        if(downImgs[2].empty() || downImgs[3].empty())
+            continue;
         LOGLN("up process %%%%%%%%%%%%%%%%%%%");
         ostitcherUp.process(upImgs, upRet);
         LOGLN("down process %%%%%%%%%%%%%%%%%%%");
@@ -223,10 +230,13 @@ int main(int argc, char *argv[])
             cv::imwrite("final.png", ret);
             return 0;
         }
-        else
+        else if(!upRet.empty())
         {
-            cv::imshow("up", upRet);
-            cv::imshow("down", downRet);
+            cv::Mat yoloRet;
+            yoloRet = nvProcessor.Process(upRet);
+            // cv::imshow("yolo", yoloRet);
+            // cv::imshow("up", upRet);
+            // cv::imshow("down", downRet);
             cv::waitKey(1);
         }
     }

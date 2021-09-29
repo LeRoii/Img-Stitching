@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#include <opencv2/opencv.hpp>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -43,6 +43,8 @@
 #include "nvbuf_utils.h"
 
 #include "camera_v4l2-cuda.h"
+
+
 
 #define MJPEG_EOS_SEARCH_SIZE 4096
 
@@ -289,6 +291,8 @@ camera_initialize(context_t * ctx)
         ctx->cam_pixfmt =fmt.fmt.pix.pixelformat;
     }
 
+    printf("fmt.fmt.pix.pixelformat!!!!!!!!!!!:%d\n", fmt.fmt.pix.pixelformat);
+
     struct v4l2_streamparm streamparm;
     memset (&streamparm, 0x00, sizeof (struct v4l2_streamparm));
     streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -310,7 +314,7 @@ display_initialize(context_t * ctx)
 {
     /* Create EGL renderer */
     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
-            ctx->cam_w, ctx->cam_h, 0, 0);
+            ctx->cam_w/3, ctx->cam_h/3, 0, 0);
     if (!ctx->renderer)
         ERROR_RETURN("Failed to create EGL renderer");
     ctx->renderer->setFPS(ctx->fps);
@@ -437,36 +441,6 @@ request_camera_buff_mmap(context_t *ctx)
 }
 
 static bool
-prepare_buffers_mjpeg(context_t * ctx)
-{
-    NvBufferCreateParams input_params = {0};
-
-    /* Allocate global buffer context */
-    ctx->g_buff = (nv_buffer *)malloc(V4L2_BUFFERS_NUM * sizeof(nv_buffer));
-    if (ctx->g_buff == NULL)
-        ERROR_RETURN("Failed to allocate global buffer context");
-    memset(ctx->g_buff, 0, V4L2_BUFFERS_NUM * sizeof(nv_buffer));
-
-    input_params.payloadType = NvBufferPayload_SurfArray;
-    input_params.width = ctx->cam_w;
-    input_params.height = ctx->cam_h;
-    input_params.layout = NvBufferLayout_Pitch;
-    input_params.colorFormat = get_nvbuff_color_fmt(V4L2_PIX_FMT_YUV420M);
-    input_params.nvbuf_tag = NvBufferTag_NONE;
-
-    /* Create Render buffer */
-    if (-1 == NvBufferCreateEx(&ctx->render_dmabuf_fd, &input_params))
-        ERROR_RETURN("Failed to create NvBuffer");
-
-    ctx->capture_dmabuf = false;
-    if (!request_camera_buff_mmap(ctx))
-        ERROR_RETURN("Failed to set up camera buff");
-
-    INFO("Succeed in preparing mjpeg buffers");
-    return true;
-}
-
-static bool
 prepare_buffers(context_t * ctx)
 {
     NvBufferCreateParams input_params = {0};
@@ -496,10 +470,6 @@ prepare_buffers(context_t * ctx)
 
         if (-1 == NvBufferGetParams(fd, &params))
             ERROR_RETURN("Failed to get NvBuffer parameters");
-
-        if (ctx->cam_pixfmt == V4L2_PIX_FMT_GREY &&
-            params.pitch[0] != params.width[0])
-                ctx->capture_dmabuf = false;
 
         /* TODO: add multi-planar support
            Currently only supports YUV422 interlaced single-planar */
@@ -552,28 +522,28 @@ signal_handle(int signum)
     quit = true;
 }
 
-static bool
-cuda_postprocess(context_t *ctx, int fd)
-{
-    if (ctx->enable_cuda)
-    {
-        /* Create EGLImage from dmabuf fd */
-        ctx->egl_image = NvEGLImageFromFd(ctx->egl_display, fd);
-        if (ctx->egl_image == NULL)
-            ERROR_RETURN("Failed to map dmabuf fd (0x%X) to EGLImage",
-                    ctx->render_dmabuf_fd);
+// static bool
+// cuda_postprocess(context_t *ctx, int fd)
+// {
+//     if (ctx->enable_cuda)
+//     {
+//         /* Create EGLImage from dmabuf fd */
+//         ctx->egl_image = NvEGLImageFromFd(ctx->egl_display, fd);
+//         if (ctx->egl_image == NULL)
+//             ERROR_RETURN("Failed to map dmabuf fd (0x%X) to EGLImage",
+//                     ctx->render_dmabuf_fd);
 
-        /* Pass this buffer hooked on this egl_image to CUDA for
-           CUDA processing - draw a rectangle on the frame */
-        HandleEGLImage(&ctx->egl_image);
+//         /* Pass this buffer hooked on this egl_image to CUDA for
+//            CUDA processing - draw a rectangle on the frame */
+//         HandleEGLImage(&ctx->egl_image);
 
-        /* Destroy EGLImage */
-        NvDestroyEGLImage(ctx->egl_display, ctx->egl_image);
-        ctx->egl_image = NULL;
-    }
+//         /* Destroy EGLImage */
+//         NvDestroyEGLImage(ctx->egl_display, ctx->egl_image);
+//         ctx->egl_image = NULL;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 static bool
 start_capture(context_t * ctx)
@@ -602,6 +572,72 @@ start_capture(context_t * ctx)
 
     fds[0].fd = ctx->cam_fd;
     fds[0].events = POLLIN;
+
+    /* read a raw YUYV data from disk and display*/
+    int img = open("camera.YUYV", O_RDONLY);
+    if (-1 == img)
+        ERROR_RETURN("Failed to open file for rendering");
+    int bufsize = 3840*2160*2;
+    unsigned char *buf = (unsigned char*)malloc(bufsize);
+    int cnt = read(img, buf, bufsize);
+        printf("read %d bytes\n", cnt);
+
+    NvBufferCreateParams bufparams = {0};
+    nv_buffer *nvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+    bufparams.payloadType = NvBufferPayload_SurfArray;
+    bufparams.width = ctx->cam_w;
+    bufparams.height = ctx->cam_h;
+    bufparams.layout = NvBufferLayout_Pitch;
+    bufparams.colorFormat = get_nvbuff_color_fmt(V4L2_PIX_FMT_YUYV);
+    bufparams.nvbuf_tag = NvBufferTag_CAMERA;
+    if (-1 == NvBufferCreateEx(&nvbuf->dmabuff_fd, &bufparams))
+            ERROR_RETURN("Failed to create NvBuffer");
+    
+    if(-1 == Raw2NvBuffer(buf, 0, 3840, 2160, nvbuf->dmabuff_fd))
+            ERROR_RETURN("Failed to Raw2NvBuffer");
+    
+    if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
+                        &transParams))
+                ERROR_RETURN("Failed to convert the yuvvvv buffer");
+    
+    // ctx->renderer->render(ctx->render_dmabuf_fd);
+
+    int rgbRender;
+    bufparams.colorFormat = NvBufferColorFormat_ARGB32;
+    bufparams.width = 960;
+    bufparams.height = 540;
+    if (-1 == NvBufferCreateEx(&rgbRender, &bufparams))
+            ERROR_RETURN("Failed to create NvBuffer");
+    
+    if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, rgbRender,
+                        &transParams))
+                ERROR_RETURN("Failed to convert the yuvvvv buffer");
+    
+    // while (poll(fds, 1, 5000) > 0 && !quit)
+    // {
+    //     ctx->renderer->render(rgbRender);
+    // }
+
+    unsigned char *rgbbuf = (unsigned char*)malloc(bufparams.width*bufparams.height*4);
+    if(-1 == NvBuffer2Raw(rgbRender, 0, bufparams.width, bufparams.height, rgbbuf))
+        ERROR_RETURN("Failed to NvBuffer2Raw");
+    
+    cv::Mat mtt(bufparams.height, bufparams.width, CV_8UC4, rgbbuf);
+    cv::imshow("a", mtt);
+    cv::waitKey(0);
+
+    return 0;
+
+    // while (poll(fds, 1, 5000) > 0 && !quit)
+    // {
+    //     // if (fds[0].revents & POLLIN) {
+    //     //     struct v4l2_buffer v4l2_buf;
+
+    //         /* Preview */
+    //         ctx->renderer->render(ctx->render_dmabuf_fd);
+    //     // }
+    // }
+
     /* Wait for camera event with timeout = 5000 ms */
     while (poll(fds, 1, 5000) > 0 && !quit)
     {
@@ -621,64 +657,32 @@ start_capture(context_t * ctx)
 
             ctx->frame++;
 
-            /* Save the n-th frame to file */
-            if (ctx->frame == ctx->save_n_frame)
-                save_frame_to_file(ctx, &v4l2_buf);
-
-            if (ctx->cam_pixfmt == V4L2_PIX_FMT_MJPEG) {
-                int fd = 0;
-                uint32_t width, height, pixfmt;
-                unsigned int i = 0;
-                unsigned int eos_search_size = MJPEG_EOS_SEARCH_SIZE;
-                unsigned int bytesused = v4l2_buf.bytesused;
-                uint8_t *p;
-
-                /* v4l2_buf.bytesused may have padding bytes for alignment
-                   Search for EOF to get exact size */
-                if (eos_search_size > bytesused)
-                    eos_search_size = bytesused;
-                for (i = 0; i < eos_search_size; i++) {
-                    p =(uint8_t *)(ctx->g_buff[v4l2_buf.index].start + bytesused);
-                    if ((*(p-2) == 0xff) && (*(p-1) == 0xd9)) {
-                        break;
-                    }
-                    bytesused--;
-                }
-
-                // /* Decoding MJPEG frame */
-                // if (ctx->jpegdec->decodeToFd(fd, ctx->g_buff[v4l2_buf.index].start,
-                //     bytesused, pixfmt, width, height) < 0)
-                //     ERROR_RETURN("Cannot decode MJPEG");
-
-                /* Convert the decoded buffer to YUV420P */
-                if (-1 == NvBufferTransform(fd, ctx->render_dmabuf_fd,
-                        &transParams))
-                    ERROR_RETURN("Failed to convert the buffer");
+            if (ctx->capture_dmabuf) {
+                /* Cache sync for VIC operation since the data is from CPU */
+                NvBufferMemSyncForDevice(ctx->g_buff[v4l2_buf.index].dmabuff_fd, 0,
+                        (void**)&ctx->g_buff[v4l2_buf.index].start);
             } else {
-                if (ctx->capture_dmabuf) {
-                    /* Cache sync for VIC operation since the data is from CPU */
-                    NvBufferMemSyncForDevice(ctx->g_buff[v4l2_buf.index].dmabuff_fd, 0,
-                            (void**)&ctx->g_buff[v4l2_buf.index].start);
-                } else {
-                    /* Copies raw buffer plane contents to an NvBuffer plane */
-                    Raw2NvBuffer(ctx->g_buff[v4l2_buf.index].start, 0,
-                             ctx->cam_w, ctx->cam_h, ctx->g_buff[v4l2_buf.index].dmabuff_fd);
-                }
-
-                /*  Convert the camera buffer from YUV422 to YUV420P */
-                if (-1 == NvBufferTransform(ctx->g_buff[v4l2_buf.index].dmabuff_fd, ctx->render_dmabuf_fd,
-                            &transParams))
-                    ERROR_RETURN("Failed to convert the buffer");
-
-                if (ctx->cam_pixfmt == V4L2_PIX_FMT_GREY) {
-                    if(!nvbuff_do_clearchroma(ctx->render_dmabuf_fd))
-                        ERROR_RETURN("Failed to clear chroma");
-                }
+                /* Copies raw buffer plane contents to an NvBuffer plane */
+                Raw2NvBuffer(ctx->g_buff[v4l2_buf.index].start, 0,
+                            ctx->cam_w, ctx->cam_h, ctx->g_buff[v4l2_buf.index].dmabuff_fd);
             }
-            cuda_postprocess(ctx, ctx->render_dmabuf_fd);
+
+            /*  Convert the camera buffer from YUV422 to YUV420P */
+            if (-1 == NvBufferTransform(ctx->g_buff[v4l2_buf.index].dmabuff_fd, ctx->render_dmabuf_fd,
+                        &transParams))
+                ERROR_RETURN("Failed to convert the buffer");
+
+            if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
+                        &transParams))
+                ERROR_RETURN("Failed to convert the yuvvvv buffer");
+
+            /* draw black rect */
+            // cuda_postprocess(ctx, ctx->render_dmabuf_fd);
 
             /* Preview */
             ctx->renderer->render(ctx->render_dmabuf_fd);
+            // ctx->renderer->render(nvbuf->dmabuff_fd);
+            // ctx->renderer->render(img);
 
             /* Enqueue camera buffer back to driver */
             if (ioctl(ctx->cam_fd, VIDIOC_QBUF, &v4l2_buf))
@@ -690,8 +694,8 @@ start_capture(context_t * ctx)
     /* Print profiling information when streaming stops */
     ctx->renderer->printProfilingStats();
 
-    // if (ctx->cam_pixfmt == V4L2_PIX_FMT_MJPEG)
-    //     delete ctx->jpegdec;
+    if (ctx->cam_pixfmt == V4L2_PIX_FMT_MJPEG)
+        delete ctx->jpegdec;
 
     return true;
 }
@@ -719,21 +723,23 @@ main(int argc, char *argv[])
 
     set_defaults(&ctx);
 
-    CHECK_ERROR(parse_cmdline(&ctx, argc, argv), cleanup,
-            "Invalid options specified");
+    // CHECK_ERROR(parse_cmdline(&ctx, argc, argv), cleanup,
+    //         "Invalid options specified");
+
+    ctx.cam_devname = "/dev/video0";
+    ctx.cam_w = 3840;
+    ctx.cam_h = 2160;
+    ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;
+    ctx.enable_cuda = true;
+    ctx.enable_verbose = true;
 
     /* Initialize camera and EGL display, EGL Display will be used to map
        the buffer to CUDA buffer for CUDA processing */
     CHECK_ERROR(init_components(&ctx), cleanup,
             "Failed to initialize v4l2 components");
 
-    if (ctx.cam_pixfmt == V4L2_PIX_FMT_MJPEG) {
-        CHECK_ERROR(prepare_buffers_mjpeg(&ctx), cleanup,
-                "Failed to prepare v4l2 buffs");
-    } else {
-        CHECK_ERROR(prepare_buffers(&ctx), cleanup,
-                "Failed to prepare v4l2 buffs");
-    }
+    CHECK_ERROR(prepare_buffers(&ctx), cleanup,
+            "Failed to prepare v4l2 buffs");
 
     CHECK_ERROR(start_stream(&ctx), cleanup,
             "Failed to start streaming");
@@ -759,8 +765,6 @@ cleanup:
         for (unsigned i = 0; i < V4L2_BUFFERS_NUM; i++) {
             if (ctx.g_buff[i].dmabuff_fd)
                 NvBufferDestroy(ctx.g_buff[i].dmabuff_fd);
-            if (ctx.cam_pixfmt == V4L2_PIX_FMT_MJPEG)
-                munmap(ctx.g_buff[i].start, ctx.g_buff[i].size);
         }
         free(ctx.g_buff);
     }

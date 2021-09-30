@@ -38,7 +38,7 @@ void serverCap()
         cout << "after recv msg recvMsgSize:" << recvMsgSize << endl;
         if (recvMsgSize != PACK_SIZE) {
             cerr << "Received unexpected size pack:" << recvMsgSize << endl;
-            continue;
+            return;
         }
         memcpy( & longbuf[i * PACK_SIZE], buffer, PACK_SIZE);
     }

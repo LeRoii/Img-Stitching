@@ -42,6 +42,7 @@ typedef struct
     int target_y[20];
     int target_w[20];
     int target_h[20];
+    int target_num;
     float target_velocity[20];
 } targetInfo;
 

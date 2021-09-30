@@ -29,7 +29,7 @@ void imagePorcessor::publishImage(cv::Mat &img)
         sendData.target_h[i]=3*i;
         sendData.target_velocity[i]=11.5*i;      
     }
-    // nvEncoder.pubTargetData(sendData);
+    nvEncoder.pubTargetData(sendData);
     nvEncoder.encodeFrame(yuvImg.data);
 
     auto end = std::chrono::steady_clock::now();

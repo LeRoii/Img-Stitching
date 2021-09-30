@@ -10,6 +10,7 @@
 #define USED_CAMERA_NUM 6
 #define BUF_LEN 65540 
 
+imagePorcessor nvProcessor;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
@@ -20,6 +21,7 @@ vector<Mat> downImgs(4);
 
 void serverCap()
 {
+    downImgs.clear();
     int recvMsgSize; // Size of received message
     string sourceAddress; // Address of datagram source
     unsigned short sourcePort; // Port of datagram source
@@ -38,6 +40,7 @@ void serverCap()
         cout << "after recv msg recvMsgSize:" << recvMsgSize << endl;
         if (recvMsgSize != PACK_SIZE) {
             cerr << "Received unexpected size pack:" << recvMsgSize << endl;
+            free(longbuf);
             return;
         }
         memcpy( & longbuf[i * PACK_SIZE], buffer, PACK_SIZE);
@@ -133,8 +136,6 @@ int main(int argc, char *argv[])
     // int recvMsgSize; // Size of received message
     // string sourceAddress; // Address of datagram source
     // unsigned short sourcePort; // Port of datagram source
-
-    imagePorcessor nvProcessor;
 
     while(1)
     {

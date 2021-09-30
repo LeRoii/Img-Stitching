@@ -1,7 +1,7 @@
 #include <thread>
 #include <memory>
 #include <opencv2/core/utility.hpp>
-
+#include "imageProcess.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
 #include "config.h"
@@ -64,14 +64,14 @@ void serverCap()
     }
     downImgs[2] = recvedFrame(Rect(0,0,480, 270)).clone();
     downImgs[3] = recvedFrame(Rect(480,0,480, 270)).clone();
-    imwrite("7.png", downImgs[2]);
-    imwrite("8.png", downImgs[3]);
+    // imwrite("7.png", downImgs[2]);
+    // imwrite("8.png", downImgs[3]);
     // imshow("recv", recvedFrame);
     // waitKey(1);
     free(longbuf);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,1,"/dev/video0"},
                                     stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,2,"/dev/video1"},
@@ -85,6 +85,83 @@ int main()
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
+    ocvStitcher ostitcherUp(960/2, 540/2);
+    ocvStitcher ostitcherDown(960/2, 540/2);
+
+    if(argc == 1)
+    {
+        do{
+            upImgs.clear();
+            for(int i=0;i<4;i++)
+            {
+                cameras[i]->read_frame();
+                upImgs.push_back(cameras[i]->m_ret);
+            }   
+        }
+        while(ostitcherUp.init(upImgs) != 0);
+
+        LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+        imwrite("1.png", upImgs[0]);
+        imwrite("2.png", upImgs[1]);
+        imwrite("3.png", upImgs[2]);
+        imwrite("4.png", upImgs[3]);
+        
+        
+        do{
+            serverCap();
+            cameras[4]->read_frame();
+            cameras[5]->read_frame();
+            downImgs[0] = cameras[4]->m_ret;
+            downImgs[1] = cameras[5]->m_ret;
+        }
+        while(ostitcherDown.init(downImgs) != 0);
+
+        LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+        imwrite("5.png", downImgs[0]);
+        imwrite("6.png", downImgs[1]);
+        imwrite("7.png", downImgs[2]);
+        imwrite("8.png", downImgs[3]);
+
+    }
+    else
+    {
+        upImgs.clear();
+        Mat img = imread("/home/nvidia/ssd/code/0929IS/2222/1.png");
+        // resize(img, img, Size(960/2, 540/2));
+        upImgs.push_back(img);
+        img = imread("/home/nvidia/ssd/code/0929IS/2222/2.png");
+        // resize(img, img, Size(960/2, 540/2));
+        upImgs.push_back(img);
+        img = imread("/home/nvidia/ssd/code/0929IS/2222/3.png");
+        // resize(img, img, Size(960/2, 540/2));
+        upImgs.push_back(img);
+        img = imread("/home/nvidia/ssd/code/0929IS/2222/4.png");
+        // resize(img, img, Size(960/2, 540/2));
+        upImgs.push_back(img);
+
+        downImgs.clear();
+        img = imread("/home/nvidia/ssd/code/0929IS/2222/5.png");
+        // resize(img, img, Size(960/2, 540/2));
+        downImgs.push_back(img);
+        img = imread("/home/nvidia/ssd/code/0929IS/2222/6.png");
+        // resize(img, img, Size(960/2, 540/2));
+        downImgs.push_back(img);
+        img = imread("/home/nvidia/ssd/code/0929IS/2222/7.png");
+        // resize(img, img, Size(960/2, 540/2));
+        downImgs.push_back(img);
+        img = imread("/home/nvidia/ssd/code/0929IS/2222/8.png");
+        // resize(img, img, Size(960/2, 540/2));
+        downImgs.push_back(img);
+
+
+        while(ostitcherUp.init(upImgs) != 0){}
+        LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
+        while(ostitcherDown.init(downImgs) != 0){}
+        LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+    }
+
     std::vector<std::thread> threads;
     for(int i=0;i<USED_CAMERA_NUM;i++)
         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
@@ -92,6 +169,8 @@ int main()
         th.detach();
 
     Mat rets[USED_CAMERA_NUM];
+
+    imagePorcessor nvProcessor;
 
     while(1)
     {
@@ -110,8 +189,8 @@ int main()
         // for(auto& th:threads)
         //     th.join();
         
-        // std::thread server(serverCap);
-        // server.join();
+        std::thread server(serverCap);
+        server.join();
 
         int ok = 1;
         ok *= cameras[0]->getFrame(upImgs[0]);
@@ -132,6 +211,10 @@ int main()
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
 
+        LOGLN("up process %%%%%%%%%%%%%%%%%%%");
+        ostitcherUp.process(upImgs, upRet);
+        LOGLN("down process %%%%%%%%%%%%%%%%%%%");
+        ostitcherDown.process(downImgs, downRet);
 
         // cameras[0]->read_frame();
         // // cameras[1]->read_frame();
@@ -149,9 +232,19 @@ int main()
         // cv::vconcat(up, down, ret);
         // cv::imshow("m_dev_name", ret);
 
-        cv::imshow("1", upImgs[0]);
+        // cv::imshow("1", cam0.m_ret);
         // cv::imwrite("1.png", cam0.m_ret);
-
+        if(!upRet.empty())
+        {
+            cv::Mat yoloRet;
+            yoloRet = nvProcessor.Process(upRet);
+            cv::imshow("yolo", yoloRet);
+            // cv::imshow("up", upRet);
+            // cv::imshow("down", downRet);
+            cv::waitKey(1);
+        }
+        cv::imshow("up", upRet);
+        cv::imshow("down", downRet);
         cv::waitKey(1);
 
         LOGLN("all takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");

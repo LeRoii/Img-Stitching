@@ -79,7 +79,7 @@ namespace udp_publisher
     int ibuf[1];
     ibuf[0] = total_pack;
     sendto(m_sockfd,ibuf,sizeof(int),0,(sockaddr *)&send_addr,sizeof(send_addr));
-
+    std::cout<<"pack number : "<<total_pack<<std::endl;
     for(int i = 0; i<total_pack; i++){
       sendto(m_sockfd,&image[i*PACK_SIZE],PACK_SIZE,0,(sockaddr *)&send_addr,sizeof(send_addr)) ;
     }

@@ -317,10 +317,9 @@ class ocvStitcher
 
         Mat result, result_mask;
         blender->blend(result, result_mask);
-
-        LOGLN("process takes : " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000 << " ms");
-
         result.convertTo(ret, CV_8U);
+
+        LOGLN("stitcher process takes : " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000 << " ms");
         // imwrite("ocvprocess.png", ret);
     }
 

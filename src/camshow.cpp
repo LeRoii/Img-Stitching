@@ -64,8 +64,8 @@ void serverCap()
     }
     downImgs[2] = recvedFrame(Rect(0,0,480, 270)).clone();
     downImgs[3] = recvedFrame(Rect(480,0,480, 270)).clone();
-    imwrite("7.png", downImgs[2]);
-    imwrite("8.png", downImgs[3]);
+    // imwrite("7.png", downImgs[2]);
+    // imwrite("8.png", downImgs[3]);
     // imshow("recv", recvedFrame);
     // waitKey(1);
     free(longbuf);
@@ -103,6 +103,8 @@ int main()
         // cameras[4]->read_frame();
         // cameras[5]->read_frame();
 
+        // return 0;
+
         /*slow */
         // std::vector<std::thread> threads;
         // for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -110,19 +112,26 @@ int main()
         // for(auto& th:threads)
         //     th.join();
         
-        // std::thread server(serverCap);
-        // server.join();
+        std::thread server(serverCap);
+        server.join();
 
-        int ok = 1;
-        ok *= cameras[0]->getFrame(upImgs[0]);
-        ok *= cameras[1]->getFrame(upImgs[1]);
-        ok *= cameras[2]->getFrame(upImgs[2]);
-        ok *= cameras[3]->getFrame(upImgs[3]);
-        ok *= cameras[4]->getFrame(downImgs[0]);
-        ok *= cameras[5]->getFrame(downImgs[1]);
+        // int ok = 1;
+        // ok *= cameras[0]->getFrame(upImgs[0]);
+        // ok *= cameras[1]->getFrame(upImgs[1]);
+        // ok *= cameras[2]->getFrame(upImgs[2]);
+        // ok *= cameras[3]->getFrame(upImgs[3]);
+        // ok *= cameras[4]->getFrame(downImgs[0]);
+        // ok *= cameras[5]->getFrame(downImgs[1]);
 
-        if(!ok)
-            continue;
+        // if(!ok)
+        //     continue;
+
+        cameras[0]->getFrame(upImgs[0]);
+        cameras[1]->getFrame(upImgs[1]);
+        cameras[2]->getFrame(upImgs[2]);
+        cameras[3]->getFrame(upImgs[3]);
+        cameras[4]->getFrame(downImgs[0]);
+        cameras[5]->getFrame(downImgs[1]);
 
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+1)+".png", upImgs[i]);
@@ -149,7 +158,8 @@ int main()
         // cv::vconcat(up, down, ret);
         // cv::imshow("m_dev_name", ret);
 
-        cv::imshow("1", upImgs[0]);
+        // cv::imshow("1", upImgs[0]);
+        cv::imshow("1", cameras[0]->m_ret);
         // cv::imwrite("1.png", cam0.m_ret);
 
         cv::waitKey(1);

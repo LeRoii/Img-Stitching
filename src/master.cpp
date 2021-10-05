@@ -12,14 +12,12 @@
 #define USED_CAMERA_NUM 6
 #define BUF_LEN 65540 
 
-#define LOG(msg) std::cout << msg
-#define LOGLN(msg) std::cout << msg << std::endl
 
 using namespace cv;
 
 vector<Mat> upImgs(4);
 vector<Mat> downImgs(4);
-Mat upRet, downRet;
+Mat upRet, downRet, ret;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
@@ -71,8 +69,44 @@ void serverCap()
     free(longbuf);
 }
 
+bool saveret = false;
+bool detect = false;
+bool initonline = false;
+
+static bool
+parse_cmdline(int argc, char **argv)
+{
+    int c;
+
+    if (argc < 2)
+    {
+        return true;
+    }
+
+    while ((c = getopt(argc, argv, "sdi")) != -1)
+    {
+        switch (c)
+        {
+            case 's':
+                saveret = true;
+                break;
+            case 'd':
+                detect = true;
+                break;
+            case 'i':
+                initonline = true;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+
 int main(int argc, char *argv[])
 {
+    parse_cmdline(argc, argv);
+
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,1,"/dev/video0"},
                                     stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,2,"/dev/video1"},
                                     stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,3,"/dev/video2"},
@@ -88,7 +122,7 @@ int main(int argc, char *argv[])
     ocvStitcher ostitcherUp(960/2, 540/2);
     ocvStitcher ostitcherDown(960/2, 540/2);
 
-    if(argc == 1)
+    if(initonline)
     {
         do{
             upImgs.clear();
@@ -102,11 +136,13 @@ int main(int argc, char *argv[])
 
         LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-        imwrite("1.png", upImgs[0]);
-        imwrite("2.png", upImgs[1]);
-        imwrite("3.png", upImgs[2]);
-        imwrite("4.png", upImgs[3]);
-        
+        if(saveret)
+        {
+            imwrite("1.png", upImgs[0]);
+            imwrite("2.png", upImgs[1]);
+            imwrite("3.png", upImgs[2]);
+            imwrite("4.png", upImgs[3]);
+        }
         
         do{
             serverCap();
@@ -119,10 +155,13 @@ int main(int argc, char *argv[])
 
         LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-        imwrite("5.png", downImgs[0]);
-        imwrite("6.png", downImgs[1]);
-        imwrite("7.png", downImgs[2]);
-        imwrite("8.png", downImgs[3]);
+        if(saveret)
+        {
+            imwrite("5.png", downImgs[0]);
+            imwrite("6.png", downImgs[1]);
+            imwrite("7.png", downImgs[2]);
+            imwrite("8.png", downImgs[3]);
+        }
 
     }
     else
@@ -175,6 +214,7 @@ int main(int argc, char *argv[])
     while(1)
     {
         auto t = cv::getTickCount();
+        auto all = cv::getTickCount();
         // cameras[0]->read_frame();
         // cameras[1]->read_frame();
         // cameras[2]->read_frame();
@@ -192,16 +232,23 @@ int main(int argc, char *argv[])
         std::thread server(serverCap);
         server.join();
 
-        int ok = 1;
-        ok *= cameras[0]->getFrame(upImgs[0]);
-        ok *= cameras[1]->getFrame(upImgs[1]);
-        ok *= cameras[2]->getFrame(upImgs[2]);
-        ok *= cameras[3]->getFrame(upImgs[3]);
-        ok *= cameras[4]->getFrame(downImgs[0]);
-        ok *= cameras[5]->getFrame(downImgs[1]);
+        // int ok = 1;
+        // ok *= cameras[0]->getFrame(upImgs[0]);
+        // ok *= cameras[1]->getFrame(upImgs[1]);
+        // ok *= cameras[2]->getFrame(upImgs[2]);
+        // ok *= cameras[3]->getFrame(upImgs[3]);
+        // ok *= cameras[4]->getFrame(downImgs[0]);
+        // ok *= cameras[5]->getFrame(downImgs[1]);
 
-        if(!ok)
-            continue;
+        // if(!ok)
+        //     continue;
+
+        cameras[0]->getFrame(upImgs[0]);
+        cameras[1]->getFrame(upImgs[1]);
+        cameras[2]->getFrame(upImgs[2]);
+        cameras[3]->getFrame(upImgs[3]);
+        cameras[4]->getFrame(downImgs[0]);
+        cameras[5]->getFrame(downImgs[1]);
 
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+1)+".png", upImgs[i]);
@@ -216,6 +263,11 @@ int main(int argc, char *argv[])
         LOGLN("down process %%%%%%%%%%%%%%%%%%%");
         ostitcherDown.process(downImgs, downRet);
 
+        upRet = upRet(Rect(0,20,1185,200));
+        downRet = downRet(Rect(0,25,1185,200));
+
+        cv::vconcat(upRet, downRet, ret);
+        cv::rectangle(ret, cv::Rect(0, 198, 1185, 4), cv::Scalar(0,0,0), -1, 1, 0);
         // cameras[0]->read_frame();
         // // cameras[1]->read_frame();
         // if(!rets[0].empty())
@@ -234,7 +286,7 @@ int main(int argc, char *argv[])
 
         // cv::imshow("1", cam0.m_ret);
         // cv::imwrite("1.png", cam0.m_ret);
-        if(!upRet.empty())
+        if(detect)
         {
             cv::Mat yoloRet;
             yoloRet = nvProcessor.Process(upRet);
@@ -243,11 +295,18 @@ int main(int argc, char *argv[])
             // cv::imshow("down", downRet);
             cv::waitKey(1);
         }
-        cv::imshow("up", upRet);
-        cv::imshow("down", downRet);
+        // cv::imshow("up", upRet);
+        // cv::imshow("down", downRet);
+        cv::imshow("ret", ret);
         cv::waitKey(1);
 
-        LOGLN("all takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+        if(saveret)
+        {
+            cv::imwrite("up.png", upRet);
+            cv::imwrite("down.png", downRet);
+        }
+
+        LOGLN("all takes : " << ((getTickCount() - all) / getTickFrequency()) * 1000 << " ms");
 
     }
     return 0;

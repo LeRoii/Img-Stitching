@@ -7,6 +7,8 @@ tk::dnn::Yolo3Detection detNN;
 int n_batch = 1;
 
 
+std::vector<int> detret;
+
 jetsonEncoder nvEncoder;
 
 
@@ -20,16 +22,27 @@ void imagePorcessor::publishImage(cv::Mat &img)
 
     auto start = std::chrono::steady_clock::now();
 
-    for(int i=0;i<20;i++){
+    for(int i=0;i<sizeof(detret)/6;i++){
         sendData.target_header=0xFFEEAABB;
+        sendData.target_num = sizeof(detret)/6;
         sendData.target_id[i]=i;
-        sendData.target_x[i]=10*i;
-        sendData.target_y[i]=15*i;
-        sendData.target_w[i]=5*i;
-        sendData.target_h[i]=3*i;
-        sendData.target_velocity[i]=11.5*i;      
+        sendData.target_x[i]=detret[i];
+        sendData.target_y[i]=detret[i+1];
+        sendData.target_w[i]=detret[i+2];
+        sendData.target_h[i]=detret[i+3];
+        sendData.target_velocity[i]=detret[i+4];;      
+
     }
-    // nvEncoder.pubTargetData(sendData);
+    // for(int i=0;i<20;i++){
+    //     sendData.target_header=0xFFEEAABB;
+    //     sendData.target_id[i]=i;
+    //     sendData.target_x[i]=10*i;
+    //     sendData.target_y[i]=15*i;
+    //     sendData.target_w[i]=5*i;
+    //     sendData.target_h[i]=3*i;
+    //     sendData.target_velocity[i]=11.5*i;      
+    // }
+    nvEncoder.pubTargetData(sendData);
     nvEncoder.encodeFrame(yuvImg.data);
 
     auto end = std::chrono::steady_clock::now();
@@ -60,7 +73,6 @@ cv::Mat imagePorcessor::ImageDetect(cv::Mat img)
     std::vector<cv::Mat> batch_frame;
     std::vector<cv::Mat> batch_dnn_input;
     std::vector<std::string> classnames;
-    std::vector<int> detret;
 
     batch_dnn_input.clear();
     batch_frame.clear();
@@ -76,7 +88,7 @@ cv::Mat imagePorcessor::ImageDetect(cv::Mat img)
     // detNN.draw(batch_frame);
     detNN.draw(batch_frame, detret, classnames);
     printf("detNN draw_boxes okkkkk\n");
-    printf("detret size:%d\n",  detret.size());
+    printf("detret size:%d\n",  detret.size());   //x,y,w,h,class,probality
 
     return batch_frame.back();
 }

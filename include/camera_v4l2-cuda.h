@@ -94,7 +94,7 @@ typedef struct
     /* Verbose option */
     bool enable_verbose;
 
-} context_t;
+} camcontext_t;
 
 /* Correlate v4l2 pixel format and NvBuffer color format */
 typedef struct

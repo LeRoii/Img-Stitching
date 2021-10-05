@@ -71,7 +71,7 @@ print_usage(void)
 }
 
 static bool
-parse_cmdline(context_t * ctx, int argc, char **argv)
+parse_cmdline(camcontext_t * ctx, int argc, char **argv)
 {
     int c;
 
@@ -142,9 +142,9 @@ parse_cmdline(context_t * ctx, int argc, char **argv)
 }
 
 static void
-set_defaults(context_t * ctx)
+set_defaults(camcontext_t * ctx)
 {
-    memset(ctx, 0, sizeof(context_t));
+    memset(ctx, 0, sizeof(camcontext_t));
 
     ctx->cam_devname = "/dev/video0";
     ctx->cam_fd = -1;
@@ -192,7 +192,7 @@ get_nvbuff_color_fmt(unsigned int v4l2_pixfmt)
 }
 
 static bool
-save_frame_to_file(context_t * ctx, struct v4l2_buffer * buf)
+save_frame_to_file(camcontext_t * ctx, struct v4l2_buffer * buf)
 {
     int file;
 
@@ -254,7 +254,7 @@ nvbuff_do_clearchroma (int dmabuf_fd)
 }
 
 static bool
-camera_initialize(context_t * ctx)
+camera_initialize(camcontext_t * ctx)
 {
     struct v4l2_format fmt;
 
@@ -310,7 +310,7 @@ camera_initialize(context_t * ctx)
 }
 
 static bool
-display_initialize(context_t * ctx)
+display_initialize(camcontext_t * ctx)
 {
     /* Create EGL renderer */
     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
@@ -335,7 +335,7 @@ display_initialize(context_t * ctx)
 }
 
 static bool
-init_components(context_t * ctx)
+init_components(camcontext_t * ctx)
 {
     if (!camera_initialize(ctx))
         ERROR_RETURN("Failed to initialize camera device");
@@ -348,7 +348,7 @@ init_components(context_t * ctx)
 }
 
 static bool
-request_camera_buff(context_t *ctx)
+request_camera_buff(camcontext_t *ctx)
 {
     /* Request camera v4l2 buffer */
     struct v4l2_requestbuffers rb;
@@ -394,7 +394,7 @@ request_camera_buff(context_t *ctx)
 }
 
 static bool
-request_camera_buff_mmap(context_t *ctx)
+request_camera_buff_mmap(camcontext_t *ctx)
 {
     /* Request camera v4l2 buffer */
     struct v4l2_requestbuffers rb;
@@ -441,7 +441,7 @@ request_camera_buff_mmap(context_t *ctx)
 }
 
 static bool
-prepare_buffers(context_t * ctx)
+prepare_buffers(camcontext_t * ctx)
 {
     NvBufferCreateParams input_params = {0};
 
@@ -499,7 +499,7 @@ prepare_buffers(context_t * ctx)
 }
 
 static bool
-start_stream(context_t * ctx)
+start_stream(camcontext_t * ctx)
 {
     enum v4l2_buf_type type;
 
@@ -523,7 +523,7 @@ signal_handle(int signum)
 }
 
 // static bool
-// cuda_postprocess(context_t *ctx, int fd)
+// cuda_postprocess(camcontext_t *ctx, int fd)
 // {
 //     if (ctx->enable_cuda)
 //     {
@@ -546,7 +546,7 @@ signal_handle(int signum)
 // }
 
 static bool
-start_capture(context_t * ctx)
+start_capture(camcontext_t * ctx)
 {
     struct sigaction sig_action;
     struct pollfd fds[1];
@@ -574,7 +574,7 @@ start_capture(context_t * ctx)
     fds[0].events = POLLIN;
 
     /* read a raw YUYV data from disk and display*/
-    int img = open("camera.YUYV", O_RDONLY);
+    int img = open("../camera.YUYV", O_RDONLY);
     if (-1 == img)
         ERROR_RETURN("Failed to open file for rendering");
     int bufsize = 3840*2160*2;
@@ -596,9 +596,9 @@ start_capture(context_t * ctx)
     if(-1 == Raw2NvBuffer(buf, 0, 3840, 2160, nvbuf->dmabuff_fd))
             ERROR_RETURN("Failed to Raw2NvBuffer");
     
-    if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
-                        &transParams))
-                ERROR_RETURN("Failed to convert the yuvvvv buffer");
+    // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
+    //                     &transParams))
+    //             ERROR_RETURN("Failed to convert the yuvvvv buffer");
     
     // ctx->renderer->render(ctx->render_dmabuf_fd);
 
@@ -623,7 +623,10 @@ start_capture(context_t * ctx)
         ERROR_RETURN("Failed to NvBuffer2Raw");
     
     cv::Mat mtt(bufparams.height, bufparams.width, CV_8UC4, rgbbuf);
-    cv::imshow("a", mtt);
+
+    cv::Mat mat;
+    cv::cvtColor(mtt,mat, cv::COLOR_RGBA2RGB);
+    cv::imshow("a", mat);
     cv::waitKey(0);
 
     return 0;
@@ -701,7 +704,7 @@ start_capture(context_t * ctx)
 }
 
 static bool
-stop_stream(context_t * ctx)
+stop_stream(camcontext_t * ctx)
 {
     enum v4l2_buf_type type;
 
@@ -718,7 +721,7 @@ stop_stream(context_t * ctx)
 int
 main(int argc, char *argv[])
 {
-    context_t ctx;
+    camcontext_t ctx;
     int error = 0;
 
     set_defaults(&ctx);

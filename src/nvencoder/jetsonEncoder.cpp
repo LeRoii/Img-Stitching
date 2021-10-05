@@ -65,7 +65,7 @@ jetsonEncoder::jetsonEncoder()
     int ret = 0;
     frame_count = 0;
     set_defaults(&ctx);
-    ctx.out_file_path = "/home/xavier/out.h264";
+    ctx.out_file_path = "/home/nvidia/out.h264";
 
     ctx.encoder_pixfmt = V4L2_PIX_FMT_H264;
 

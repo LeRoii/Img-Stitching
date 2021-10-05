@@ -321,7 +321,7 @@ class ocvStitcher
         LOGLN("process takes : " << ((getTickCount() - app_start_time) / getTickFrequency()) * 1000 << " ms");
 
         result.convertTo(ret, CV_8U);
-        imwrite("ocvprocess.png", ret);
+        // imwrite("ocvprocess.png", ret);
     }
 
     public:

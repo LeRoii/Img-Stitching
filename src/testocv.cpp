@@ -11,12 +11,13 @@ int main()
     // imgs.push_back(imread("../tmp/3-dist.png"));
     // imgs.push_back(imread("../tmp/4-dist.png"));
 
-    imgs.push_back(imread("../tmp/1.png"));
-    imgs.push_back(imread("../tmp/2.png"));
-    imgs.push_back(imread("../tmp/3.png"));
-    imgs.push_back(imread("../tmp/4.png"));
+    imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
+    imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
+    imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
+    imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
 
-    ostitcher.init(imgs);
+    for(int i=0;i<5;i++)
+        ostitcher.init(imgs);
 
     Mat ret;
     ostitcher.process(imgs, ret);

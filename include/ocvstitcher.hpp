@@ -49,6 +49,9 @@ class ocvStitcher
         camK.reserve(num_images);
         corners.reserve(num_images);
         blenderMask.reserve(num_images);
+
+        inputOk = false;
+        outputOk = false;
     }
 
     ~ocvStitcher()
@@ -58,6 +61,7 @@ class ocvStitcher
 
     int init(vector<Mat> &imgs)
     {
+        LOGLN("***********init start**************");
         auto t = getTickCount();
         auto app_start_time = getTickCount();
         vector<ImageFeatures> features(num_images);
@@ -86,6 +90,8 @@ class ocvStitcher
             return -1;
         }
 
+        LOGLN("***********after estimator**************" << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+
         for (size_t i = 0; i < cameras.size(); ++i)
         {
             Mat R;
@@ -112,11 +118,14 @@ class ocvStitcher
 
         // Find median focal length
 
+        LOGLN("***********after Camera parameters adjusting Find median focal length**************");
+
         vector<double> focals;
         for (size_t i = 0; i < cameras.size(); ++i)
         {
             LOGLN("Camera #" << i+1 << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
             focals.push_back(cameras[i].focal);
+            LOGLN("focal:"<<cameras[i].focal);
         }
 
         sort(focals.begin(), focals.end());
@@ -145,7 +154,6 @@ class ocvStitcher
 
         warper_creator = makePtr<cv::SphericalWarperGpu>();
         warper = warper_creator->create(static_cast<float>(warped_image_scale * seam_work_aspect));
-
 
         vector<UMat> images_warped(num_images);
         // vector<Size> sizes(num_images);

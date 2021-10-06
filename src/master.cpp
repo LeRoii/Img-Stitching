@@ -271,6 +271,7 @@ int main(int argc, char *argv[])
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
 
+
         /* serial execute*/
         // LOGLN("up process %%%%%%%%%%%%%%%%%%%");
         // ostitcherUp.process(upImgs, upRet);
@@ -314,15 +315,6 @@ int main(int argc, char *argv[])
 
         cv::vconcat(upRet, downRet, ret);
         cv::rectangle(ret, cv::Rect(0, 198, 1185, 4), cv::Scalar(0,0,0), -1, 1, 0);
-        // cameras[0]->read_frame();
-        // // cameras[1]->read_frame();
-        // if(!rets[0].empty())
-        //     cv::imshow("1", rets[0]);
-        // cv::imshow("1", cameras[0]->m_ret);
-        // cv::imshow("2", cameras[1]->m_ret);
-        // cv::imshow("3", cameras[2]->m_ret);
-        // cv::imshow("4", cameras[3]->m_ret);
-        // cv::waitKey(1);
 
         // cv::Mat up,down, ret;
         // cv::hconcat(vector<cv::Mat>{cameras[0]->m_ret, cameras[1]->m_ret, cameras[2]->m_ret}, up);

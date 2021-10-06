@@ -279,7 +279,7 @@ class ocvStitcher
 
         for (int img_idx = 0; img_idx < num_images; ++img_idx)
         {
-            LOGLN("Compositing image #" << img_idx+1);
+            // LOGLN("Compositing image #" << img_idx+1);
             auto t = getTickCount();
             // Read image and resize it if necessary
             img = imgs[img_idx];
@@ -310,7 +310,7 @@ class ocvStitcher
                 }
                 blender->prepare(corners, sizes);
             }
-            LOGLN("before feed takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+            // LOGLN("before feed takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
             // Blend the current image
             blender->feed(img_warped_s, blenderMask[img_idx], corners[img_idx]);
         }
@@ -342,6 +342,7 @@ class ocvStitcher
     double seam_work_aspect;
     Size dst_sz;
     vector<Size> sizes = vector<Size>(num_images);
+    bool inputOk, outputOk;
 
 };
 

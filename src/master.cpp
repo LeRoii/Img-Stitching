@@ -15,14 +15,14 @@
 
 using namespace cv;
 
-vector<Mat> upImgs(4);
-vector<Mat> downImgs(4);
-Mat upRet, downRet, ret;
-
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
 char buffer[BUF_LEN]; // Buffer for echo string
 
+vector<Mat> upImgs(4);
+vector<Mat> downImgs(4);
+vector<Mat> stitcherOut(2);
+Mat upRet, downRet, ret;
 
 void serverCap()
 {
@@ -40,9 +40,7 @@ void serverCap()
     cout << "expecting length of packs:" << total_pack << endl;
     char * longbuf = new char[PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
-        cout << "before recv msg" << endl;
         recvMsgSize = sock.recvFrom(buffer, BUF_LEN, sourceAddress, sourcePort);
-        cout << "after recv msg recvMsgSize:" << recvMsgSize << endl;
         if (recvMsgSize != PACK_SIZE) {
             cerr << "Received unexpected size pack:" << recvMsgSize << endl;
             free(longbuf);
@@ -69,9 +67,32 @@ void serverCap()
     free(longbuf);
 }
 
+
+
 bool saveret = false;
 bool detect = false;
 bool initonline = false;
+
+std::mutex g_stitcherMtx[2];
+std::condition_variable stitcherCon[2];
+vector<vector<Mat>> stitcherInput{upImgs, downImgs};
+// bool inputOk[2] = false;
+// bool outputOk = false;
+
+void stitcherTh(int id, ocvStitcher *stitcher)
+{
+    while(1)
+    {
+        LOGLN("stitcherTh!!"<<id);
+        std::unique_lock<std::mutex> lock(g_stitcherMtx[id]);
+        while(!stitcher->inputOk)
+            stitcherCon[id].wait(lock);
+        stitcher->process(stitcherInput[id], stitcherOut[id]);
+        stitcher->inputOk = false;
+        stitcher->outputOk = true;
+        stitcherCon[id].notify_all();
+    }
+}
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -211,6 +232,9 @@ int main(int argc, char *argv[])
 
     imagePorcessor nvProcessor;
 
+    std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
+    std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
+
     while(1)
     {
         auto t = cv::getTickCount();
@@ -232,17 +256,6 @@ int main(int argc, char *argv[])
         std::thread server(serverCap);
         server.join();
 
-        // int ok = 1;
-        // ok *= cameras[0]->getFrame(upImgs[0]);
-        // ok *= cameras[1]->getFrame(upImgs[1]);
-        // ok *= cameras[2]->getFrame(upImgs[2]);
-        // ok *= cameras[3]->getFrame(upImgs[3]);
-        // ok *= cameras[4]->getFrame(downImgs[0]);
-        // ok *= cameras[5]->getFrame(downImgs[1]);
-
-        // if(!ok)
-        //     continue;
-
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
         cameras[2]->getFrame(upImgs[2]);
@@ -258,13 +271,46 @@ int main(int argc, char *argv[])
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
 
-        LOGLN("up process %%%%%%%%%%%%%%%%%%%");
-        ostitcherUp.process(upImgs, upRet);
-        LOGLN("down process %%%%%%%%%%%%%%%%%%%");
-        ostitcherDown.process(downImgs, downRet);
+        /* serial execute*/
+        // LOGLN("up process %%%%%%%%%%%%%%%%%%%");
+        // ostitcherUp.process(upImgs, upRet);
+        // LOGLN("down process %%%%%%%%%%%%%%%%%%%");
+        // ostitcherDown.process(downImgs, downRet);
+        
+        // upRet = upRet(Rect(0,20,1185,200));
+        // downRet = downRet(Rect(0,25,1185,200));
+        
+        /* parallel*/
+        stitcherInput[0][0] = upImgs[0];
+        stitcherInput[0][1] = upImgs[1];
+        stitcherInput[0][2] = upImgs[2];
+        stitcherInput[0][3] = upImgs[3];
 
-        upRet = upRet(Rect(0,20,1185,200));
-        downRet = downRet(Rect(0,25,1185,200));
+        stitcherInput[1][0] = downImgs[0];
+        stitcherInput[1][1] = downImgs[1];
+        stitcherInput[1][2] = downImgs[2];
+        stitcherInput[1][3] = downImgs[3];
+
+        std::unique_lock<std::mutex> lock(g_stitcherMtx[0]);
+        std::unique_lock<std::mutex> lock1(g_stitcherMtx[1]);
+
+        ostitcherUp.inputOk = true;
+        ostitcherDown.inputOk = true;
+
+        stitcherCon[0].notify_all();
+        stitcherCon[1].notify_all();
+        
+        while(!(ostitcherUp.outputOk && ostitcherDown.outputOk))
+        {
+            stitcherCon[0].wait(lock);
+            stitcherCon[1].wait(lock1);
+        }
+
+        ostitcherUp.outputOk = false;
+        ostitcherDown.outputOk = false;
+
+        upRet = stitcherOut[0](Rect(0,20,1185,200));
+        downRet = stitcherOut[1](Rect(0,25,1185,200));
 
         cv::vconcat(upRet, downRet, ret);
         cv::rectangle(ret, cv::Rect(0, 198, 1185, 4), cv::Scalar(0,0,0), -1, 1, 0);
@@ -306,7 +352,7 @@ int main(int argc, char *argv[])
             cv::imwrite("down.png", downRet);
         }
 
-        LOGLN("all takes : " << ((getTickCount() - all) / getTickFrequency()) * 1000 << " ms");
+        LOGLN("******all takes : " << ((getTickCount() - all) / getTickFrequency()) * 1000 << " ms");
 
     }
     return 0;

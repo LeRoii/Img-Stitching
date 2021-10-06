@@ -344,12 +344,14 @@ int main(int argc, char *argv[])
             // cv::imshow("down", downRet);
             cv::waitKey(1);
         }
-        
-        // cv::imshow("ret", ret);
-        // cv::imshow("up", stitcherOut[0]);
-        // cv::imshow("down", stitcherOut[1]);
-        cv::imshow("ret", ret);
-        cv::waitKey(1);
+        else
+        {
+            // cv::imshow("ret", ret);
+            // cv::imshow("up", stitcherOut[0]);
+            // cv::imshow("down", stitcherOut[1]);
+            cv::imshow("ret", ret);
+            cv::waitKey(1);
+        }
 
         if(saveret)
         {

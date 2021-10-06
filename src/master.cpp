@@ -332,7 +332,13 @@ int main(int argc, char *argv[])
         if(detect)
         {
             cv::Mat yoloRet;
+            auto start = std::chrono::steady_clock::now();
             yoloRet = nvProcessor.Process(ret);
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::duration<double> spent = end - start;
+            std::cout << " #############detect Time############: " << spent.count() << " sec \n";
+
+            nvProcessor.publishImage(yoloRet);
             cv::imshow("yolo", yoloRet);
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);

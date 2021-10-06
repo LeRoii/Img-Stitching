@@ -12,44 +12,6 @@ std::vector<int> detret;
 jetsonEncoder nvEncoder;
 
 
-void imagePorcessor::publishImage(cv::Mat &img)
-{
-
-    targetInfo sendData;
-    cv::Mat yuvImg;
-    cv::resize(img, img, cv::Size(1280,720));
-    cvtColor(img, yuvImg,CV_BGR2YUV_I420);
-
-    auto start = std::chrono::steady_clock::now();
-
-    for(int i=0;i<sizeof(detret)/6;i++){
-        sendData.target_header=0xFFEEAABB;
-        sendData.target_num = sizeof(detret)/6;
-        sendData.target_id[i]=i;
-        sendData.target_x[i]=detret[i];
-        sendData.target_y[i]=detret[i+1];
-        sendData.target_w[i]=detret[i+2];
-        sendData.target_h[i]=detret[i+3];
-        sendData.target_velocity[i]=detret[i+4];;      
-
-    }
-    // for(int i=0;i<20;i++){
-    //     sendData.target_header=0xFFEEAABB;
-    //     sendData.target_id[i]=i;
-    //     sendData.target_x[i]=10*i;
-    //     sendData.target_y[i]=15*i;
-    //     sendData.target_w[i]=5*i;
-    //     sendData.target_h[i]=3*i;
-    //     sendData.target_velocity[i]=11.5*i;      
-    // }
-    nvEncoder.pubTargetData(sendData);
-    nvEncoder.encodeFrame(yuvImg.data);
-
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> spent = end - start;
-    std::cout << " Time: " << spent.count() << " sec \n";
-}
-
 
 cv::Mat imagePorcessor::getROIimage(cv::Mat srcImg)
 {
@@ -128,7 +90,7 @@ cv::Mat imagePorcessor::processImage(std::vector<cv::Mat> ceil_img) {
 }
 
 imagePorcessor::imagePorcessor() {
-    std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_int8.rt" ;
+    std::string net ="/home/nvidia/ssd/code/cameracap/cfg/kitti_yolo4_int8.rt" ;
     int n_classes = 80;
     float conf_thresh=0.8;
     detNN.init(net, n_classes, n_batch, conf_thresh);
@@ -142,7 +104,40 @@ cv::Mat imagePorcessor::Process(cv::Mat img){
     cut_img(img, ceil_img);
 
     yolo_result = processImage(ceil_img);
-    publishImage(yolo_result);
+    // publishImage(yolo_result);
     return yolo_result;
 }
 
+
+void imagePorcessor::publishImage(cv::Mat img)
+{
+
+    targetInfo sendData;
+    cv::Mat yuvImg;
+    cv::resize(img, img, cv::Size(1280,720));
+    cvtColor(img, yuvImg,CV_BGR2YUV_I420);
+
+    for(int i=0;i<sizeof(detret)/6;i++){
+        sendData.target_header=0xFFEEAABB;
+        sendData.target_num = sizeof(detret)/6;
+        sendData.target_id[i]=i;
+        sendData.target_x[i]=detret[i];
+        sendData.target_y[i]=detret[i+1];
+        sendData.target_w[i]=detret[i+2];
+        sendData.target_h[i]=detret[i+3];
+        sendData.target_velocity[i]=detret[i+4];;      
+
+    }
+    // for(int i=0;i<20;i++){
+    //     sendData.target_header=0xFFEEAABB;
+    //     sendData.target_id[i]=i;
+    //     sendData.target_x[i]=10*i;
+    //     sendData.target_y[i]=15*i;
+    //     sendData.target_w[i]=5*i;
+    //     sendData.target_h[i]=3*i;
+    //     sendData.target_velocity[i]=11.5*i;      
+    // }
+    nvEncoder.pubTargetData(sendData);
+    nvEncoder.encodeFrame(yuvImg.data);
+
+}

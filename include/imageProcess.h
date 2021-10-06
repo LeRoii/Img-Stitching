@@ -16,9 +16,9 @@ class imagePorcessor
     public:
     imagePorcessor();
     cv::Mat Process(cv::Mat img);
+    void publishImage(cv::Mat img);
 
     private:
-    void publishImage(cv::Mat &img);
     cv::Mat getROIimage(cv::Mat srcImg);
     cv::Mat ImageDetect(cv::Mat img);
     void cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img);

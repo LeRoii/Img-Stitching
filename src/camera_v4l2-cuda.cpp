@@ -314,7 +314,7 @@ display_initialize(camcontext_t * ctx)
 {
     /* Create EGL renderer */
     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
-            ctx->cam_w/3, ctx->cam_h/3, 0, 0);
+            ctx->cam_w/4, ctx->cam_h/4, 0, 0);
     if (!ctx->renderer)
         ERROR_RETURN("Failed to create EGL renderer");
     ctx->renderer->setFPS(ctx->fps);
@@ -482,6 +482,9 @@ prepare_buffers(camcontext_t * ctx)
 
     input_params.colorFormat = get_nvbuff_color_fmt(V4L2_PIX_FMT_YUV420M);
     input_params.nvbuf_tag = NvBufferTag_NONE;
+    // input_params.width = 1280;
+    // input_params.height = 720;
+
     /* Create Render buffer */
     if (-1 == NvBufferCreateEx(&ctx->render_dmabuf_fd, &input_params))
         ERROR_RETURN("Failed to create NvBuffer");
@@ -609,9 +612,9 @@ start_capture(camcontext_t * ctx)
     if (-1 == NvBufferCreateEx(&rgbRender, &bufparams))
             ERROR_RETURN("Failed to create NvBuffer");
     
-    if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, rgbRender,
-                        &transParams))
-                ERROR_RETURN("Failed to convert the yuvvvv buffer");
+    // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, rgbRender,
+    //                     &transParams))
+    //             ERROR_RETURN("Failed to convert the yuvvvv buffer");
     
     // while (poll(fds, 1, 5000) > 0 && !quit)
     // {
@@ -622,14 +625,14 @@ start_capture(camcontext_t * ctx)
     if(-1 == NvBuffer2Raw(rgbRender, 0, bufparams.width, bufparams.height, rgbbuf))
         ERROR_RETURN("Failed to NvBuffer2Raw");
     
-    cv::Mat mtt(bufparams.height, bufparams.width, CV_8UC4, rgbbuf);
+    // cv::Mat mtt(bufparams.height, bufparams.width, CV_8UC4, rgbbuf);
 
-    cv::Mat mat;
-    cv::cvtColor(mtt,mat, cv::COLOR_RGBA2RGB);
-    cv::imshow("a", mat);
-    cv::waitKey(0);
+    // cv::Mat mat;
+    // cv::cvtColor(mtt,mat, cv::COLOR_RGBA2RGB);
+    // cv::imshow("a", mat);
+    // cv::waitKey(0);
 
-    return 0;
+    // return 0;
 
     // while (poll(fds, 1, 5000) > 0 && !quit)
     // {
@@ -675,9 +678,9 @@ start_capture(camcontext_t * ctx)
                         &transParams))
                 ERROR_RETURN("Failed to convert the buffer");
 
-            if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
-                        &transParams))
-                ERROR_RETURN("Failed to convert the yuvvvv buffer");
+            // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
+            //             &transParams))
+            //     ERROR_RETURN("Failed to convert the yuvvvv buffer");
 
             /* draw black rect */
             // cuda_postprocess(ctx, ctx->render_dmabuf_fd);

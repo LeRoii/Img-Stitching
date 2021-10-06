@@ -36,3 +36,4 @@ build/*
 imgs/
 *.rt
 *.YUYV
+*.bak

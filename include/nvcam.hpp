@@ -524,6 +524,14 @@ public:
 
         // m_queue.resize(10);
 
+        cv::Size image_size = cv::Size(m_distoredWidth, m_distoredHeight);
+        cv::Size undistorSize = image_size;
+        mapx = cv::Mat(undistorSize,CV_32FC1);
+        mapy = cv::Mat(undistorSize,CV_32FC1);
+        cv::Mat R = cv::Mat::eye(3,3,CV_32F);
+        cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
+        cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
+
         printf("!!!!!![%d] cam init ok!!!!!!!!!\n", m_id);
 
 
@@ -711,7 +719,6 @@ public:
             v4l2_buf.memory = V4L2_MEMORY_DMABUF;
         else
             v4l2_buf.memory = V4L2_MEMORY_MMAP;
-
         
         if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
             ERROR_RETURN("Failed to dequeue camera buff: %s (%d)",
@@ -730,9 +737,9 @@ public:
         }
 
         /*  Convert the camera buffer from YUV422 to YUV420P */
-        if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, ctx.render_dmabuf_fd,
-                    &transParams))
-            ERROR_RETURN("Failed to convert the buffer");
+        // if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, ctx.render_dmabuf_fd,
+        //             &transParams))
+        //     ERROR_RETURN("Failed to convert the buffer");
 
         if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd,
                     &transParams))
@@ -748,13 +755,13 @@ public:
 		// gettimeofday(&ts, NULL);
         // printf("[%lu.%lu]\tundistor start\n", ts.tv_sec, ts.tv_usec);
         // cv::imwrite(filename+"dist.png", m_ret);
-        cv::Size image_size = m_distoredImg.size();
-        cv::Size undistorSize = image_size;
-        cv::Mat mapx = cv::Mat(undistorSize,CV_32FC1);
-        cv::Mat mapy = cv::Mat(undistorSize,CV_32FC1);
-        cv::Mat R = cv::Mat::eye(3,3,CV_32F);
-        cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
-        cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
+        // cv::Size image_size = m_distoredImg.size();
+        // cv::Size undistorSize = image_size;
+        // cv::Mat mapx = cv::Mat(undistorSize,CV_32FC1);
+        // cv::Mat mapy = cv::Mat(undistorSize,CV_32FC1);
+        // cv::Mat R = cv::Mat::eye(3,3,CV_32F);
+        // cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
+        // cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
         // cv::Mat t = cv::Mat(undistorSize,CV_8UC3);
         cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
         // cv::imwrite(std::to_string(m_id)+"-undist.png", m_ret);
@@ -863,6 +870,8 @@ public:
     NvBufferTransformParams transParams;
 
     std::queue<cv::Mat> m_queue;
+
+    cv::Mat mapx, mapy;
     
     
 };

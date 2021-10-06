@@ -327,7 +327,7 @@ int main(int argc, char *argv[])
         if(detect)
         {
             cv::Mat yoloRet;
-            yoloRet = nvProcessor.Process(upRet);
+            yoloRet = nvProcessor.Process(ret);
             cv::imshow("yolo", yoloRet);
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
@@ -335,7 +335,7 @@ int main(int argc, char *argv[])
         }
         // cv::imshow("up", upRet);
         // cv::imshow("down", downRet);
-        cv::imshow("ret", ret);
+        // cv::imshow("ret", ret);
         cv::waitKey(1);
 
         if(saveret)

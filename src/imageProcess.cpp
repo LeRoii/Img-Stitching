@@ -110,8 +110,8 @@ void imagePorcessor::cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img)
 }  
 
 cv::Mat imagePorcessor::processImage(std::vector<cv::Mat> ceil_img) {
-    cv::Mat roi_img1=ImageDetect(getROIimage(ceil_img[0]));
-    cv::Mat roi_img2=ImageDetect(getROIimage(ceil_img[1]));
+    cv::Mat roi_img1=ImageDetect(ceil_img[0]);
+    cv::Mat roi_img2=ImageDetect(ceil_img[1]);
 
     int w1 = roi_img1.cols; int h1 = roi_img1.rows;
     int w2 = roi_img2.cols; int h2 = roi_img2.rows;

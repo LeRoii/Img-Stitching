@@ -120,20 +120,22 @@ class ocvStitcher
 
         LOGLN("***********after Camera parameters adjusting Find median focal length**************");
 
-        vector<double> focals;
-        for (size_t i = 0; i < cameras.size(); ++i)
-        {
-            LOGLN("Camera #" << i+1 << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
-            focals.push_back(cameras[i].focal);
-            LOGLN("focal:"<<cameras[i].focal);
-        }
+        // vector<double> focals;
+        // for (size_t i = 0; i < cameras.size(); ++i)
+        // {
+        //     LOGLN("Camera #" << i+1 << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
+        //     focals.push_back(cameras[i].focal);
+        //     LOGLN("focal:"<<cameras[i].focal);
+        // }
 
-        sort(focals.begin(), focals.end());
-        float warped_image_scale;
-        if (focals.size() % 2 == 1)
-            warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
-        else
-            warped_image_scale = static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) * 0.5f;
+        // sort(focals.begin(), focals.end());
+        // float warped_image_scale;
+        // if (focals.size() % 2 == 1)
+        //     warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
+        // else
+        //     warped_image_scale = static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) * 0.5f;
+        
+        float warped_image_scale = static_cast<float>(cameras[2].focal);
 
         vector<Mat> rmats;
         for (size_t i = 0; i < cameras.size(); ++i)
@@ -178,8 +180,11 @@ class ocvStitcher
 
             warper->warp(masks[i], K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
 
-        }
+            // imwrite(std::to_string(i)+"images_warped.png", images_warped[i]);
+            // imwrite(std::to_string(i)+"masks_warped.png", masks_warped[i]);
 
+        }
+        t = getTickCount();
         vector<UMat> images_warped_f(num_images);
         for (int i = 0; i < num_images; ++i)
             images_warped[i].convertTo(images_warped_f[i], CV_32F);
@@ -190,23 +195,32 @@ class ocvStitcher
         seam_finder = makePtr<detail::GraphCutSeamFinder>(GraphCutSeamFinderBase::COST_COLOR);
         seam_finder->find(images_warped_f, corners, masks_warped);
 
+        for (int i = 0; i < num_images; ++i)
+        {
+            LOGLN("corners:" << i << ":\n" << corners[i]);
+            imwrite(std::to_string(i)+"-seamfinder-masks_warped.png", masks_warped[i]);
+        }
+
+        LOGLN("***********after seam_finder**************" << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+
         // Release unused memory
         seamSizedImgs.clear();
         images_warped.clear();
         images_warped_f.clear();
         masks.clear();
 
-        LOGLN("Compositing...");
+        LOGLN("*************Compositing...");
 
         // seam_work_aspect is 1, use the same warper
         // warper = warper_creator->create(warped_image_scale);
         for (int i = 0; i < num_images; ++i)
         {
-            LOGLN("camK[1111i #" << i << ":\nK:\n" << camK[i]);
             Rect roi = warper->warpRoi(Size(m_imgWidth,m_imgHeight), camK[i], cameras[i].R);
             // Rect roi = warper->warpRoi(sz, K, cameras[i].R);
             corners[i] = roi.tl();
             sizes[i] = roi.size();
+
+            LOGLN("****:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
         }
 
         Ptr<Blender> blender;

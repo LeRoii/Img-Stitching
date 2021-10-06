@@ -253,8 +253,8 @@ int main(int argc, char *argv[])
         // for(auto& th:threads)
         //     th.join();
         
-        std::thread server(serverCap);
-        server.join();
+        // std::thread server(serverCap);
+        // server.join();
 
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
@@ -271,6 +271,10 @@ int main(int argc, char *argv[])
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
 
+        // cv::imshow("ret", upImgs[2]);
+        // cv::imshow("ret", cameras[2]->m_ret);
+        // cv::waitKey(1);
+        // continue;
 
         /* serial execute*/
         // LOGLN("up process %%%%%%%%%%%%%%%%%%%");
@@ -310,11 +314,12 @@ int main(int argc, char *argv[])
         ostitcherUp.outputOk = false;
         ostitcherDown.outputOk = false;
 
-        upRet = stitcherOut[0](Rect(0,20,1185,200));
-        downRet = stitcherOut[1](Rect(0,25,1185,200));
+        int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
+        upRet = stitcherOut[0](Rect(0,20,width,200));
+        downRet = stitcherOut[1](Rect(0,25,width,200));
 
         cv::vconcat(upRet, downRet, ret);
-        cv::rectangle(ret, cv::Rect(0, 198, 1185, 4), cv::Scalar(0,0,0), -1, 1, 0);
+        cv::rectangle(ret, cv::Rect(0, 198, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
         // cv::Mat up,down, ret;
         // cv::hconcat(vector<cv::Mat>{cameras[0]->m_ret, cameras[1]->m_ret, cameras[2]->m_ret}, up);
@@ -333,15 +338,15 @@ int main(int argc, char *argv[])
             // cv::imshow("down", downRet);
             cv::waitKey(1);
         }
-        // cv::imshow("up", upRet);
-        // cv::imshow("down", downRet);
+        // cv::imshow("up", stitcherOut[0]);
+        // cv::imshow("down", stitcherOut[1]);
         cv::imshow("ret", ret);
         cv::waitKey(1);
 
         if(saveret)
         {
-            cv::imwrite("up.png", upRet);
-            cv::imwrite("down.png", downRet);
+            cv::imwrite("up.png", stitcherOut[0]);
+            cv::imwrite("down.png", stitcherOut[1]);
         }
 
         LOGLN("******all takes : " << ((getTickCount() - all) / getTickFrequency()) * 1000 << " ms");

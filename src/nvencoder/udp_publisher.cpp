@@ -100,7 +100,6 @@ namespace udp_publisher
     {
       printf("send data error");
     }
-		
   }
 
 

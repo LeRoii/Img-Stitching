@@ -72,6 +72,7 @@ void serverCap()
 bool saveret = false;
 bool detect = false;
 bool initonline = false;
+bool use_ssr = false;
 
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
@@ -97,6 +98,7 @@ void stitcherTh(int id, ocvStitcher *stitcher)
 static bool
 parse_cmdline(int argc, char **argv)
 {
+    std::cout<<"Help: use 's' to save image, use 'd' to detect, use 'i' to online init, use 'h' to open HDR!"<<std::endl;
     int c;
 
     if (argc < 2)
@@ -117,6 +119,8 @@ parse_cmdline(int argc, char **argv)
             case 'i':
                 initonline = true;
                 break;
+            case 'h':
+                use_ssr = true;
             default:
                 break;
         }
@@ -333,13 +337,16 @@ int main(int argc, char *argv[])
         {
             cv::Mat yoloRet;
             auto start = std::chrono::steady_clock::now();
+            if(use_ssr) {
+                ret = nvProcessor.SSR(ret);
+            }
             yoloRet = nvProcessor.Process(ret);
             auto end = std::chrono::steady_clock::now();
             std::chrono::duration<double> spent = end - start;
             std::cout << " #############detect Time############: " << spent.count() << " sec \n";
 
             nvProcessor.publishImage(yoloRet);
-            cv::imshow("yolo", yoloRet);
+            // cv::imshow("yolo", yoloRet);
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
             cv::waitKey(1);

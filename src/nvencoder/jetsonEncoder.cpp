@@ -168,7 +168,7 @@ void jetsonEncoder::set_defaults(context_t * ctx)
     ctx->bitrate = 4 * 1024* 1024;
     ctx->fps_n = 30;
     ctx->fps_d = 1;
-    ctx->width = 1280;
+    ctx->width = 1920;
     ctx->height = 720;
 }
 
@@ -255,3 +255,4 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
     cerr<<"send Data length:"<<needSendlen<<endl;
     udp_pub.sendData(target_data,needSendlen);
  }
+ 

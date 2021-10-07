@@ -12,12 +12,15 @@
 
 using namespace std;
 
+sockaddr_in local_addr;
+int len;
+
 namespace udp_publisher
 {
 
   UdpPublisher::UdpPublisher()
   {
-    m_port = 10000;
+    m_port = 9999;
     m_device_ip_str = "192.168.1.103";
     printf("Init udp server!!!!");
 
@@ -37,11 +40,11 @@ namespace udp_publisher
     }
   
     // Prepare the socket structure
-    sockaddr_in local_addr;
     memset(&local_addr, 0, sizeof(local_addr)); // Set to zeros
     local_addr.sin_family = AF_INET;            // Host byte order
     local_addr.sin_port = htons(m_port);        // Convert to network byte order
     local_addr.sin_addr.s_addr = INADDR_ANY;    // Fill local ip
+    len = sizeof(local_addr);
     // Bind socket to ip
     if (bind(m_sockfd, (sockaddr *)&local_addr, sizeof(sockaddr)) == -1)
     {
@@ -100,7 +103,24 @@ namespace udp_publisher
     {
       printf("send data error");
     }
+		
   }
+
+
+  void UdpPublisher::recvData(controlData data)
+  {
+
+		printf("\n ~~~~~~~~~~~Enter data to recv:  ");
+
+    if(  recvfrom(m_sockfd, (targetInfo*)&data, sizeof(data), 0, (struct sockaddr *)&local_addr, (socklen_t *)&len) <= 0)
+    {
+      printf("recv data error");
+    } else{
+     
+      std::cout<<data.use_flip<<","<<data.use_hdr<<std::endl;
+    }
+  }
+ 
 
 
   UdpPublisher::~UdpPublisher(void)

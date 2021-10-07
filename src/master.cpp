@@ -17,12 +17,18 @@ using namespace cv;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
+
+
 char buffer[BUF_LEN]; // Buffer for echo string
 
 vector<Mat> upImgs(4);
 vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
+
+
+
+
 
 void serverCap()
 {
@@ -234,7 +240,7 @@ int main(int argc, char *argv[])
 
     Mat rets[USED_CAMERA_NUM];
 
-    imagePorcessor nvProcessor;
+    imageProcessor nvProcessor;
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
@@ -335,6 +341,9 @@ int main(int argc, char *argv[])
         // cv::imwrite("1.png", cam0.m_ret);
         if(detect)
         {
+            controlData ctl_command;
+
+            ctl_command = nvProcessor.getCtlCommand();
             cv::Mat yoloRet;
             auto start = std::chrono::steady_clock::now();
             if(use_ssr) {

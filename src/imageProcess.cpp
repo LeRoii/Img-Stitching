@@ -13,7 +13,7 @@ jetsonEncoder nvEncoder;
 
 
 
-cv::Mat imagePorcessor::getROIimage(cv::Mat srcImg)
+cv::Mat imageProcessor::getROIimage(cv::Mat srcImg)
 {
 
     std::cout<<"image_width: "<<srcImg.cols<<"   image_height: "<<srcImg.rows<<std::endl;
@@ -30,7 +30,7 @@ cv::Mat imagePorcessor::getROIimage(cv::Mat srcImg)
     return desImg;
 }
 
-cv::Mat imagePorcessor::ImageDetect(cv::Mat img)
+cv::Mat imageProcessor::ImageDetect(cv::Mat img)
 {
     std::vector<cv::Mat> batch_frame;
     std::vector<cv::Mat> batch_dnn_input;
@@ -55,7 +55,7 @@ cv::Mat imagePorcessor::ImageDetect(cv::Mat img)
     return batch_frame.back();
 }
 
-void imagePorcessor::cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img)
+void imageProcessor::cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img)
 {  
     // int t = m * n; 
     int height = src_img.rows;  
@@ -71,14 +71,14 @@ void imagePorcessor::cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img)
     ceil_img.push_back(roi_img);
 }  
 
-cv::Mat imagePorcessor::channel_process(cv::Mat R) {
+cv::Mat imageProcessor::channel_process(cv::Mat R) {
     cv::Mat ret;
     cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(2, cv::Size(20, 20)); //0.01s
     clahe->apply(R, ret);
     return ret;
 }
 
-cv::Mat imagePorcessor::SSR(cv::Mat input) {
+cv::Mat imageProcessor::SSR(cv::Mat input) {
     cv::Mat ret;
     std::vector<cv::Mat> img;
     cv::split(input, img);
@@ -91,7 +91,7 @@ cv::Mat imagePorcessor::SSR(cv::Mat input) {
 }
 
 
-cv::Mat imagePorcessor::processImage(std::vector<cv::Mat> ceil_img) {
+cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
     cv::Mat roi_img1=ImageDetect(ceil_img[0]);
     cv::Mat roi_img2=ImageDetect(ceil_img[1]);
 
@@ -109,14 +109,14 @@ cv::Mat imagePorcessor::processImage(std::vector<cv::Mat> ceil_img) {
     return resultImg;
 }
 
-imagePorcessor::imagePorcessor() {
+imageProcessor::imageProcessor() {
     int n_classes = 80;
     float conf_thresh=0.8;
     detNN.init(net, n_classes, n_batch, conf_thresh);
    printf("detNN init okkkkk\n");
 }
 
-cv::Mat imagePorcessor::Process(cv::Mat img){
+cv::Mat imageProcessor::Process(cv::Mat img){
     std::vector<cv::Mat>  ceil_img;
     cv::Mat  yolo_result;
 
@@ -128,7 +128,7 @@ cv::Mat imagePorcessor::Process(cv::Mat img){
 }
 
 
-void imagePorcessor::publishImage(cv::Mat img)
+void imageProcessor::publishImage(cv::Mat img)
 {
 
     targetInfo sendData;
@@ -159,4 +159,10 @@ void imagePorcessor::publishImage(cv::Mat img)
     nvEncoder.pubTargetData(sendData);
     nvEncoder.encodeFrame(yuvImg.data);
 
+}
+
+controlData imageProcessor::getCtlCommand(){
+    controlData ctl_data;
+    ctl_data = nvEncoder.getControlData();
+    return ctl_data;
 }

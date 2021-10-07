@@ -11,11 +11,11 @@
 
 
 
-class imagePorcessor
+class imageProcessor
 {
     public:
-    imagePorcessor();
-    ~imagePorcessor();
+    imageProcessor();
+    ~imageProcessor();
     cv::Mat Process(cv::Mat img);
 
     private:

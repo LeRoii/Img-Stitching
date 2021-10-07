@@ -251,8 +251,13 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
  int jetsonEncoder::pubTargetData(targetInfo  target_data){
 
     int needSendlen = sizeof(target_data);
-    
     cerr<<"send Data length:"<<needSendlen<<endl;
     udp_pub.sendData(target_data,needSendlen);
+ }
+
+ controlData  jetsonEncoder::getControlData(){
+    controlData ctl_data;
+    udp_pub.recvData(ctl_data);
+    return ctl_data;
  }
  

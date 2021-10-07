@@ -12,13 +12,14 @@
 
 
 
-class imagePorcessor
+class imageProcessor
 {
     public:
-    imagePorcessor();
+    imageProcessor();
     cv::Mat Process(cv::Mat img);
     void publishImage(cv::Mat img);
     cv::Mat SSR(cv::Mat input);
+    controlData getCtlCommand();
 
     private:
     cv::Mat channel_process(cv::Mat R);

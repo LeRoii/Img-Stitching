@@ -257,7 +257,7 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
 
  controlData  jetsonEncoder::getControlData(){
     controlData ctl_data;
-    udp_pub.recvData(ctl_data);
+    ctl_data = udp_pub.recvData();
     return ctl_data;
  }
  

@@ -50,8 +50,11 @@ typedef struct
 
 typedef struct
 {
-    bool use_hdr;
+    bool use_ssr;
     bool use_flip;
+    bool use_detect;
+    int contrast;
+    int bright;
 } controlData;
 
 class jetsonEncoder

@@ -107,18 +107,16 @@ namespace udp_publisher
   }
 
 
-  void UdpPublisher::recvData(controlData data)
+  controlData UdpPublisher::recvData()
   {
-
+    controlData data;
 		printf("\n ~~~~~~~~~~~Enter data to recv:  ");
 
-    if(  recvfrom(m_sockfd, (targetInfo*)&data, sizeof(data), 0, (struct sockaddr *)&local_addr, (socklen_t *)&len) <= 0)
+    if(  recvfrom(m_sockfd, (controlData*)&data, sizeof(data), 0, (struct sockaddr *)&local_addr, (socklen_t *)&len) <= 0)
     {
       printf("recv data error");
-    } else{
-     
-      std::cout<<data.use_flip<<","<<data.use_hdr<<std::endl;
-    }
+    } 
+    return data;
   }
  
 

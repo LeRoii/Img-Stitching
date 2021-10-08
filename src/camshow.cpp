@@ -159,7 +159,7 @@ int main()
         // cv::imshow("m_dev_name", ret);
 
         // cv::imshow("1", upImgs[0]);
-        cv::imshow("1", cameras[0]->m_ret);
+        cv::imshow("1", upImgs[0]);
         // cv::imwrite("1.png", cam0.m_ret);
 
         cv::waitKey(1);

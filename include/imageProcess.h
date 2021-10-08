@@ -24,7 +24,7 @@ class imageProcessor
     private:
     cv::Mat channel_process(cv::Mat R);
     cv::Mat getROIimage(cv::Mat srcImg);
-    cv::Mat ImageDetect(cv::Mat img);
+    cv::Mat ImageDetect(cv::Mat img, std::vector<int> &detret);
     void cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img);
     cv::Mat processImage(std::vector<cv::Mat> ceil_img);
 

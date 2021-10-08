@@ -7,7 +7,8 @@ tk::dnn::Yolo3Detection detNN;
 int n_batch = 1;
 std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
 
-std::vector<int> detret;
+
+targetInfo sendData;
 
 jetsonEncoder nvEncoder;
 
@@ -30,7 +31,7 @@ cv::Mat imageProcessor::getROIimage(cv::Mat srcImg)
     return desImg;
 }
 
-cv::Mat imageProcessor::ImageDetect(cv::Mat img)
+cv::Mat imageProcessor::ImageDetect(cv::Mat img, std::vector<int> &detret)
 {
     std::vector<cv::Mat> batch_frame;
     std::vector<cv::Mat> batch_dnn_input;
@@ -92,8 +93,56 @@ cv::Mat imageProcessor::SSR(cv::Mat input) {
 
 
 cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
-    cv::Mat roi_img1=ImageDetect(ceil_img[0]);
-    cv::Mat roi_img2=ImageDetect(ceil_img[1]);
+    std::vector<int> detret_left;
+    std::vector<int> detret_right;
+    cv::Mat roi_img1=ImageDetect(ceil_img[0], detret_left);
+    cv::Mat roi_img2=ImageDetect(ceil_img[1], detret_right);
+
+    //=======get target bbox, and send it to server========//
+    sendData.target_header=0xFFEEAABB;
+    sendData.target_num = sizeof(detret_left)/6 + sizeof(detret_right)/6;
+
+    for(int i=0;i<sizeof(detret_left)/6;i++){
+            sendData.target_id[i]=i;
+        if(abs(detret_left[6*i])<760 && abs(detret_left[6*i+1])<560 && abs(detret_left[6*i+2])<1000 && detret_left[6*i+5]>30) {
+            sendData.target_x[i]=detret_left[6*i];
+            sendData.target_y[i]=detret_left[6*i+1];
+            sendData.target_w[i]=detret_left[6*i+2];
+            sendData.target_h[i]=detret_left[6*i+3];
+            sendData.target_class[i]=detret_left[6*i+4]; 
+            sendData.target_prob[i]=detret_left[6*i+5];
+        }else{
+            sendData.target_x[i]=0;
+            sendData.target_y[i]=0;
+            sendData.target_w[i]=0;
+            sendData.target_h[i]=0;
+            sendData.target_class[i]=0; 
+            sendData.target_prob[i]=0;
+        }
+    }
+
+    for(int i=0; i< sizeof(detret_right)/6;i++){
+        sendData.target_id[i+sizeof(detret_left)/6]=i+sizeof(detret_left)/6;
+        if(abs(detret_right[6*i])<760 && abs(detret_right[6*i+1])<560 && abs(detret_right[6*i+2])<1000 && detret_right[6*i+5]>30) {
+            sendData.target_x[i+sizeof(detret_left)/6]=detret_right[6*i]+760;
+            sendData.target_y[i+sizeof(detret_left)/6]=detret_right[6*i+1];
+            sendData.target_w[i+sizeof(detret_left)/6]=detret_right[6*i+2];
+            sendData.target_h[i+sizeof(detret_left)/6]=detret_right[6*i+3];
+            sendData.target_class[i+sizeof(detret_left)/6]=detret_right[6*i+4]; 
+            sendData.target_prob[i+sizeof(detret_left)/6]=detret_right[6*i+5];
+        }else{
+            sendData.target_x[i+sizeof(detret_left)/6]=0;
+            sendData.target_y[i+sizeof(detret_left)/6]=0;
+            sendData.target_w[i+sizeof(detret_left)/6]=0;
+            sendData.target_h[i+sizeof(detret_left)/6]=0;
+            sendData.target_class[i+sizeof(detret_left)/6]=0; 
+            sendData.target_prob[i+sizeof(detret_left)/6]=0;
+        }
+    }
+
+    detret_left.clear();
+    detret_right.clear();
+    nvEncoder.pubTargetData(sendData);
 
     int w1 = roi_img1.cols; int h1 = roi_img1.rows;
     int w2 = roi_img2.cols; int h2 = roi_img2.rows;
@@ -105,7 +154,6 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
     cv::Mat ROI_2 = resultImg(cv::Rect(w1, 0, w2, h2));
     roi_img1.copyTo(ROI_1);
     roi_img2.copyTo(ROI_2);
-    // resultImg =  resultImg(cv::Rect(0, 0, resultImg.cols, resultImg.rows/2));
     return resultImg;
 }
 
@@ -131,32 +179,11 @@ cv::Mat imageProcessor::Process(cv::Mat img){
 void imageProcessor::publishImage(cv::Mat img)
 {
 
-    targetInfo sendData;
+
     cv::Mat yuvImg;
     cv::resize(img, img, cv::Size(1920,720));
     cvtColor(img, yuvImg,CV_BGR2YUV_I420);
 
-    for(int i=0;i<sizeof(detret)/6;i++){
-        sendData.target_header=0xFFEEAABB;
-        sendData.target_num = sizeof(detret)/6;
-        sendData.target_id[i]=i;
-        sendData.target_x[i]=detret[i];
-        sendData.target_y[i]=detret[i+1];
-        sendData.target_w[i]=detret[i+2];
-        sendData.target_h[i]=detret[i+3];
-        sendData.target_velocity[i]=detret[i+4];;      
-
-    }
-    // for(int i=0;i<20;i++){
-    //     sendData.target_header=0xFFEEAABB;
-    //     sendData.target_id[i]=i;
-    //     sendData.target_x[i]=10*i;
-    //     sendData.target_y[i]=15*i;
-    //     sendData.target_w[i]=5*i;
-    //     sendData.target_h[i]=3*i;
-    //     sendData.target_velocity[i]=11.5*i;      
-    // }
-    nvEncoder.pubTargetData(sendData);
     nvEncoder.encodeFrame(yuvImg.data);
 
 }

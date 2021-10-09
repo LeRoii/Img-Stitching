@@ -76,8 +76,8 @@ void serverCap()
 
 
 bool saveret = false;
-bool detect = false;
-bool initonline = false;
+bool detect = true;
+bool initonline = true;
 bool start_ssr = false;
 
 std::mutex g_stitcherMtx[2];
@@ -263,8 +263,8 @@ int main(int argc, char *argv[])
         // for(auto& th:threads)
         //     th.join();
         
-        // std::thread server(serverCap);
-        // server.join();
+        std::thread server(serverCap);
+        server.join();
 
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);

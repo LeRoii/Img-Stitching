@@ -46,6 +46,12 @@ typedef struct
     float target_velocity[20];
 } targetInfo;
 
+typedef struct
+{
+    bool use_hdr;
+    bool use_flip;
+} controlData;
+
 class jetsonEncoder
 {
     public:
@@ -53,7 +59,8 @@ class jetsonEncoder
     ~jetsonEncoder();
     int encodeFrame(uint8_t *yuv_bytes);
     int pubTargetData(targetInfo  target_data);
-
+    controlData getControlData();
+    
     private:
     void set_defaults(context_t * ctx);
     

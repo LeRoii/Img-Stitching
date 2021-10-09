@@ -10,7 +10,7 @@
 #define USED_CAMERA_NUM 6
 #define BUF_LEN 65540 
 
-imagePorcessor nvProcessor;
+imageProcessor nvProcessor;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);

@@ -17,12 +17,18 @@ using namespace cv;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
+
+
 char buffer[BUF_LEN]; // Buffer for echo string
 
 vector<Mat> upImgs(4);
 vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
+
+
+
+
 
 void serverCap()
 {
@@ -72,6 +78,7 @@ void serverCap()
 bool saveret = false;
 bool detect = false;
 bool initonline = false;
+bool use_ssr = false;
 
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
@@ -97,6 +104,7 @@ void stitcherTh(int id, ocvStitcher *stitcher)
 static bool
 parse_cmdline(int argc, char **argv)
 {
+    std::cout<<"Help: use 's' to save image, use 'd' to detect, use 'i' to online init, use 'h' to open HDR!"<<std::endl;
     int c;
 
     if (argc < 2)
@@ -117,6 +125,8 @@ parse_cmdline(int argc, char **argv)
             case 'i':
                 initonline = true;
                 break;
+            case 'h':
+                use_ssr = true;
             default:
                 break;
         }
@@ -230,7 +240,7 @@ int main(int argc, char *argv[])
 
     Mat rets[USED_CAMERA_NUM];
 
-    imagePorcessor nvProcessor;
+    imageProcessor nvProcessor;
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
@@ -345,15 +355,21 @@ int main(int argc, char *argv[])
 
         if(detect)
         {
+            controlData ctl_command;
+
+            ctl_command = nvProcessor.getCtlCommand();
             cv::Mat yoloRet;
             auto start = std::chrono::steady_clock::now();
+            if(use_ssr) {
+                ret = nvProcessor.SSR(ret);
+            }
             yoloRet = nvProcessor.Process(ret);
             auto end = std::chrono::steady_clock::now();
             std::chrono::duration<double> spent = end - start;
             std::cout << " #############detect Time############: " << spent.count() << " sec \n";
 
             nvProcessor.publishImage(yoloRet);
-            cv::imshow("yolo", yoloRet);
+            // cv::imshow("yolo", yoloRet);
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
             cv::waitKey(1);

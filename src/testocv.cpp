@@ -16,7 +16,7 @@ int main()
     imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
     imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
 
-    for(int i=0;i<5;i++)
+    for(int i=0;i<1;i++)
         ostitcher.init(imgs);
 
     Mat ret;
@@ -31,6 +31,12 @@ int main()
     // imwrite("2.png", imgs[1]);
     // imwrite("3.png", imgs[2]);
     // imwrite("4.png", imgs[3]);
+
+    // Mat img = imread("/home/nvidia/ssd/code/0929IS/build/1-blenderMask.png");
+    // img(Rect(img.size().width*0.7,0,img.size().width*0.3,img.size().height)).setTo(255);
+    // imwrite("1blendm.png", img);
+
+    Ptr<Blender> blender = Blender::createDefault(Blender::MULTI_BAND, true);
 
     return 0;
 }

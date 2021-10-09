@@ -181,10 +181,10 @@ int main(int argc, char* argv[])
     // img_names.push_back("../tmp/3-dist.png");
     // img_names.push_back("../tmp/4-dist.png");
 
-    img_names.push_back("../tmp/1.png");
-    img_names.push_back("../tmp/2.png");
-    img_names.push_back("../tmp/3.png");
-    img_names.push_back("../tmp/4.png");
+img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
+    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/2.png");
+    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/3.png");
+    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/4.png");
     // Check if have enough images
     // int num_images = static_cast<int>(img_names.size());
     if (num_images < 2)

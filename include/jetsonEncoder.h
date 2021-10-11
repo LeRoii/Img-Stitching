@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 #include "NvVideoEncoder.h"
 
 using namespace std;

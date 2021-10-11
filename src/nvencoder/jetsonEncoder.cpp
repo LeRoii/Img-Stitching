@@ -3,6 +3,16 @@
 
 udp_publisher::UdpPublisher udp_pub;
 
+
+
+ size_t GetFileSize(const std::string& file_name){
+	std::ifstream in(file_name.c_str());
+	in.seekg(0, std::ios::end);
+	size_t size = in.tellg();
+	in.close();
+	return size; //单位是：byte
+}
+
 static int write_encoder_output_frame(ofstream * stream, NvBuffer * buffer)
 {
     stream->write((char *) buffer->planes[0].data, buffer->planes[0].bytesused);
@@ -261,3 +271,5 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
     return ctl_data;
  }
  
+
+

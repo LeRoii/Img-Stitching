@@ -325,11 +325,12 @@ int main(int argc, char *argv[])
         ostitcherDown.outputOk = false;
 
         int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        upRet = stitcherOut[0](Rect(0,20,width,200));
-        downRet = stitcherOut[1](Rect(0,25,width,200));
+        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - 30;
+        upRet = stitcherOut[0](Rect(0,15,width,height));
+        downRet = stitcherOut[1](Rect(0,15,width,height));
 
         cv::vconcat(upRet, downRet, ret);
-        cv::rectangle(ret, cv::Rect(0, 198, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
+        cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
         // cv::Mat up,down, ret;
         // cv::hconcat(vector<cv::Mat>{cameras[0]->m_ret, cameras[1]->m_ret, cameras[2]->m_ret}, up);
@@ -339,6 +340,19 @@ int main(int argc, char *argv[])
 
         // cv::imshow("1", cam0.m_ret);
         // cv::imwrite("1.png", cam0.m_ret);
+
+        if(saveret)
+        {
+            imwrite("1.png", upImgs[0]);
+            imwrite("2.png", upImgs[1]);
+            imwrite("3.png", upImgs[2]);
+            imwrite("4.png", upImgs[3]);
+            imwrite("5.png", downImgs[0]);
+            imwrite("6.png", downImgs[1]);
+            imwrite("7.png", downImgs[2]);
+            imwrite("8.png", downImgs[3]);
+        }
+
         if(detect)
         {
             controlData ctl_command;

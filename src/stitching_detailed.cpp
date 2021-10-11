@@ -136,7 +136,7 @@ static void printUsage()
 // Default command line args
 vector<String> img_names;
 bool preview = false;
-bool try_cuda = true;
+bool try_cuda = false;
 double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
@@ -150,10 +150,10 @@ bool do_wave_correct = true;
 WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
 bool save_graph = true;
 std::string save_graph_to = "matchedgraph";
-string warp_type = "spherical";
+string warp_type = "cylindrical";
 int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
 float match_conf = 0.3f;
-string seam_find_type = "gc_color";
+string seam_find_type = "no";
 int blend_type = Blender::MULTI_BAND;
 int timelapse_type = Timelapser::AS_IS;
 float blend_strength = 5;
@@ -400,10 +400,10 @@ int main(int argc, char* argv[])
     if (retval)
         return retval;
 
-    img_names.push_back("1.png");
-    img_names.push_back("2.png");
-    img_names.push_back("3.png");
-    img_names.push_back("4.png");
+    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
+    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/2.png");
+    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/3.png");
+    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/4.png");
     // img_names.push_back("3-dist.png");
     // img_names.push_back("4-dist.png");
     // Check if have enough images

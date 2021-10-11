@@ -151,6 +151,15 @@ class ocvStitcher
 
         LOGLN("Warping images (auxiliary)... ");
 
+        /*every camera use same intrinsic parameter, make no big different*/
+        for (size_t i = 0; i < cameras.size(); ++i)
+        {
+            LOGLN("Initial camera intrinsics #" << i+1 << ":\nK:\n" << cameras[i].K());
+            cameras[i] = cameras[0];
+            cameras[i].R = rmats[i];
+            LOGLN("after set Initial camera intrinsics #" << i+1 << ":\nK:\n" << cameras[i].K());
+        }
+
         vector<UMat> masks(num_images);
         // Preapre images masks
         for (int i = 0; i < num_images; ++i)
@@ -159,6 +168,7 @@ class ocvStitcher
             masks[i].setTo(Scalar::all(255));
         }
 
+        // warper_creator = makePtr<cv::CylindricalWarperGpu>();
         warper_creator = makePtr<cv::SphericalWarperGpu>();
         warper = warper_creator->create(static_cast<float>(warped_image_scale * seam_work_aspect));
 
@@ -171,6 +181,7 @@ class ocvStitcher
             // Mat_<float> K;
             cameras[i].K().convertTo(camK[i], CV_32F);
 
+            LOGLN("cameras[i] for sephere warp #" << i << "\n" << cameras[i].K());
             LOGLN("cam K for sephere warp #" << i << "\n" << camK[i]);
             LOGLN("cam R for sephere warp #" << i << "\n" << cameras[i].R);
 
@@ -186,8 +197,17 @@ class ocvStitcher
 
             warper->warp(masks[i], K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
 
-            imwrite(std::to_string(i)+"images_warped.png", images_warped[i]);
-            imwrite(std::to_string(i)+"masks_warped.png", masks_warped[i]);
+            imwrite(std::to_string(i)+"-images_warped.png", images_warped[i]);
+            imwrite(std::to_string(i)+"-masks_warped.png", masks_warped[i]);
+
+            LOGLN("****first warp:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
+        }
+
+        for(int i=0;i<4;i++)
+        {
+            // blenderMask[i] = masks_warped[i].getMat(ACCESS_RW);
+            masks_warped[i].copyTo(blenderMask[i]);
+            // blenderMask[i].setTo(Scalar::all(255));
         }
 
         t = getTickCount();
@@ -199,6 +219,7 @@ class ocvStitcher
 
         compensator->feed(corners, images_warped, masks_warped);
         seam_finder = makePtr<detail::GraphCutSeamFinder>(GraphCutSeamFinderBase::COST_COLOR);
+        // seam_finder = makePtr<detail::NoSeamFinder>();
         seam_finder->find(images_warped_f, corners, masks_warped);
 
         for (int i = 0; i < num_images; ++i)
@@ -235,15 +256,17 @@ class ocvStitcher
         Mat dilated_mask, seam_mask;
         Mat mask, maskwarped;
 
-        //mask black(0):overlap region, white(255):non overlap region
-        for(int i=0;i<4;i++)
-        {
-            blenderMask[i] = Mat(masks_warped[i].size(), CV_8UC1);
-            blenderMask[i].setTo(Scalar::all(255));
-        }
+        /*mask black(0):overlap region, white(255):non overlap region*/
+        // for(int i=0;i<4;i++)
+        // {
+        //     // blenderMask[i] = masks_warped[i].getMat(ACCESS_RW);
+        //     masks_warped[i].copyTo(blenderMask[i]);
+        //     // blenderMask[i].setTo(Scalar::all(255));
+        // }
 
-        // auto masksize = blenderMask[0].size();
-        // blenderMask[0](cv::Rect(0,0,masksize.width*0.3, masksize.height)).setTo(0);
+        auto masksize = blenderMask[0].size();
+        // blenderMask[0].setTo(255);
+        blenderMask[0](Rect(0,0,masksize.width*0.3,masksize.height)).setTo(0);
 
         // masksize = blenderMask[1].size();
         // blenderMask[1].setTo(0);
@@ -282,20 +305,22 @@ class ocvStitcher
             img.release();
             // mask.release();
 
-            // dilate(masks_warped[img_idx], dilated_mask, Mat());
-            // imwrite(std::to_string(img_idx)+"-dilated_mask.png", dilated_mask);
-            // resize(dilated_mask, seam_mask, compensatorMaskWarped[img_idx].size(), 0, 0, INTER_LINEAR_EXACT);
-            // // mask_warped = seam_mask & mask_warped;
-            // blenderMask[img_idx] = seam_mask & compensatorMaskWarped[img_idx];
+            dilate(masks_warped[img_idx], dilated_mask, Mat());
+            imwrite(std::to_string(img_idx)+"-dilated_mask.png", dilated_mask);
+            resize(dilated_mask, seam_mask, compensatorMaskWarped[img_idx].size(), 0, 0, INTER_LINEAR_EXACT);
+            // mask_warped = seam_mask & mask_warped;
+            blenderMask[img_idx] = seam_mask & compensatorMaskWarped[img_idx];
 
             // imwrite("blendmask.png", blenderMask[img_idx]);
             imwrite(std::to_string(img_idx)+"-blenderMask.png", blenderMask[img_idx]);
+            imwrite(std::to_string(img_idx)+"-img_warped.png", img_warped);
 
             if (!blender)
             {
                 blender = Blender::createDefault(Blender::MULTI_BAND, true);
                 dst_sz = resultRoi(corners, sizes).size();
                 blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
+                LOGLN("blend_width: " << blend_width << "dst_sz:" << dst_sz);
                 if (blend_width < 1.f)
                     blender = Blender::createDefault(Blender::NO, true);
                 else
@@ -339,6 +364,7 @@ class ocvStitcher
 
             // Warp the current image
             warper->warp(img, camK[img_idx], cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+            // imwrite(std::to_string(img_idx)+"-img_warped.png", img_warped);
 
             // Compensate exposure
             // compensator->apply(img_idx, corners[img_idx], img_warped, compensatorMaskWarped[img_idx]);

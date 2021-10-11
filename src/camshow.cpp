@@ -152,14 +152,14 @@ int main()
         // cv::imshow("4", cameras[3]->m_ret);
         // cv::waitKey(1);
 
-        // cv::Mat up,down, ret;
-        // cv::hconcat(vector<cv::Mat>{cameras[0]->m_ret, cameras[1]->m_ret, cameras[2]->m_ret}, up);
-        // cv::hconcat(vector<cv::Mat>{cameras[3]->m_ret, cameras[4]->m_ret, cameras[5]->m_ret}, down);
-        // cv::vconcat(up, down, ret);
-        // cv::imshow("m_dev_name", ret);
+        cv::Mat up,down, ret;
+        cv::hconcat(vector<cv::Mat>{upImgs[0], upImgs[1], upImgs[2], upImgs[3]}, up);
+        cv::hconcat(vector<cv::Mat>{downImgs[0], downImgs[1], downImgs[2], downImgs[3]}, down);
+        cv::vconcat(up, down, ret);
+        cv::imshow("m_dev_name", ret);
 
         // cv::imshow("1", upImgs[0]);
-        cv::imshow("1", upImgs[0]);
+        // cv::imshow("1", upImgs[0]);
         // cv::imwrite("1.png", cam0.m_ret);
 
         cv::waitKey(1);

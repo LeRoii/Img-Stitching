@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // cv::imshow("ret", ret);
+            cv::imshow("ret", ret);
             // cv::imshow("up", stitcherOut[0]);
             // cv::imshow("down", stitcherOut[1]);
             // cv::imshow("ret", ret);

@@ -4,13 +4,14 @@
 udp_publisher::UdpPublisher udp_pub;
 
 
+int save_id = 0;
 
  size_t GetFileSize(const std::string& file_name){
 	std::ifstream in(file_name.c_str());
 	in.seekg(0, std::ios::end);
 	size_t size = in.tellg();
 	in.close();
-	return size; //单位是：byte
+	return size; //单位是：Byte
 }
 
 static int write_encoder_output_frame(ofstream * stream, NvBuffer * buffer)
@@ -40,6 +41,8 @@ bool
 encoder_capture_plane_dq_callback(struct v4l2_buffer *v4l2_buf, NvBuffer * buffer,
                                   NvBuffer * shared_buffer, void *arg)
 {
+    char str[80];
+    size_t saved_size;
     context_t *ctx = (context_t *) arg;
     NvVideoEncoder *enc = ctx->enc;
 
@@ -50,6 +53,19 @@ encoder_capture_plane_dq_callback(struct v4l2_buffer *v4l2_buf, NvBuffer * buffe
         return false;
     }
     printf("encoder_capture_plane_dq_callback,size:%d\n",buffer->planes[0].bytesused);
+
+
+    saved_size = GetFileSize(ctx->out_file_path);
+    std::cout<<"^^^^^^^^^^^^^^^^^^^^^^^^^^^^size: "<<saved_size<<std::endl;
+
+    if(saved_size>104857600){ //100MB = 104857600B
+        save_id ++;
+        sprintf(str, "/home/nvidia/out_%d.h264", save_id);
+        ctx->out_file_path = str;
+        std::cout<<"The video save to a new file!"<<std::endl;
+        ctx->out_file = new ofstream(ctx->out_file_path);
+        TEST_ERROR(!ctx->out_file->is_open(), "Could not open output file");
+    }
 
     write_encoder_output_frame(ctx->out_file, buffer);
 

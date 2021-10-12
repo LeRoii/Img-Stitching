@@ -7,6 +7,23 @@
 #include "jetsonEncoder.h"
 #include <vector>
 
+#include <linux/can.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <utility>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <linux/can/raw.h>
+#include <net/if.h>
+#include <vector>
+#include <sstream>
+#include <netinet/in.h>
+#include <time.h>
+#include <arpa/inet.h>
+
 #include "yolo_v2_class.hpp"
 #include "Yolo3Detection.h"
 

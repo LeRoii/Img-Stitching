@@ -28,8 +28,6 @@ Mat upRet, downRet, ret;
 
 
 
-
-
 void serverCap()
 {
     downImgs.clear();
@@ -76,8 +74,8 @@ void serverCap()
 
 
 bool saveret = false;
-bool detect = true;
-bool initonline = true;
+bool detect = false;
+bool initonline = false;
 bool start_ssr = false;
 
 std::mutex g_stitcherMtx[2];

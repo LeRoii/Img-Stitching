@@ -1,6 +1,13 @@
 #include "imageProcess.h"
 
 
+/* can define start */
+#define sendAcc 0x421
+#define SERV_PORT 33332 
+#define CANPORT "can1"
+int can_socket_fd;
+unsigned long nbytes;
+/* can define end */
 
 tk::dnn::Yolo3Detection detNN;
 
@@ -13,6 +20,40 @@ targetInfo sendData;
 jetsonEncoder nvEncoder;
 
 
+
+void canInit()
+{
+	struct sockaddr_can addr;
+	struct ifreq ifrr;
+
+	can_socket_fd = socket(PF_CAN,SOCK_RAW,CAN_RAW);
+	strcpy(ifrr.ifr_name,CANPORT);
+	ioctl(can_socket_fd,SIOCGIFINDEX,&ifrr);
+	addr.can_family = AF_CAN;
+	addr.can_ifindex = ifrr.ifr_ifindex;
+	bind(can_socket_fd, (struct sockaddr *)&addr, sizeof(addr));
+}
+
+int canSend(std::vector<int> temp_data){
+    int length = temp_data.size()/6;
+
+    struct can_frame can_send_Acc[length];
+
+    for(int i=0;i<length;i++){ 
+        can_send_Acc[i].can_id = sendAcc+i;
+        can_send_Acc[i].can_dlc = 8;
+        can_send_Acc[i].data[0]=temp_data[6*i];    //高8位
+        can_send_Acc[i].data[1]=temp_data[6*i]>>8;   //低8位
+        can_send_Acc[i].data[2]=temp_data[6*i+1];    //高8位
+        can_send_Acc[i].data[3]=temp_data[6*i+1]>>8;   //低8位
+        can_send_Acc[i].data[4]=temp_data[6*i+2];    //高8位
+        can_send_Acc[i].data[5]=temp_data[6*i+2]>>8;   //低8位
+        can_send_Acc[i].data[6]=temp_data[6*i+3];    //高8位
+        can_send_Acc[i].data[7]=temp_data[6*i+3]>>8;   //低8位
+        nbytes = write(can_socket_fd, &can_send_Acc[i], sizeof(can_send_Acc[i]));        
+    }
+    
+}
 
 cv::Mat imageProcessor::getROIimage(cv::Mat srcImg)
 {
@@ -95,6 +136,7 @@ cv::Mat imageProcessor::SSR(cv::Mat input) {
 cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
     std::vector<int> detret_left;
     std::vector<int> detret_right;
+    std::vector<int> detret_all;
     detret_left.clear();
     detret_right.clear();
     cv::Mat roi_img1=ImageDetect(ceil_img[0], detret_left);
@@ -129,6 +171,11 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
 
     nvEncoder.pubTargetData(sendData);
 
+    detret_all.insert(detret_all.end(),detret_left.begin(),detret_left.end());
+    detret_all.insert(detret_all.end(),detret_right.begin(),detret_right.end());
+
+    canSend(detret_all);
+
     int w1 = roi_img1.cols; int h1 = roi_img1.rows;
     int w2 = roi_img2.cols; int h2 = roi_img2.rows;
     int width = w1 + w2; int height = max(h1, h2);
@@ -142,12 +189,7 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
     return resultImg;
 }
 
-imageProcessor::imageProcessor() {
-    int n_classes = 80;
-    float conf_thresh=0.8;
-    detNN.init(net, n_classes, n_batch, conf_thresh);
-   printf("detNN init okkkkk\n");
-}
+
 
 cv::Mat imageProcessor::Process(cv::Mat img){
     std::vector<cv::Mat>  ceil_img;
@@ -177,4 +219,13 @@ controlData imageProcessor::getCtlCommand(){
     controlData ctl_data;
     ctl_data = nvEncoder.getControlData();
     return ctl_data;
+}
+//Init here
+imageProcessor::imageProcessor() {
+    canInit();
+    printf("can init ok!\n");
+    int n_classes = 80;
+    float conf_thresh=0.8;
+    detNN.init(net, n_classes, n_batch, conf_thresh);
+   printf("detNN init okkkkk\n");
 }

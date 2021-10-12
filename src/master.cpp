@@ -76,8 +76,8 @@ void serverCap()
 
 
 bool saveret = false;
-bool detect = true;
-bool initonline = true;
+bool detect = false;
+bool initonline = false;
 bool start_ssr = false;
 
 std::mutex g_stitcherMtx[2];
@@ -376,14 +376,14 @@ int main(int argc, char *argv[])
                 nvProcessor.publishImage(ret);
             }
             
-            // cv::imshow("yolo", yoloRet);
+            cv::imshow("yolo", yoloRet);
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
             cv::waitKey(1);
         }
         else
         {
-            // cv::imshow("ret", ret);
+            cv::imshow("ret", ret);
             // cv::imshow("up", stitcherOut[0]);
             // cv::imshow("down", stitcherOut[1]);
             // cv::imshow("ret", ret);

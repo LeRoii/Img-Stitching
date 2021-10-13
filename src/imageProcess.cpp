@@ -2,7 +2,7 @@
 
 
 /* can define start */
-#define sendAcc 0x421
+#define sendPos 0x421
 #define SERV_PORT 33332 
 #define CANPORT "can1"
 int can_socket_fd;
@@ -37,20 +37,21 @@ void canInit()
 int canSend(std::vector<int> temp_data){
     int length = temp_data.size()/6;
 
-    struct can_frame can_send_Acc[length];
+    struct can_frame can_send_pos[length];
+
 
     for(int i=0;i<length;i++){ 
-        can_send_Acc[i].can_id = sendAcc+i;
-        can_send_Acc[i].can_dlc = 8;
-        can_send_Acc[i].data[0]=temp_data[6*i];    //高8位
-        can_send_Acc[i].data[1]=temp_data[6*i]>>8;   //低8位
-        can_send_Acc[i].data[2]=temp_data[6*i+1];    //高8位
-        can_send_Acc[i].data[3]=temp_data[6*i+1]>>8;   //低8位
-        can_send_Acc[i].data[4]=temp_data[6*i+2];    //高8位
-        can_send_Acc[i].data[5]=temp_data[6*i+2]>>8;   //低8位
-        can_send_Acc[i].data[6]=temp_data[6*i+3];    //高8位
-        can_send_Acc[i].data[7]=temp_data[6*i+3]>>8;   //低8位
-        nbytes = write(can_socket_fd, &can_send_Acc[i], sizeof(can_send_Acc[i]));        
+        can_send_pos[i].can_id = sendPos+i;
+        can_send_pos[i].can_dlc = 8;
+        can_send_pos[i].data[0]=temp_data[6*i];    //x高8位
+        can_send_pos[i].data[1]=temp_data[6*i]>>8;   //x低8位
+        can_send_pos[i].data[2]=temp_data[6*i+1];    //y高8位
+        can_send_pos[i].data[3]=temp_data[6*i+1]>>8;   //y低8位
+        can_send_pos[i].data[4]=temp_data[6*i+2];    //w高8位
+        can_send_pos[i].data[5]=temp_data[6*i+2]>>8;   //w低8位
+        can_send_pos[i].data[6]=temp_data[6*i+3];    //h高8位
+        can_send_pos[i].data[7]=temp_data[6*i+3]>>8;   //h低8位
+        nbytes = write(can_socket_fd, &can_send_pos[i], sizeof(can_send_pos[i]));        
     }
     
 }
@@ -121,14 +122,16 @@ cv::Mat imageProcessor::channel_process(cv::Mat R) {
 }
 
 cv::Mat imageProcessor::SSR(cv::Mat input) {
-    cv::Mat ret;
+    cv::Mat ret,temp;
+    cv::cvtColor(input, temp, CV_BGR2YUV);
     std::vector<cv::Mat> img;
-    cv::split(input, img);
-    cv::Mat B = img[0];
-    cv::Mat G = img[1];
-    cv::Mat R = img[2];
-    cv::Mat channels[3] = { channel_process(B), channel_process(G), channel_process(R)};
+    cv::split(temp, img);
+    cv::Mat Y = img[0];
+    cv::Mat U = img[1];
+    cv::Mat V = img[2];
+    cv::Mat channels[3] = { channel_process(Y), U, V};
     cv::merge(channels, 3, ret);
+    cv::cvtColor(ret, ret, CV_YUV2BGR);
     return ret;
 }
 

@@ -110,7 +110,7 @@ parse_cmdline(int argc, char **argv)
         return true;
     }
 
-    while ((c = getopt(argc, argv, "sdi")) != -1)
+    while ((c = getopt(argc, argv, "sdih")) != -1)
     {
         switch (c)
         {
@@ -125,6 +125,7 @@ parse_cmdline(int argc, char **argv)
                 break;
             case 'h':
                 start_ssr = true;
+                break;
             default:
                 break;
         }
@@ -361,6 +362,7 @@ int main(int argc, char *argv[])
 
             cv::Mat yoloRet;
             auto start = std::chrono::steady_clock::now();
+            
             if(ctl_command.use_ssr || start_ssr) {
                 ret = nvProcessor.SSR(ret);
             }
@@ -374,7 +376,7 @@ int main(int argc, char *argv[])
                 nvProcessor.publishImage(ret);
             }
             
-            cv::imshow("yolo", yoloRet);
+            // cv::imshow("yolo", yoloRet);                                                                                                                                                                                                                                                                                                 
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
             cv::waitKey(1);

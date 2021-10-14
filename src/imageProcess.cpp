@@ -2,12 +2,19 @@
 
 
 /* can define start */
-#define sendPos 0x421
+#define sendPos_id 0x421
+#define sendAngle_id 0x321
+
+#define recvCmd1_id 0x221
+#define recvCmd2_id 0x222
+
 #define SERV_PORT 33332 
-#define CANPORT "can1"
+#define CANPORT "can0"
 int can_socket_fd;
 unsigned long nbytes;
 /* can define end */
+int angle_x;  //第一个目标中心坐标-角度
+int angle_y;  //第一个目标中心坐标-角度
 
 tk::dnn::Yolo3Detection detNN;
 
@@ -19,7 +26,7 @@ targetInfo sendData;
 
 jetsonEncoder nvEncoder;
 
-
+canCmd can_recv_data;
 
 void canInit()
 {
@@ -37,24 +44,81 @@ void canInit()
 int canSend(std::vector<int> temp_data){
     int length = temp_data.size()/6;
 
+
+    int turn_angle=0;  //转台角度
     struct can_frame can_send_pos[length];
-
-
+    struct can_frame can_send_angle;
     for(int i=0;i<length;i++){ 
-        can_send_pos[i].can_id = sendPos+i;
+        can_send_pos[i].can_id = sendPos_id+i;
         can_send_pos[i].can_dlc = 8;
-        can_send_pos[i].data[0]=temp_data[6*i];    //x高8位
-        can_send_pos[i].data[1]=temp_data[6*i]>>8;   //x低8位
-        can_send_pos[i].data[2]=temp_data[6*i+1];    //y高8位
-        can_send_pos[i].data[3]=temp_data[6*i+1]>>8;   //y低8位
-        can_send_pos[i].data[4]=temp_data[6*i+2];    //w高8位
-        can_send_pos[i].data[5]=temp_data[6*i+2]>>8;   //w低8位
-        can_send_pos[i].data[6]=temp_data[6*i+3];    //h高8位
-        can_send_pos[i].data[7]=temp_data[6*i+3]>>8;   //h低8位
+        can_send_pos[i].data[0]=temp_data[6*i]>>8;    //x高8位
+        can_send_pos[i].data[1]=temp_data[6*i];   //x低8位
+        can_send_pos[i].data[2]=temp_data[6*i+1]>>8;    //y高8位
+        can_send_pos[i].data[3]=temp_data[6*i+1];   //y低8位
+        can_send_pos[i].data[4]=temp_data[6*i+2]>>8;    //w高8位
+        can_send_pos[i].data[5]=temp_data[6*i+2];   //w低8位
+        can_send_pos[i].data[6]=temp_data[6*i+3]>>8;    //h高8位
+        can_send_pos[i].data[7]=temp_data[6*i+3];   //h低8位
         nbytes = write(can_socket_fd, &can_send_pos[i], sizeof(can_send_pos[i]));        
     }
-    
+
+    if(length>0){
+        if(temp_data[1]+temp_data[3]/2<=280){    //上半部分
+            angle_x = (temp_data[0]+temp_data[2]/2)*1.184;  // 放大10倍，px*1800/1520  
+            angle_y = (temp_data[1]+temp_data[3]/2)*1.778;  //放大10倍，py*320/280
+        }else if(temp_data[1]+temp_data[3]/2>280){       //下半部分
+            angle_x = (temp_data[0]+temp_data[2]/2)*1.184 + 1800;  // 放大10倍，px*1800/1520 ，图像下半部分，x增180度
+            angle_y = (temp_data[1]+temp_data[3]/2-280)*1.778;  //放大10倍，(py-280)*320/280
+        }
+        can_send_angle.can_id = sendAngle_id;
+        can_send_angle.can_dlc = 8;
+        can_send_angle.data[0] = angle_x>>8;     //第一个目标中心坐标高8位（转角度）
+        can_send_angle.data[1] = angle_x;  //第一个目标中心坐标低8位（转角度）
+        can_send_angle.data[2] = angle_x>>8;     //第一个目标中心坐标高8位（转角度）
+        can_send_angle.data[3] = angle_x;  //第一个目标中心坐标低8位（转角度）
+        can_send_angle.data[4] = turn_angle>>8; //转台实际角度高8位
+        can_send_angle.data[5] = turn_angle;    //转台实际角度低8位
+        can_send_angle.data[6] = 0; 
+        can_send_angle.data[7] = 0;
+        nbytes = write(can_socket_fd, &can_send_angle, sizeof(can_send_angle));        
+    }
 }
+
+void* canRecv(void* args)
+{
+	unsigned long nbytes;
+
+    struct can_frame can_read_cmd;
+    while(1){
+        nbytes = read(can_socket_fd, &can_read_cmd, sizeof(can_read_cmd));
+        if(nbytes>0){
+            if(can_read_cmd.can_id == recvCmd1_id){
+                std::cout<<"^^^^^^^^^^^^^^^^^^^^can data recv: ";
+                for(int i =0; i<8;i++) {
+                    printf("  %x",can_read_cmd.data[i]);
+                }
+               std::cout<<" "<<std::endl;
+                can_recv_data.use_dehaze = can_read_cmd.data[0];
+                can_recv_data.use_ssr = can_read_cmd.data[1];
+                can_recv_data.bright_method = can_read_cmd.data[2];
+                can_recv_data.bright = can_read_cmd.data[3];
+                can_recv_data.contrast_method = can_read_cmd.data[4];
+                can_recv_data.contrast = can_read_cmd.data[5];
+                can_recv_data.use_flip = can_read_cmd.data[6];
+                can_recv_data.use_detect = can_read_cmd.data[7];
+            } else if(can_read_cmd.can_id == recvCmd2_id){
+                can_recv_data.use_cross = can_read_cmd.data[0];
+                can_recv_data.video_save = can_read_cmd.data[1];
+                can_recv_data.self_check = can_read_cmd.data[2];
+                can_recv_data.open_window = can_read_cmd.data[3];
+                can_recv_data.turn_ctl = can_read_cmd.data[4];
+                can_recv_data.turn_ctl_angle |= can_read_cmd.data[5]<<8;
+                can_recv_data.turn_ctl_angle |= can_read_cmd.data[6];    
+            }
+        }
+    }
+}
+
 
 cv::Mat imageProcessor::getROIimage(cv::Mat srcImg)
 {
@@ -140,6 +204,7 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
     std::vector<int> detret_left;
     std::vector<int> detret_right;
     std::vector<int> detret_all;
+    char center_str[10]={0};
     detret_left.clear();
     detret_right.clear();
     cv::Mat roi_img1=ImageDetect(ceil_img[0], detret_left);
@@ -178,6 +243,7 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
     detret_all.insert(detret_all.end(),detret_right.begin(),detret_right.end());
 
     canSend(detret_all);
+    // canRecv();
 
     int w1 = roi_img1.cols; int h1 = roi_img1.rows;
     int w2 = roi_img2.cols; int h2 = roi_img2.rows;
@@ -189,6 +255,12 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
     cv::Mat ROI_2 = resultImg(cv::Rect(w1, 0, w2, h2));
     roi_img1.copyTo(ROI_1);
     roi_img2.copyTo(ROI_2);
+    if(detret_all.size()>=6){
+        cv::Point p = cv::Point(detret_all[0]+detret_all[2]/2,detret_all[1]+detret_all[3]/2);
+        sprintf(center_str,"%d, %d", angle_x/10, angle_y/10);
+        cv::putText(resultImg, center_str, p, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(0,255, 0), 1, CV_AA);
+    }
+    
     return resultImg;
 }
 
@@ -225,10 +297,17 @@ controlData imageProcessor::getCtlCommand(){
 }
 //Init here
 imageProcessor::imageProcessor() {
+    pthread_t tid;
     canInit();
     printf("can init ok!\n");
     int n_classes = 80;
     float conf_thresh=0.8;
     detNN.init(net, n_classes, n_batch, conf_thresh);
+
+    int ret = pthread_create(&tid, NULL, canRecv, NULL);
+    if (ret != 0)
+    {
+        cout << "pthread_create error: error_code=" << ret << endl;
+    }
    printf("detNN init okkkkk\n");
 }

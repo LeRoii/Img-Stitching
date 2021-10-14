@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
                 nvProcessor.publishImage(ret);
             }
             
-            // cv::imshow("yolo", yoloRet);                                                                                                                                                                                                                                                                                                 
+            cv::imshow("yolo", yoloRet);                                                                                                                                                                                                                                                                                                 
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
             cv::waitKey(1);

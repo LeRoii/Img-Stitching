@@ -58,6 +58,10 @@ typedef struct
     int bright;
 } controlData;
 
+
+
+
+
 class jetsonEncoder
 {
     public:

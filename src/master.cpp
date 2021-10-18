@@ -77,6 +77,8 @@ bool saveret = false;
 bool detect = false;
 bool initonline = false;
 bool start_ssr = false;
+bool savevideo = false;
+int initmode = 1;
 
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
@@ -93,6 +95,7 @@ void stitcherTh(int id, ocvStitcher *stitcher)
         while(!stitcher->inputOk)
             stitcherCon[id].wait(lock);
         stitcher->process(stitcherInput[id], stitcherOut[id]);
+        // stitcher->simpprocess(stitcherInput[id], stitcherOut[id]);
         stitcher->inputOk = false;
         stitcher->outputOk = true;
         stitcherCon[id].notify_all();
@@ -110,7 +113,7 @@ parse_cmdline(int argc, char **argv)
         return true;
     }
 
-    while ((c = getopt(argc, argv, "sdi")) != -1)
+    while ((c = getopt(argc, argv, "sdihv")) != -1)
     {
         switch (c)
         {
@@ -125,6 +128,8 @@ parse_cmdline(int argc, char **argv)
                 break;
             case 'h':
                 start_ssr = true;
+            case  'v':
+                savevideo = true;
             default:
                 break;
         }
@@ -148,87 +153,137 @@ int main(int argc, char *argv[])
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
-    ocvStitcher ostitcherUp(960/2, 540/2);
-    ocvStitcher ostitcherDown(960/2, 540/2);
+    ocvStitcher ostitcherUp(960/2, 540/2, 1);
+    ocvStitcher ostitcherDown(960/2, 540/2, 2);
 
-    if(initonline)
-    {
-        do{
-            upImgs.clear();
-            for(int i=0;i<4;i++)
-            {
-                cameras[i]->read_frame();
-                upImgs.push_back(cameras[i]->m_ret);
-            }   
-        }
-        while(ostitcherUp.init(upImgs) != 0);
-
-        LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
-        if(saveret)
-        {
-            imwrite("1.png", upImgs[0]);
-            imwrite("2.png", upImgs[1]);
-            imwrite("3.png", upImgs[2]);
-            imwrite("4.png", upImgs[3]);
-        }
-        
-        do{
-            serverCap();
-            cameras[4]->read_frame();
-            cameras[5]->read_frame();
-            downImgs[0] = cameras[4]->m_ret;
-            downImgs[1] = cameras[5]->m_ret;
-        }
-        while(ostitcherDown.init(downImgs) != 0);
-
-        LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
-        if(saveret)
-        {
-            imwrite("5.png", downImgs[0]);
-            imwrite("6.png", downImgs[1]);
-            imwrite("7.png", downImgs[2]);
-            imwrite("8.png", downImgs[3]);
-        }
-
-    }
-    else
-    {
+    do{
         upImgs.clear();
-        Mat img = imread("/home/nvidia/ssd/code/0929IS/2222/1.png");
-        // resize(img, img, Size(960/2, 540/2));
-        upImgs.push_back(img);
-        img = imread("/home/nvidia/ssd/code/0929IS/2222/2.png");
-        // resize(img, img, Size(960/2, 540/2));
-        upImgs.push_back(img);
-        img = imread("/home/nvidia/ssd/code/0929IS/2222/3.png");
-        // resize(img, img, Size(960/2, 540/2));
-        upImgs.push_back(img);
-        img = imread("/home/nvidia/ssd/code/0929IS/2222/4.png");
-        // resize(img, img, Size(960/2, 540/2));
-        upImgs.push_back(img);
-
-        downImgs.clear();
-        img = imread("/home/nvidia/ssd/code/0929IS/2222/5.png");
-        // resize(img, img, Size(960/2, 540/2));
-        downImgs.push_back(img);
-        img = imread("/home/nvidia/ssd/code/0929IS/2222/6.png");
-        // resize(img, img, Size(960/2, 540/2));
-        downImgs.push_back(img);
-        img = imread("/home/nvidia/ssd/code/0929IS/2222/7.png");
-        // resize(img, img, Size(960/2, 540/2));
-        downImgs.push_back(img);
-        img = imread("/home/nvidia/ssd/code/0929IS/2222/8.png");
-        // resize(img, img, Size(960/2, 540/2));
-        downImgs.push_back(img);
-
-
-        while(ostitcherUp.init(upImgs) != 0){}
-        LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
-        while(ostitcherDown.init(downImgs) != 0){}
-        LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+        for(int i=0;i<4;i++)
+        {
+            cameras[i]->read_frame();
+            upImgs.push_back(cameras[i]->m_ret);
+        }   
     }
+    while(ostitcherUp.init(upImgs, initonline) != 0);
+    // while(ostitcherUp.simpleInit(upImgs) != 0);
+
+        LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+    if(saveret)
+    {
+        imwrite("1.png", upImgs[0]);
+        imwrite("2.png", upImgs[1]);
+        imwrite("3.png", upImgs[2]);
+        imwrite("4.png", upImgs[3]);
+    }
+    
+    do{
+        serverCap();
+        cameras[4]->read_frame();
+        cameras[5]->read_frame();
+        downImgs[0] = cameras[4]->m_ret;
+        downImgs[1] = cameras[5]->m_ret;
+    }
+    while(ostitcherDown.init(downImgs, initonline) != 0);
+    // while(ostitcherDown.simpleInit(downImgs) != 0);
+
+    LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+    if(saveret)
+    {
+        imwrite("5.png", downImgs[0]);
+        imwrite("6.png", downImgs[1]);
+        imwrite("7.png", downImgs[2]);
+        imwrite("8.png", downImgs[3]);
+    }
+
+    // if(initonline)
+    // {
+    //     do{
+    //         upImgs.clear();
+    //         for(int i=0;i<4;i++)
+    //         {
+    //             cameras[i]->read_frame();
+    //             upImgs.push_back(cameras[i]->m_ret);
+    //         }   
+    //     }
+    //     while(ostitcherUp.initAll(upImgs) != 0);
+    //     // while(ostitcherUp.simpleInit(upImgs) != 0);
+
+    //     LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+    //     if(saveret)
+    //     {
+    //         imwrite("1.png", upImgs[0]);
+    //         imwrite("2.png", upImgs[1]);
+    //         imwrite("3.png", upImgs[2]);
+    //         imwrite("4.png", upImgs[3]);
+    //     }
+        
+    //     do{
+    //         serverCap();
+    //         cameras[4]->read_frame();
+    //         cameras[5]->read_frame();
+    //         downImgs[0] = cameras[4]->m_ret;
+    //         downImgs[1] = cameras[5]->m_ret;
+    //     }
+    //     while(ostitcherDown.initAll(downImgs) != 0);
+    //     // while(ostitcherDown.simpleInit(downImgs) != 0);
+
+    //     LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+    //     if(saveret)
+    //     {
+    //         imwrite("5.png", downImgs[0]);
+    //         imwrite("6.png", downImgs[1]);
+    //         imwrite("7.png", downImgs[2]);
+    //         imwrite("8.png", downImgs[3]);
+    //     }
+
+    // }
+    // else
+    // {
+    //     upImgs.clear();
+    //     Mat img = imread("/home/nvidia/ssd/code/0929IS/2222/1.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     upImgs.push_back(img);
+    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/2.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     upImgs.push_back(img);
+    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/3.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     upImgs.push_back(img);
+    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/4.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     upImgs.push_back(img);
+
+    //     downImgs.clear();
+    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/5.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     downImgs.push_back(img);
+    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/6.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     downImgs.push_back(img);
+    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/7.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     downImgs.push_back(img);
+    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/8.png");
+    //     // resize(img, img, Size(960/2, 540/2));
+    //     downImgs.push_back(img);
+
+
+    //     // while(ostitcherUp.init(upImgs) != 0){}
+    //     // LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
+    //     // while(ostitcherDown.init(downImgs) != 0){}
+    //     // LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+    //     while(ostitcherUp.initSeam(upImgs) != 0){}
+    //     LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
+    //     while(ostitcherDown.initSeam(downImgs) != 0){}
+    //     LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+    // }
+
+    // return 0;
 
     std::vector<std::thread> threads;
     for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -242,6 +297,9 @@ int main(int argc, char *argv[])
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
+
+	//创建 writer，并指定 FOURCC 及 FPS 等参数
+	VideoWriter *writer = nullptr;
 
     while(1)
     {
@@ -374,13 +432,41 @@ int main(int argc, char *argv[])
                 nvProcessor.publishImage(ret);
             }
             
+            
             cv::imshow("yolo", yoloRet);
+
+            if(writer == nullptr)
+            {
+                Size s(yoloRet.size().width, yoloRet.size().height);
+                writer = new VideoWriter("myvideod.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
+                //检查是否成功创建
+                if (!writer->isOpened())
+                {
+                    cout << "Can not create video file.\n" << endl;
+                    return -1;
+                }
+            }
+            if(savevideo)
+                *writer << yoloRet;
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
             cv::waitKey(1);
         }
         else
         {
+            if(writer == nullptr)
+            {
+                Size s(ret.size().width, ret.size().height);
+                writer = new VideoWriter("myvideo.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
+                //检查是否成功创建
+                if (!writer->isOpened())
+                {
+                    cout << "Can not create video file.\n" << endl;
+                    return -1;
+                }
+            }
+            if(savevideo)
+                *writer << ret;
             cv::imshow("ret", ret);
             // cv::imshow("up", stitcherOut[0]);
             // cv::imshow("down", stitcherOut[1]);

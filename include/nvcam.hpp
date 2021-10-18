@@ -787,7 +787,7 @@ public:
             ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
                     strerror(errno), errno);
         
-        printf("read_frame ctx.cam_fd:%d ok!!!\n", ctx.cam_fd);
+        // printf("read_frame ctx.cam_fd:%d ok!!!\n", ctx.cam_fd);
     }
 
     void run()

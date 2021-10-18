@@ -237,7 +237,7 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
         } 
     }
 
-    nvEncoder.pubTargetData(sendData);
+    nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
 
     detret_all.insert(detret_all.end(),detret_left.begin(),detret_left.end());
     detret_all.insert(detret_all.end(),detret_right.begin(),detret_right.end());
@@ -304,7 +304,7 @@ imageProcessor::imageProcessor() {
     float conf_thresh=0.8;
     detNN.init(net, n_classes, n_batch, conf_thresh);
 
-    int ret = pthread_create(&tid, NULL, canRecv, NULL);
+    int ret = pthread_create(&tid, NULL, canRecv, NULL);  //为can接收程序创建线程
     if (ret != 0)
     {
         cout << "pthread_create error: error_code=" << ret << endl;

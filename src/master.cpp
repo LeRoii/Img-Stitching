@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
 
     Mat rets[USED_CAMERA_NUM];
 
-    imageProcessor nvProcessor;
+    imageProcessor nvProcessor;     //图像处理类
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
@@ -419,6 +419,7 @@ int main(int argc, char *argv[])
 
             cv::Mat yoloRet;
             auto start = std::chrono::steady_clock::now();
+            
             if(ctl_command.use_ssr || start_ssr) {
                 ret = nvProcessor.SSR(ret);
             }

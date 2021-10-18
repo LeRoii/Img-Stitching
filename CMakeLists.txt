@@ -23,13 +23,10 @@ set(COMMONCLS /usr/src/jetson_multimedia_api/samples/common/classes)
 add_subdirectory(cudasrc)
 include_directories(cudasrc)
 
-
-
 set(OpenCV_DIR "/usr/local/share/OpenCV/OpenCVConfig.cmake")
 find_package( OpenCV 3 REQUIRED )
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
-
 
 message(STATUS "OpenCV版本: ${OpenCV_VERSION}")
 message(STATUS "    头文件目录：${OpenCV_INCLUDE_DIRS}")
@@ -46,28 +43,22 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 add_compile_options(-std=c++11 -g)
 # add_definitions(-DDEBUG)
 
-
-# compile
-file(GLOB tkdnn_CUSRC "src/tkDNN/kernels/*.cu" )
 cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CUDA_INCLUDE_DIRS} )
 
 set(NVENCODER_SOURCE  src/nvencoder/jetsonEncoder.cpp
         src/nvencoder/udp_publisher.cpp)
 
-
-    set(COMMONCLSFILES
-        ${COMMONCLS}/NvBuffer.cpp
-        ${COMMONCLS}/NvElement.cpp
-        ${COMMONCLS}/NvElementProfiler.cpp
-        ${COMMONCLS}/NvEglRenderer.cpp
-        ${COMMONCLS}/NvLogging.cpp
-        ${COMMONCLS}/NvV4l2Element.cpp
-        ${COMMONCLS}/NvV4l2ElementPlane.cpp
-        ${COMMONCLS}/NvVideoEncoder.cpp
-        ${COMMONCLS}/NvVideoDecoder.cpp
-        ${COMMONCLS}/NvLogging.cpp)
-    
-                      
+set(COMMONCLSFILES
+    ${COMMONCLS}/NvBuffer.cpp
+    ${COMMONCLS}/NvElement.cpp
+    ${COMMONCLS}/NvElementProfiler.cpp
+    ${COMMONCLS}/NvEglRenderer.cpp
+    ${COMMONCLS}/NvLogging.cpp
+    ${COMMONCLS}/NvV4l2Element.cpp
+    ${COMMONCLS}/NvV4l2ElementPlane.cpp
+    ${COMMONCLS}/NvVideoEncoder.cpp
+    ${COMMONCLS}/NvVideoDecoder.cpp
+    ${COMMONCLS}/NvLogging.cpp)
 
 include_directories(
     ${CUDA_INCLUDE_DIRS}

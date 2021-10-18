@@ -23,28 +23,43 @@
 #include <netinet/in.h>
 #include <time.h>
 #include <arpa/inet.h>
-
+#include <pthread.h>
 #include "yolo_v2_class.hpp"
 #include "Yolo3Detection.h"
 
-
+typedef struct
+{
+    bool use_dehaze; //电子去雾开关
+    bool use_ssr; //图像增强开关
+    bool bright_method; //亮度调节模式，1为手动，0为自动
+    unsigned char bright;
+    bool contrast_method; //对比度调节摸索，1为手动，0为自动
+    unsigned char contrast; 
+    bool use_flip;  //图像翻转开关
+    bool use_detect; //图像十八开关
+    bool use_cross; //电十字加载/消隐，1为加载，0为消隐
+    bool video_save;    //视频存储开关
+    bool self_check;    //自检开关
+    bool open_window; //开窗局部放大开关
+    bool turn_ctl;  //转台控制开关
+    int turn_ctl_angle;
+} canCmd;
 
 class imageProcessor
 {
     public:
     imageProcessor();
     cv::Mat Process(cv::Mat img);
-    void publishImage(cv::Mat img);
-    cv::Mat SSR(cv::Mat input);
-    controlData getCtlCommand();
+    void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
+    cv::Mat SSR(cv::Mat input);     //图像增强
+    controlData getCtlCommand();    //UDP通讯获得上位机控制命令
 
     private:
-    cv::Mat channel_process(cv::Mat R);
-    cv::Mat getROIimage(cv::Mat srcImg);
-    cv::Mat ImageDetect(cv::Mat img, std::vector<int> &detret);
-    void cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img);
-    cv::Mat processImage(std::vector<cv::Mat> ceil_img);
-
+    cv::Mat channel_process(cv::Mat R);     //对图像单通道进行增强
+    cv::Mat getROIimage(cv::Mat srcImg);    //不改变原图宽高比的情况下，将图像填充成方形
+    cv::Mat ImageDetect(cv::Mat img, std::vector<int> &detret);     //目标检测
+    void cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img);  //将拼接好的图像裁成2*1图像块并存储到vector中
+    cv::Mat processImage(std::vector<cv::Mat> ceil_img);    //调用图像裁剪、检测和检测结果拼接、UDP发送目标信息、CAN发送目标信息
 };
 
 #endif

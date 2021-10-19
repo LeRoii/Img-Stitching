@@ -27,6 +27,10 @@ set(OpenCV_DIR "/usr/local/share/OpenCV/OpenCVConfig.cmake")
 find_package( OpenCV 3 REQUIRED )
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
+if(NOT TARGET spdlog)
+    # Stand-alone build
+    find_package(spdlog REQUIRED)
+endif()
 
 message(STATUS "OpenCV版本: ${OpenCV_VERSION}")
 message(STATUS "    头文件目录：${OpenCV_INCLUDE_DIRS}")
@@ -42,6 +46,7 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_compile_options(-std=c++11 -g)
 # add_definitions(-DDEBUG)
+add_definitions(-DSPDLOG_DEBUG_ON )
 
 cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CUDA_INCLUDE_DIRS} )
 
@@ -139,7 +144,8 @@ target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
 -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
--L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
+-L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+spdlog::spdlog)
 
 target_link_libraries(cameracuda  
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  

@@ -2,6 +2,10 @@
 #include <opencv2/opencv.hpp>
 #include "ocvstitcher.hpp"
 
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+
+#include "spdlog/spdlog.h"
+
 // #include "imageProcess.h"
 
 // void Stringsplit(string str, const char split, vector<string>& res)
@@ -145,9 +149,98 @@ int main()
     // time_t tt = chrono::system_clock::to_time_t(now);
     // cout << "string format: " << ctime(&tt) << endl;
 
-    std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-    struct std::tm * ptm = std::localtime(&tt);
-    std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
+    // std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
+    // struct std::tm * ptm = std::localtime(&tt);
+    // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
+
+    /*
+    vector<Mat> cameraR;
+    Mat cameraK;
+    cameraK = Mat(Size(3,3), CV_32FC1);
+    for(int i=0;i<4;i++)
+        cameraR.push_back(Mat(Size(3,3), CV_32FC1));
+
+    vector<string> res;
+    string filename = "cameraparaout_2.txt";
+    std::ifstream fin(filename, std::ios::in);
+    if(fin.is_open())
+    {
+        int linenum = 0;
+        int paranum = 0;
+        std::string str;
+
+        while(getline(fin,str))
+        {
+            linenum++;
+            if (std::string::npos != str.find(":"))
+            {
+                paranum++;
+            }
+        }
+
+        fin.clear();
+        fin.seekg(0, ios::beg);
+
+        cout<<"linenum:"<<linenum<<",paranum:"<<paranum<<endl;
+
+        for(int i=0;i<7*(paranum-1);i++)
+            getline(fin,str);
+
+        cout<<"in if"<<endl;
+        
+        fin >> str;
+        cout<<str<<endl;
+        fin >> str;
+        Stringsplit(str, ',', res);
+        for(int i=0;i<3;i++)
+        {
+            for(int j=0;j<3;j++)
+            {
+                cameraK.at<float>(i,j) = stof(res[i*3+j]);
+            }
+        }
+        cout<<cameraK<<endl;
+
+        for(int i=0;i<4;i++)
+        {
+            fin >> str;
+            cout<<str<<endl;
+            res.clear();
+            Stringsplit(str, ',', res);
+            for(int mi=0;mi<3;mi++)
+            {
+                for(int mj=0;mj<3;mj++)
+                {
+                    cameraR[i].at<float>(mi,mj) = stof(res[mi*3+mj]);
+                }
+            }
+
+            cout<<cameraR[i]<<endl;
+        }
+        fin >> str;
+        float warped_image_scale = stof(str);
+    }
+    */
+
+    spdlog::info("Welcome to spdlog!");
+    spdlog::error("Some error message with arg: {}", 1);
+    
+    spdlog::warn("Easy padding in numbers like {:08d}", 12);
+    spdlog::critical("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
+    spdlog::info("Support for floats {:03.2f}", 1.23456);
+    spdlog::info("Positional args are {1} {0}..", "too", "supported");
+    spdlog::info("{:<30}", "left aligned");
+    
+    spdlog::set_level(spdlog::level::debug); // Set global log level to debug
+    spdlog::debug("This message should be displayed..");    
+    
+    // change log pattern
+    spdlog::set_pattern("[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
+    
+    // Compile time log levels
+    // define SPDLOG_ACTIVE_LEVEL to desired level
+    SPDLOG_TRACE("Some trace message with param {}", 42);
+    SPDLOG_DEBUG("Some debug message");
            
     return 0;
 }

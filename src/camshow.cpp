@@ -115,17 +115,6 @@ int main()
         std::thread server(serverCap);
         server.join();
 
-        // int ok = 1;
-        // ok *= cameras[0]->getFrame(upImgs[0]);
-        // ok *= cameras[1]->getFrame(upImgs[1]);
-        // ok *= cameras[2]->getFrame(upImgs[2]);
-        // ok *= cameras[3]->getFrame(upImgs[3]);
-        // ok *= cameras[4]->getFrame(downImgs[0]);
-        // ok *= cameras[5]->getFrame(downImgs[1]);
-
-        // if(!ok)
-        //     continue;
-
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
         cameras[2]->getFrame(upImgs[2]);
@@ -153,8 +142,8 @@ int main()
         // cv::waitKey(1);
 
         cv::Mat up,down, ret;
-        cv::hconcat(vector<cv::Mat>{upImgs[0], upImgs[1], upImgs[2], upImgs[3]}, up);
-        cv::hconcat(vector<cv::Mat>{downImgs[0], downImgs[1], downImgs[2], downImgs[3]}, down);
+        cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+        cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
         cv::vconcat(up, down, ret);
         cv::imshow("m_dev_name", ret);
 

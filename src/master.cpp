@@ -7,17 +7,14 @@
 #include "config.h"
 #include "ocvstitcher.hpp"
 
-
 #define CAMERA_NUM 8
 #define USED_CAMERA_NUM 6
 #define BUF_LEN 65540 
-
 
 using namespace cv;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
-
 
 char buffer[BUF_LEN]; // Buffer for echo string
 
@@ -25,8 +22,6 @@ vector<Mat> upImgs(4);
 vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
-
-
 
 void serverCap()
 {
@@ -41,25 +36,25 @@ void serverCap()
     } while (recvMsgSize > sizeof(int));
     int total_pack = ((int * ) buffer)[0];
 
-    cout << "expecting length of packs:" << total_pack << endl;
+    spdlog::debug("expecting length of packs: {}", total_pack);
     char * longbuf = new char[PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
         recvMsgSize = sock.recvFrom(buffer, BUF_LEN, sourceAddress, sourcePort);
         if (recvMsgSize != PACK_SIZE) {
-            cerr << "Received unexpected size pack:" << recvMsgSize << endl;
+            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
             free(longbuf);
             return;
         }
         memcpy( & longbuf[i * PACK_SIZE], buffer, PACK_SIZE);
     }
 
-    cout << "Received packet from " << sourceAddress << ":" << sourcePort << endl;
+    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
 
     Mat rawData = Mat(1, PACK_SIZE * total_pack, CV_8UC1, longbuf);
     recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    cout << "size:" << recvedFrame.size() << endl;
+    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
     if (recvedFrame.size().width == 0) {
-        cerr << "decode failure!" << endl;
+        spdlog::warn("decode failure!");
         // continue;
     }
     downImgs[2] = recvedFrame(Rect(0,0,480, 270)).clone();
@@ -71,26 +66,20 @@ void serverCap()
     free(longbuf);
 }
 
-
-
 bool saveret = false;
 bool detect = false;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
-int initmode = 1;
 
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
-// bool inputOk[2] = false;
-// bool outputOk = false;
 
 void stitcherTh(int id, ocvStitcher *stitcher)
 {
     while(1)
     {
-        LOGLN("stitcherTh!!"<<id);
         std::unique_lock<std::mutex> lock(g_stitcherMtx[id]);
         while(!stitcher->inputOk)
             stitcherCon[id].wait(lock);
@@ -128,8 +117,10 @@ parse_cmdline(int argc, char **argv)
                 break;
             case 'h':
                 start_ssr = true;
+                break;
             case  'v':
                 savevideo = true;
+                break;
             default:
                 break;
         }
@@ -139,6 +130,7 @@ parse_cmdline(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
+    spdlog::set_level(spdlog::level::debug);
     parse_cmdline(argc, argv);
 
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,1,"/dev/video0"},
@@ -165,9 +157,7 @@ int main(int argc, char *argv[])
         }   
     }
     while(ostitcherUp.init(upImgs, initonline) != 0);
-    // while(ostitcherUp.simpleInit(upImgs) != 0);
-
-        LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
+    spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
     if(saveret)
     {
@@ -185,9 +175,7 @@ int main(int argc, char *argv[])
         downImgs[1] = cameras[5]->m_ret;
     }
     while(ostitcherDown.init(downImgs, initonline) != 0);
-    // while(ostitcherDown.simpleInit(downImgs) != 0);
-
-    LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+    spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
     if(saveret)
     {
@@ -334,7 +322,7 @@ int main(int argc, char *argv[])
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
 
-        LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+        spdlog::debug("read takes : {} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
         t = cv::getTickCount();
 
         // cv::imshow("ret", upImgs[2]);
@@ -414,25 +402,27 @@ int main(int argc, char *argv[])
             controlData ctl_command;
 
             ctl_command = nvProcessor.getCtlCommand();
-            std::cout<<"***********get command: ";
-            std::cout<<ctl_command.use_flip<<","<<ctl_command.use_ssr<<","<<ctl_command.bright<<","<<ctl_command.contrast<<std::endl;
+            spdlog::info("***********get command: ");
+            spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
 
             cv::Mat yoloRet;
-            auto start = std::chrono::steady_clock::now();
+            // auto start = std::chrono::steady_clock::now();
+            t = cv::getTickCount();
             
             if(ctl_command.use_ssr || start_ssr) {
                 ret = nvProcessor.SSR(ret);
             }
             yoloRet = nvProcessor.Process(ret);
-            auto end = std::chrono::steady_clock::now();
-            std::chrono::duration<double> spent = end - start;
-            std::cout << " #############detect Time############: " << spent.count() << " sec \n";
+            
+            // auto end = std::chrono::steady_clock::now();
+            // std::chrono::duration<double> spent = end - start;
+            // std::cout << " #############detect Time############: " << spent.count() << " sec \n";
+            spdlog::debug("detect takes : {} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
            if(ctl_command.use_detect || detect){
                 nvProcessor.publishImage(yoloRet);
             } else{
                 nvProcessor.publishImage(ret);
             }
-            
             
             cv::imshow("yolo", yoloRet);
 
@@ -443,7 +433,7 @@ int main(int argc, char *argv[])
                 //检查是否成功创建
                 if (!writer->isOpened())
                 {
-                    cout << "Can not create video file.\n" << endl;
+                    spdlog::critical("Can not create video file.");
                     return -1;
                 }
             }
@@ -462,7 +452,7 @@ int main(int argc, char *argv[])
                 //检查是否成功创建
                 if (!writer->isOpened())
                 {
-                    cout << "Can not create video file.\n" << endl;
+                    spdlog::critical("Can not create video file.");
                     return -1;
                 }
             }
@@ -481,7 +471,7 @@ int main(int argc, char *argv[])
             cv::imwrite("down.png", stitcherOut[1]);
         }
 
-        LOGLN("******all takes : " << ((getTickCount() - all) / getTickFrequency()) * 1000 << " ms");
+        spdlog::debug("******all takes: {} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
 
     }
     return 0;

@@ -23,6 +23,10 @@ vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
 
+
+int stitcherinputWidth = 1920/4;
+int stitcherinputHeight = 1080/4;
+
 void serverCap()
 {
     downImgs.clear();
@@ -57,8 +61,8 @@ void serverCap()
         spdlog::warn("decode failure!");
         // continue;
     }
-    downImgs[2] = recvedFrame(Rect(0,0,480, 270)).clone();
-    downImgs[3] = recvedFrame(Rect(480,0,480, 270)).clone();
+    downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
     // imwrite("7.png", downImgs[2]);
     // imwrite("8.png", downImgs[3]);
     // imshow("recv", recvedFrame);
@@ -133,20 +137,22 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     parse_cmdline(argc, argv);
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,1,"/dev/video0"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,2,"/dev/video1"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,3,"/dev/video2"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,4,"/dev/video3"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,5,"/dev/video4"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,6,"/dev/video5"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,7,"/dev/video6"}};
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"}};
 
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
-    ocvStitcher ostitcherUp(960/2, 540/2, 1);
-    ocvStitcher ostitcherDown(960/2, 540/2, 2);
+    // ocvStitcher ostitcherUp(960/2, 540/2, 1);
+    // ocvStitcher ostitcherDown(960/2, 540/2, 2);
+    ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1);
+    ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2);
 
     do{
         upImgs.clear();
@@ -159,13 +165,13 @@ int main(int argc, char *argv[])
     while(ostitcherUp.init(upImgs, initonline) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    if(saveret)
-    {
-        imwrite("1.png", upImgs[0]);
-        imwrite("2.png", upImgs[1]);
-        imwrite("3.png", upImgs[2]);
-        imwrite("4.png", upImgs[3]);
-    }
+    // if(saveret)
+    // {
+    //     imwrite("1.png", upImgs[0]);
+    //     imwrite("2.png", upImgs[1]);
+    //     imwrite("3.png", upImgs[2]);
+    //     imwrite("4.png", upImgs[3]);
+    // }
     
     do{
         serverCap();
@@ -177,13 +183,13 @@ int main(int argc, char *argv[])
     while(ostitcherDown.init(downImgs, initonline) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    if(saveret)
-    {
-        imwrite("5.png", downImgs[0]);
-        imwrite("6.png", downImgs[1]);
-        imwrite("7.png", downImgs[2]);
-        imwrite("8.png", downImgs[3]);
-    }
+    // if(saveret)
+    // {
+    //     imwrite("5.png", downImgs[0]);
+    //     imwrite("6.png", downImgs[1]);
+    //     imwrite("7.png", downImgs[2]);
+    //     imwrite("8.png", downImgs[3]);
+    // }
 
     // if(initonline)
     // {
@@ -322,7 +328,7 @@ int main(int argc, char *argv[])
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
 
-        spdlog::debug("read takes : {} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
+        spdlog::debug("read takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
         t = cv::getTickCount();
 
         // cv::imshow("ret", upImgs[2]);
@@ -385,17 +391,17 @@ int main(int argc, char *argv[])
         // cv::imshow("1", cam0.m_ret);
         // cv::imwrite("1.png", cam0.m_ret);
 
-        if(saveret)
-        {
-            imwrite("1.png", upImgs[0]);
-            imwrite("2.png", upImgs[1]);
-            imwrite("3.png", upImgs[2]);
-            imwrite("4.png", upImgs[3]);
-            imwrite("5.png", downImgs[0]);
-            imwrite("6.png", downImgs[1]);
-            imwrite("7.png", downImgs[2]);
-            imwrite("8.png", downImgs[3]);
-        }
+        // if(saveret)
+        // {
+        //     imwrite("1.png", upImgs[0]);
+        //     imwrite("2.png", upImgs[1]);
+        //     imwrite("3.png", upImgs[2]);
+        //     imwrite("4.png", upImgs[3]);
+        //     imwrite("5.png", downImgs[0]);
+        //     imwrite("6.png", downImgs[1]);
+        //     imwrite("7.png", downImgs[2]);
+        //     imwrite("8.png", downImgs[3]);
+        // }
 
         if(detect)
         {
@@ -417,7 +423,7 @@ int main(int argc, char *argv[])
             // auto end = std::chrono::steady_clock::now();
             // std::chrono::duration<double> spent = end - start;
             // std::cout << " #############detect Time############: " << spent.count() << " sec \n";
-            spdlog::debug("detect takes : {} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
+            spdlog::debug("detect takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
            if(ctl_command.use_detect || detect){
                 nvProcessor.publishImage(yoloRet);
             } else{
@@ -471,7 +477,7 @@ int main(int argc, char *argv[])
             cv::imwrite("down.png", stitcherOut[1]);
         }
 
-        spdlog::debug("******all takes: {} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
+        spdlog::debug("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
 
     }
     return 0;

@@ -697,7 +697,7 @@ class ocvStitcher
         blender->blend(result, result_mask);
         result.convertTo(ret, CV_8U);
 
-        spdlog::debug("stitcher process takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+        spdlog::debug("stitcher process takes : {:03.3f} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
         // imwrite("ocvprocess.png", ret);
     }
 
@@ -734,7 +734,7 @@ class ocvStitcher
             blenderMask[img_idx] = seam_mask & compensatorMaskWarped[img_idx];
         }
 
-        spdlog::debug("updateMask takes : {} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
+        spdlog::debug("updateMask takes : {:03.2f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
     }
 
 

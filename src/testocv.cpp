@@ -1,10 +1,14 @@
 #include <chrono>
+#include <termio.h>
+#include <stdio.h>
 #include <opencv2/opencv.hpp>
-#include "ocvstitcher.hpp"
+// #include "ocvstitcher.hpp"
 
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 
 #include "spdlog/spdlog.h"
+
+using namespace cv;
 
 // #include "imageProcess.h"
 
@@ -17,6 +21,25 @@
 //         res.push_back(token);
 //     }
 // }
+
+int scanKeyboard()
+{
+    int in;
+    struct termios new_settings;
+    struct termios stored_settings;
+    tcgetattr(0,&stored_settings);
+    new_settings = stored_settings;
+    new_settings.c_lflag &= (~ICANON);
+    new_settings.c_cc[VTIME] = 0;
+    tcgetattr(0,&stored_settings);
+    new_settings.c_cc[VMIN] = 1;
+    tcsetattr(0,TCSANOW,&new_settings);
+
+    in = getchar();
+
+    tcsetattr(0,TCSANOW,&stored_settings);
+    return in;
+}
 
 int main()
 {
@@ -222,6 +245,7 @@ int main()
     }
     */
 
+   /*
     spdlog::info("Welcome to spdlog!");
     spdlog::error("Some error message with arg: {}", 1);
     
@@ -241,6 +265,21 @@ int main()
     // define SPDLOG_ACTIVE_LEVEL to desired level
     SPDLOG_TRACE("Some trace message with param {}", 42);
     SPDLOG_DEBUG("Some debug message");
+    */
+
+ 
+    // while(1){
+    //     printf(":%d",scanKeyboard());
+    // }
+
+    printf("aaaaaaaa\n");
+    Mat img = imread("/home/nvidia/ssd/code/0929IS/buildbk/1.jpg");
+    cv::resize(img, img, cv::Size(1920, 1080));
+    cv::namedWindow("FreespaceSeg", CV_WINDOW_NORMAL);
+    cv::setWindowProperty("FreespaceSeg", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+    cv::moveWindow("FreespaceSeg", 0, 0);
+    cv::imshow("FreespaceSeg", img);
+    cv::waitKey(0);
            
     return 0;
 }

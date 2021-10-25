@@ -4,6 +4,9 @@ project(cvtest)
 if(COMMAND cmake_policy)
     cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
+
+#add -no-pie to generate executable files, otherwise generate shared library
+# set(CMAKE_CXX_FLAGS "-no-pie -g -Wall")
 #-------------------------------------------------------------------------------
 # CUDA
 #-------------------------------------------------------------------------------
@@ -78,26 +81,27 @@ include_directories(
 # Build Node 
 #-------------------------------------------------------------------------------
 
-add_executable(${PROJECT_NAME} src/imageProcess.cpp src/xavier.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
+# add_executable(${PROJECT_NAME} src/imageProcess.cpp src/xavier.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 
 add_executable(camshow src/camshow.cpp src/PracticalSocket.cpp  ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 add_executable(sti src/sti.cpp )
 add_executable(sd src/stitching_detailed.cpp )
 add_executable(mo src/stithermo.cpp )
-add_executable(testocv src/testocv.cpp src/imageProcess.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+# add_executable(testocv src/testocv.cpp src/imageProcess.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(testocv src/testocv.cpp )
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
-target_link_libraries(${PROJECT_NAME}
-  ${tkdnn_LIBS}
-  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
-  ${OpenCV_LIBS}
-  ${GLUT_LIBRARY}
-  ${CUDA_LIBRARIES}
-   ${OPENGL_LIBRARY}
-  v4l2
-  yuyv2rgb
- )
+# target_link_libraries(${PROJECT_NAME}
+#   ${tkdnn_LIBS}
+#   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+#   ${OpenCV_LIBS}
+#   ${GLUT_LIBRARY}
+#   ${CUDA_LIBRARIES}
+#    ${OPENGL_LIBRARY}
+#   v4l2
+#   yuyv2rgb
+#  )
 
  target_link_libraries(master  
  -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
@@ -114,21 +118,21 @@ target_link_libraries(${PROJECT_NAME}
 # target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} ${GLUT_LIBRARY})
 # target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} ${GLUT_LIBRARY})
 
-target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/cfg/libtkDNN.so")
-target_link_libraries(${PROJECT_NAME} "/usr/local/cuda/lib64/libcudart.so")
-target_link_libraries(${PROJECT_NAME} "/usr/local/cuda/lib64/libnvrtc.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libcuda.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvbuf_utils.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvjpeg.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvosd.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libdrm.so.2")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libnvparsers.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libnvinfer.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libX11.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libEGL.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libGLESv2.so")
-target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libv4l2.so")
-target_link_libraries(${PROJECT_NAME}  "/usr/lib/aarch64-linux-gnu/libpthread.so")
+# target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/cfg/libtkDNN.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/local/cuda/lib64/libcudart.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/local/cuda/lib64/libnvrtc.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libcuda.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvbuf_utils.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvjpeg.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvosd.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libdrm.so.2")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libnvparsers.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libnvinfer.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libX11.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libEGL.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libGLESv2.so")
+# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libv4l2.so")
+# target_link_libraries(${PROJECT_NAME}  "/usr/lib/aarch64-linux-gnu/libpthread.so")
 
 # add_executable(calib calib.cpp )
 # target_link_libraries(cvtest yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
@@ -141,10 +145,12 @@ target_link_libraries(camshow  yuyv2rgb ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_
 target_link_libraries(sti   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 target_link_libraries(sd   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
+# target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
+# -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+#  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+# -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+# spdlog::spdlog)
 target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
--L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
- -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
--L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
 spdlog::spdlog)
 
 target_link_libraries(cameracuda  
@@ -152,3 +158,5 @@ target_link_libraries(cameracuda
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
      ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
      )
+
+install(TARGETS testocv RUNTIME DESTINATION /home/nvidia/ssd/code/0929IS)

@@ -38,15 +38,15 @@ typedef struct
 typedef struct
 {
     int target_header;
-    int target_id[20];
-    int target_x[20];
-    int target_y[20];
-    int target_w[20];
-    int target_h[20];
-    int target_class[20];
-    int target_prob[20];
+    int target_id[200];
+    int target_x[200];
+    int target_y[200];
+    int target_w[200];
+    int target_h[200];
+    int target_class[200];
+    int target_prob[200];
     int target_num;
-    float target_velocity[20];
+    float target_velocity[200];
 } targetInfo;
 
 typedef struct

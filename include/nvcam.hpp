@@ -47,12 +47,10 @@
 #include "nvbuf_utils.h"
 
 #include "camera_v4l2-cuda.h"
+#include "spdlog/spdlog.h"
 
 #define LOG(msg) std::cout << msg
 #define LOGLN(msg) std::cout << msg << std::endl
-
-
-#define MJPEG_EOS_SEARCH_SIZE 4096
 
 static bool quit = false;
 
@@ -502,7 +500,8 @@ public:
         ok &= start_stream(&ctx);
 
         if(!ok)
-            printf("ERROR: %s(): (line:%d)\n", __FUNCTION__, __LINE__);
+            // printf("ERROR: %s(): (line:%d)\n", __FUNCTION__, __LINE__);
+            spdlog::critical("ERROR: {}(): (line:{})", __FUNCTION__, __LINE__);
 
         NvBufferCreateParams bufparams = {0};
         retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
@@ -513,7 +512,7 @@ public:
         bufparams.colorFormat = NvBufferColorFormat_ARGB32;
         bufparams.nvbuf_tag = NvBufferTag_CAMERA;
         if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
-                printf("Failed to create NvBuffer");
+                spdlog::critical("Failed to create NvBuffer");
 
         m_argb = cv::Mat(bufparams.height, bufparams.width, CV_8UC4);
 
@@ -532,9 +531,7 @@ public:
         cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
         cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
 
-        printf("!!!!!![%d] cam init ok!!!!!!!!!\n", m_id);
-
-
+        spdlog::info("!!!!!![%d] cam init ok!!!!!!!!!\n", m_id);
     }
     ~nvCam()
     {
@@ -715,10 +712,27 @@ public:
         /* Dequeue a camera buff */
         memset(&v4l2_buf, 0, sizeof(v4l2_buf));
         v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (ctx.capture_dmabuf)
-            v4l2_buf.memory = V4L2_MEMORY_DMABUF;
-        else
-            v4l2_buf.memory = V4L2_MEMORY_MMAP;
+        // if (ctx.capture_dmabuf)
+        //     v4l2_buf.memory = V4L2_MEMORY_DMABUF;
+        // else
+        //     v4l2_buf.memory = V4L2_MEMORY_MMAP;
+        
+        // if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
+        //     ERROR_RETURN("Failed to dequeue camera buff: %s (%d)",
+        //             strerror(errno), errno);
+
+        // ctx.frame++;
+
+        // if (ctx.capture_dmabuf) {
+        //     /* Cache sync for VIC operation since the data is from CPU */
+        //     NvBufferMemSyncForDevice(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0,
+        //             (void**)&ctx.g_buff[v4l2_buf.index].start);
+        // } else {
+        //     /* Copies raw buffer plane contents to an NvBuffer plane */
+        //     Raw2NvBuffer(ctx.g_buff[v4l2_buf.index].start, 0,
+        //                 ctx.cam_w, ctx.cam_h, ctx.g_buff[v4l2_buf.index].dmabuff_fd);
+        // }
+        v4l2_buf.memory = V4L2_MEMORY_DMABUF;
         
         if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
             ERROR_RETURN("Failed to dequeue camera buff: %s (%d)",
@@ -726,15 +740,9 @@ public:
 
         ctx.frame++;
 
-        if (ctx.capture_dmabuf) {
-            /* Cache sync for VIC operation since the data is from CPU */
-            NvBufferMemSyncForDevice(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0,
-                    (void**)&ctx.g_buff[v4l2_buf.index].start);
-        } else {
-            /* Copies raw buffer plane contents to an NvBuffer plane */
-            Raw2NvBuffer(ctx.g_buff[v4l2_buf.index].start, 0,
-                        ctx.cam_w, ctx.cam_h, ctx.g_buff[v4l2_buf.index].dmabuff_fd);
-        }
+        /* Cache sync for VIC operation since the data is from CPU */
+        NvBufferMemSyncForDevice(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0,
+                (void**)&ctx.g_buff[v4l2_buf.index].start);
 
         /*  Convert the camera buffer from YUV422 to YUV420P */
         // if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, ctx.render_dmabuf_fd,
@@ -748,32 +756,13 @@ public:
         if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb.data))
             ERROR_RETURN("Failed to NvBuffer2Raw");
 
-        cv::cvtColor(m_argb, m_distoredImg, cv::COLOR_RGBA2RGB);
-        cv::Mat tmp;
+        // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
 
-        /*undistored*********/
-		// gettimeofday(&ts, NULL);
-        // printf("[%lu.%lu]\tundistor start\n", ts.tv_sec, ts.tv_usec);
-        // cv::imwrite(filename+"dist.png", m_ret);
-        // cv::Size image_size = m_distoredImg.size();
-        // cv::Size undistorSize = image_size;
-        // cv::Mat mapx = cv::Mat(undistorSize,CV_32FC1);
-        // cv::Mat mapy = cv::Mat(undistorSize,CV_32FC1);
-        // cv::Mat R = cv::Mat::eye(3,3,CV_32F);
-        // cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
-        // cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
-        // cv::Mat t = cv::Mat(undistorSize,CV_8UC3);
+        cv::cvtColor(m_argb, m_distoredImg, cv::COLOR_RGBA2RGB);
+        // /*undistored*********/
         cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
-        // cv::imwrite(std::to_string(m_id)+"-undist.png", m_ret);
         m_distoredImg = m_distoredImg(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
-        // m_mtx[m_id].lock();
         cv::resize(m_distoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
-        // cv::imwrite(std::to_string(m_id)+"-undist.png", m_ret);
-        // m_mtx[m_id].unlock();
-		// cv::cvtColor(m_ret, m_ret, cv::COLOR_BGR2RGB);
-        // cv::imwrite(filename+"undist.png", m_ret);
-		// gettimeofday(&ts, NULL);
-        // printf("[%lu.%lu]\tundistor end\n", ts.tv_sec, ts.tv_usec);
         
         /*undistored end*/
 
@@ -814,23 +803,6 @@ public:
 
     int getFrame(cv::Mat &mat)
 	{
-		// // printf("getFrame start!!!!!!!!!!!!!!!\n");
-		// if(m_queue.empty())
-		// {
-		// 	printf("getFrame queue empty!!!!!!!!\n");
-		// 	return 0;
-		// }
-		// // std::lock_guard<std::mutex> lock(g_mtx);
-		// m_mtx[m_id].lock();
-		// mat = m_queue.front().clone();
-		// m_queue.pop_front();
-		// m_mtx[m_id].unlock();
-
-        // if(mat.size().width > 0)
-        //     return 1;
-        // else 
-        //     return 0;
-
         std::unique_lock<std::mutex> lock(m_mtx[m_id]);
         while(m_queue.empty())
         {
@@ -842,16 +814,6 @@ public:
         m_queue.pop();
         con[m_id].notify_all();
 
-        // std::unique_lock<std::mutex> lock(m_mtx[m_id]);
-        // if(m_queue.empty())
-        // {
-        //     LOGLN("empty::"<<m_id);
-        //     con[m_id].notify_all();
-        //     return 0;
-        // }
-        // mat = m_queue.front().clone();
-        // m_queue.pop();
-        // con[m_id].notify_all();
         return 1;
 	}
 

@@ -4,28 +4,25 @@
 #include "imageProcess.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
-#include "config.h"
+// #include "config.h"
 #include "ocvstitcher.hpp"
+#include "stitcherconfig.h"
 
-#define CAMERA_NUM 8
-#define USED_CAMERA_NUM 6
-#define BUF_LEN 65540 
+// #define CAMERA_NUM 8
+// #define USED_CAMERA_NUM 6
+// #define BUF_LEN 65540 
 
 using namespace cv;
 
-unsigned short servPort = 10001;
-UDPSocket sock(servPort);
+static unsigned short servPort = 10001;
+static UDPSocket sock(servPort);
 
-char buffer[BUF_LEN]; // Buffer for echo string
+static char buffer[SLAVE_PCIE_UDP_BUF_LEN]; // Buffer for echo string
 
 vector<Mat> upImgs(4);
 vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
-
-
-int stitcherinputWidth = 1920/4;
-int stitcherinputHeight = 1080/4;
 
 void serverCap()
 {
@@ -36,25 +33,25 @@ void serverCap()
     Mat recvedFrame;
 
     do {
-        recvMsgSize = sock.recvFrom(buffer, BUF_LEN, sourceAddress, sourcePort);
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
     } while (recvMsgSize > sizeof(int));
     int total_pack = ((int * ) buffer)[0];
 
     spdlog::debug("expecting length of packs: {}", total_pack);
-    char * longbuf = new char[PACK_SIZE * total_pack];
+    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
-        recvMsgSize = sock.recvFrom(buffer, BUF_LEN, sourceAddress, sourcePort);
-        if (recvMsgSize != PACK_SIZE) {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
             spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
             free(longbuf);
             return;
         }
-        memcpy( & longbuf[i * PACK_SIZE], buffer, PACK_SIZE);
+        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
     }
 
     spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
 
-    Mat rawData = Mat(1, PACK_SIZE * total_pack, CV_8UC1, longbuf);
+    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
     recvedFrame = imdecode(rawData, IMREAD_COLOR);
     spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
     if (recvedFrame.size().width == 0) {

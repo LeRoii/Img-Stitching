@@ -78,13 +78,13 @@ namespace udp_publisher
     // printf("\n");
 
 
-    int total_pack = 1+(length-1)/PACK_SIZE;
+    int total_pack = 1+(length-1)/UP_UDP_PACK_SIZE;
     int ibuf[1];
     ibuf[0] = total_pack;
     sendto(m_sockfd,ibuf,sizeof(int),0,(sockaddr *)&send_addr,sizeof(send_addr));
     std::cout<<"pack number : "<<total_pack<<std::endl;
     for(int i = 0; i<total_pack; i++){
-      sendto(m_sockfd,&image[i*PACK_SIZE],PACK_SIZE,0,(sockaddr *)&send_addr,sizeof(send_addr)) ;
+      sendto(m_sockfd,&image[i*UP_UDP_PACK_SIZE],UP_UDP_PACK_SIZE,0,(sockaddr *)&send_addr,sizeof(send_addr)) ;
     }
 
   }

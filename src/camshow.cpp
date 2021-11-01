@@ -4,13 +4,13 @@
 
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
-#include "config.h"
 #include "ocvstitcher.hpp"
+#include "stitcherconfig.h"
 
 
-#define CAMERA_NUM 8
-#define USED_CAMERA_NUM 6
-#define BUF_LEN 65540 
+// #define CAMERA_NUM 8
+// #define USED_CAMERA_NUM 6
+// #define BUF_LEN 65540 
 
 #define LOG(msg) std::cout << msg
 #define LOGLN(msg) std::cout << msg << std::endl
@@ -23,8 +23,7 @@ Mat upRet, downRet;
 
 unsigned short servPort = 10001;
 UDPSocket sock(servPort);
-char buffer[BUF_LEN]; // Buffer for echo string
-
+char buffer[SLAVE_PCIE_UDP_BUF_LEN]; // Buffer for echo string
 
 void serverCap()
 {
@@ -35,35 +34,33 @@ void serverCap()
     Mat recvedFrame;
 
     do {
-        recvMsgSize = sock.recvFrom(buffer, BUF_LEN, sourceAddress, sourcePort);
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
     } while (recvMsgSize > sizeof(int));
     int total_pack = ((int * ) buffer)[0];
 
-    cout << "expecting length of packs:" << total_pack << endl;
-    char * longbuf = new char[PACK_SIZE * total_pack];
+    spdlog::debug("expecting length of packs: {}", total_pack);
+    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
-        cout << "before recv msg" << endl;
-        recvMsgSize = sock.recvFrom(buffer, BUF_LEN, sourceAddress, sourcePort);
-        cout << "after recv msg recvMsgSize:" << recvMsgSize << endl;
-        if (recvMsgSize != PACK_SIZE) {
-            cerr << "Received unexpected size pack:" << recvMsgSize << endl;
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
+            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
             free(longbuf);
             return;
         }
-        memcpy( & longbuf[i * PACK_SIZE], buffer, PACK_SIZE);
+        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
     }
 
-    cout << "Received packet from " << sourceAddress << ":" << sourcePort << endl;
+    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
 
-    Mat rawData = Mat(1, PACK_SIZE * total_pack, CV_8UC1, longbuf);
+    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
     recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    cout << "size:" << recvedFrame.size() << endl;
+    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
     if (recvedFrame.size().width == 0) {
-        cerr << "decode failure!" << endl;
+        spdlog::warn("decode failure!");
         // continue;
     }
-    downImgs[2] = recvedFrame(Rect(0,0,480, 270)).clone();
-    downImgs[3] = recvedFrame(Rect(480,0,480, 270)).clone();
+    downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
     // imwrite("7.png", downImgs[2]);
     // imwrite("8.png", downImgs[3]);
     // imshow("recv", recvedFrame);
@@ -71,15 +68,25 @@ void serverCap()
     free(longbuf);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,1,"/dev/video0"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,2,"/dev/video1"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,3,"/dev/video2"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,4,"/dev/video3"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,5,"/dev/video4"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,6,"/dev/video5"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,7,"/dev/video6"}};
+    if(argc > 1)
+    {
+        printf("aaaaaaaaaaaaaa::::%c\n", argv[1][0]);
+        if(argv[1][0] <'0' || argv[1][0] > '8')
+        {
+            printf("invalid argument!!!\n");
+            return 0;
+        }
+    }
+
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"}};
 
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -112,8 +119,11 @@ int main()
         // for(auto& th:threads)
         //     th.join();
         
-        std::thread server(serverCap);
-        server.join();
+        if(argc == 1)
+        {
+            std::thread server(serverCap);
+            server.join();
+        }
 
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
@@ -141,14 +151,33 @@ int main()
         // cv::imshow("4", cameras[3]->m_ret);
         // cv::waitKey(1);
 
-        cv::Mat up,down, ret;
-        cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-        cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-        cv::vconcat(up, down, ret);
+        cv::Mat ret;
+        if(argc == 1)
+        {
+            cv::Mat up,down;
+            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+            cv::vconcat(up, down, ret);
+            
+        }
+        else
+        {
+            int idx = stoi(argv[1]);
+            
+            if(idx < 5)
+            {
+                ret = upImgs[idx-1];
+            }
+            else
+            {
+                ret = downImgs[idx-5];
+            }
+        }
+
         cv::imshow("m_dev_name", ret);
 
         // cv::imshow("1", upImgs[0]);
-        // cv::imshow("5", cameras[4]->m_ret);
+        // cv::imshow("5", cameras[0]->m_ret);
         // cv::imwrite("1.png", cam0.m_ret);
 
         cv::waitKey(1);

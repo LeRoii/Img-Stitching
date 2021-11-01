@@ -9,7 +9,7 @@
 #include <vector>
 #include <netinet/in.h>
 
-#define PACK_SIZE 6000
+#define UP_UDP_PACK_SIZE 6000
 
 namespace defaults
 {

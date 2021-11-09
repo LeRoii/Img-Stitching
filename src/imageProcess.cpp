@@ -137,7 +137,7 @@ cv::Mat imageProcessor::getROIimage(cv::Mat srcImg)
     return desImg;
 }
 
-cv::Mat imageProcessor::ImageDetect(cv::Mat img, std::vector<int> &detret)
+cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
 {
     std::vector<cv::Mat> batch_frame;
     std::vector<cv::Mat> batch_dnn_input;
@@ -162,7 +162,7 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat img, std::vector<int> &detret)
     return batch_frame.back();
 }
 
-void imageProcessor::cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img)
+void imageProcessor::cut_img(cv::Mat &src_img, std::vector<cv::Mat> &ceil_img)
 {  
     // int t = m * n; 
     int height = src_img.rows;  
@@ -200,7 +200,7 @@ cv::Mat imageProcessor::SSR(cv::Mat input) {
 }
 
 
-cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
+cv::Mat imageProcessor::processImage(std::vector<cv::Mat> &ceil_img) {
     std::vector<int> detret_left;
     std::vector<int> detret_right;
     std::vector<int> detret_all;
@@ -266,7 +266,7 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> ceil_img) {
 
 
 
-cv::Mat imageProcessor::Process(cv::Mat img){
+cv::Mat imageProcessor::Process(cv::Mat &img){
     std::vector<cv::Mat>  ceil_img;
     cv::Mat  yolo_result;
 
@@ -275,6 +275,43 @@ cv::Mat imageProcessor::Process(cv::Mat img){
     yolo_result = processImage(ceil_img);
     // publishImage(yolo_result);
     return yolo_result;
+}
+
+cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
+    std::vector<cv::Mat>  ceil_img;
+    cv::Mat  yolo_result;
+
+    std::vector<int> detret_all;
+    char center_str[10]={0};
+    cv::Mat ret = ImageDetect(img, detret_all);
+
+    //=======get target bbox, and send it to server========//
+    sendData.target_header=0xFFEEAABB;
+    sendData.target_num = detret_all.size()/6;
+    if(detret_all.size()>=6 ){
+        for(int i=0;i<detret_all.size()/6;i++){
+            sendData.target_id[i]=i;
+            sendData.target_x[i]=detret_all[6*i];
+            sendData.target_y[i]=detret_all[6*i+1];
+            sendData.target_w[i]=detret_all[6*i+2];
+            sendData.target_h[i]=detret_all[6*i+3];
+            sendData.target_class[i]=detret_all[6*i+4]; 
+            sendData.target_prob[i]=detret_all[6*i+5];
+        }
+    }
+
+    nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
+    canSend(detret_all);
+
+    if(detret_all.size()>=6){
+        cv::Point p = cv::Point(detret_all[0]+detret_all[2]/2,detret_all[1]+detret_all[3]/2);
+        sprintf(center_str,"%d, %d", angle_x/10, angle_y/10);
+        cv::putText(ret, center_str, p, cv::FONT_HERSHEY_TRIPLEX, 0.4, cv::Scalar(0,255, 0), 1, CV_AA);
+    }
+
+    // yolo_result = processImage(ceil_img);
+    // publishImage(yolo_result);
+    return ret;
 }
 
 
@@ -307,7 +344,7 @@ imageProcessor::imageProcessor() {
     int ret = pthread_create(&tid, NULL, canRecv, NULL);  //为can接收程序创建线程
     if (ret != 0)
     {
-        cout << "pthread_create error: error_code=" << ret << endl;
+       spdlog::warn("pthread_create error: error_code={}", ret);
     }
-   printf("detNN init okkkkk\n");
+   spdlog::info("detNN init okkkkk");
 }

@@ -27,6 +27,8 @@
 #include "yolo_v2_class.hpp"
 #include "Yolo3Detection.h"
 
+#include "spdlog/spdlog.h"
+
 typedef struct
 {
     bool use_dehaze; //电子去雾开关
@@ -49,17 +51,19 @@ class imageProcessor
 {
     public:
     imageProcessor();
-    cv::Mat Process(cv::Mat img);
+    cv::Mat Process(cv::Mat &img);
+    cv::Mat ProcessOnce(cv::Mat &img);
     void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
     cv::Mat SSR(cv::Mat input);     //图像增强
     controlData getCtlCommand();    //UDP通讯获得上位机控制命令
+    cv::Mat ImageDetect(cv::Mat &img, std::vector<int> &detret);     //目标检测
 
     private:
     cv::Mat channel_process(cv::Mat R);     //对图像单通道进行增强
     cv::Mat getROIimage(cv::Mat srcImg);    //不改变原图宽高比的情况下，将图像填充成方形
-    cv::Mat ImageDetect(cv::Mat img, std::vector<int> &detret);     //目标检测
-    void cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img);  //将拼接好的图像裁成2*1图像块并存储到vector中
-    cv::Mat processImage(std::vector<cv::Mat> ceil_img);    //调用图像裁剪、检测和检测结果拼接、UDP发送目标信息、CAN发送目标信息
+    
+    void cut_img(cv::Mat &src_img, std::vector<cv::Mat> &ceil_img);  //将拼接好的图像裁成2*1图像块并存储到vector中
+    cv::Mat processImage(std::vector<cv::Mat> &ceil_img);    //调用图像裁剪、检测和检测结果拼接、UDP发送目标信息、CAN发送目标信息
 };
 
 #endif

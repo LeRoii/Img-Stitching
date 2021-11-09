@@ -37,7 +37,7 @@ void serverCap()
     } while (recvMsgSize > sizeof(int));
     int total_pack = ((int * ) buffer)[0];
 
-    spdlog::debug("expecting length of packs: {}", total_pack);
+    spdlog::info("expecting length of packs: {}", total_pack);
     char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
         recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
@@ -180,101 +180,6 @@ int main(int argc, char *argv[])
     while(ostitcherDown.init(downImgs, initonline) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    // if(saveret)
-    // {
-    //     imwrite("5.png", downImgs[0]);
-    //     imwrite("6.png", downImgs[1]);
-    //     imwrite("7.png", downImgs[2]);
-    //     imwrite("8.png", downImgs[3]);
-    // }
-
-    // if(initonline)
-    // {
-    //     do{
-    //         upImgs.clear();
-    //         for(int i=0;i<4;i++)
-    //         {
-    //             cameras[i]->read_frame();
-    //             upImgs.push_back(cameras[i]->m_ret);
-    //         }   
-    //     }
-    //     while(ostitcherUp.initAll(upImgs) != 0);
-    //     // while(ostitcherUp.simpleInit(upImgs) != 0);
-
-    //     LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
-    //     if(saveret)
-    //     {
-    //         imwrite("1.png", upImgs[0]);
-    //         imwrite("2.png", upImgs[1]);
-    //         imwrite("3.png", upImgs[2]);
-    //         imwrite("4.png", upImgs[3]);
-    //     }
-        
-    //     do{
-    //         serverCap();
-    //         cameras[4]->read_frame();
-    //         cameras[5]->read_frame();
-    //         downImgs[0] = cameras[4]->m_ret;
-    //         downImgs[1] = cameras[5]->m_ret;
-    //     }
-    //     while(ostitcherDown.initAll(downImgs) != 0);
-    //     // while(ostitcherDown.simpleInit(downImgs) != 0);
-
-    //     LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
-    //     if(saveret)
-    //     {
-    //         imwrite("5.png", downImgs[0]);
-    //         imwrite("6.png", downImgs[1]);
-    //         imwrite("7.png", downImgs[2]);
-    //         imwrite("8.png", downImgs[3]);
-    //     }
-
-    // }
-    // else
-    // {
-    //     upImgs.clear();
-    //     Mat img = imread("/home/nvidia/ssd/code/0929IS/2222/1.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     upImgs.push_back(img);
-    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/2.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     upImgs.push_back(img);
-    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/3.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     upImgs.push_back(img);
-    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/4.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     upImgs.push_back(img);
-
-    //     downImgs.clear();
-    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/5.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     downImgs.push_back(img);
-    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/6.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     downImgs.push_back(img);
-    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/7.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     downImgs.push_back(img);
-    //     img = imread("/home/nvidia/ssd/code/0929IS/2222/8.png");
-    //     // resize(img, img, Size(960/2, 540/2));
-    //     downImgs.push_back(img);
-
-
-    //     // while(ostitcherUp.init(upImgs) != 0){}
-    //     // LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
-    //     // while(ostitcherDown.init(downImgs) != 0){}
-    //     // LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
-    //     while(ostitcherUp.initSeam(upImgs) != 0){}
-    //     LOGLN("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
-    //     while(ostitcherDown.initSeam(downImgs) != 0){}
-    //     LOGLN("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
-    // }
-
-    // return 0;
 
     std::vector<std::thread> threads;
     for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -282,14 +187,11 @@ int main(int argc, char *argv[])
     for(auto& th:threads)
         th.detach();
 
-    Mat rets[USED_CAMERA_NUM];
-
     imageProcessor nvProcessor;     //图像处理类
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
 
-	//创建 writer，并指定 FOURCC 及 FPS 等参数
 	VideoWriter *writer = nullptr;
 
     while(1)
@@ -325,7 +227,7 @@ int main(int argc, char *argv[])
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
 
-        spdlog::debug("read takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
+        spdlog::info("read takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
         t = cv::getTickCount();
 
         // cv::imshow("ret", upImgs[2]);
@@ -379,6 +281,8 @@ int main(int argc, char *argv[])
         cv::vconcat(upRet, downRet, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
+        spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
+
         // cv::Mat up,down, ret;
         // cv::hconcat(vector<cv::Mat>{cameras[0]->m_ret, cameras[1]->m_ret, cameras[2]->m_ret}, up);
         // cv::hconcat(vector<cv::Mat>{cameras[3]->m_ret, cameras[4]->m_ret, cameras[5]->m_ret}, down);
@@ -415,12 +319,13 @@ int main(int argc, char *argv[])
             if(ctl_command.use_ssr || start_ssr) {
                 ret = nvProcessor.SSR(ret);
             }
-            yoloRet = nvProcessor.Process(ret);
+            // yoloRet = nvProcessor.Process(ret);
+            yoloRet = nvProcessor.ProcessOnce(ret);
             
             // auto end = std::chrono::steady_clock::now();
             // std::chrono::duration<double> spent = end - start;
             // std::cout << " #############detect Time############: " << spent.count() << " sec \n";
-            spdlog::debug("detect takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
+            spdlog::info("detect takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
            if(ctl_command.use_detect || detect){
                 nvProcessor.publishImage(yoloRet);
             } else{
@@ -431,8 +336,12 @@ int main(int argc, char *argv[])
 
             if(writer == nullptr)
             {
+                std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
+                struct std::tm * ptm = std::localtime(&tt);
+                stringstream sstr;
+                sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
                 Size s(yoloRet.size().width, yoloRet.size().height);
-                writer = new VideoWriter("myvideod.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
+                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
                 //检查是否成功创建
                 if (!writer->isOpened())
                 {
@@ -450,8 +359,13 @@ int main(int argc, char *argv[])
         {
             if(writer == nullptr)
             {
+                std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
+                struct std::tm * ptm = std::localtime(&tt);
+                stringstream sstr;
+                sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
                 Size s(ret.size().width, ret.size().height);
-                writer = new VideoWriter("myvideo.avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
+                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
+ 
                 //检查是否成功创建
                 if (!writer->isOpened())
                 {
@@ -474,7 +388,7 @@ int main(int argc, char *argv[])
             cv::imwrite("down.png", stitcherOut[1]);
         }
 
-        spdlog::debug("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
+        spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
 
     }
     return 0;

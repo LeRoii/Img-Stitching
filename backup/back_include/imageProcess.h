@@ -22,7 +22,7 @@ class imageProcessor
     void publishImage(cv::Mat &img);
     cv::Mat getROIimage(cv::Mat srcImg);
     cv::Mat ImageDetect(cv::Mat img);
-    void cut_img(cv::Mat src_img,std::vector<cv::Mat> &ceil_img);
+    void cut_img(cv::Mat &src_img,std::vector<cv::Mat> &ceil_img);
 
 };
 

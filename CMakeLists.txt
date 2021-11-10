@@ -47,7 +47,7 @@ message(STATUS "CUDA_LIBRARIES:::${CUDA_LIBRARIES}")
 message(STATUS "CUDA_CUBLAS_LIBRARIES:::${CUDA_CUBLAS_LIBRARIES}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_compile_options(-std=c++11 -g)
+add_compile_options(-std=c++14 -g)
 # add_definitions(-DDEBUG)
 add_definitions(-DSPDLOG_DEBUG_ON )
 
@@ -91,6 +91,11 @@ add_executable(mo src/stithermo.cpp )
 add_executable(testocv src/testocv.cpp )
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+
+add_library(panocam SHARED src/panocam.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+
+add_executable(demo src/demo.cpp)
+
 
 # target_link_libraries(${PROJECT_NAME}
 #   ${tkdnn_LIBS}
@@ -158,5 +163,13 @@ target_link_libraries(cameracuda
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
      ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
      )
+
+target_link_libraries(panocam
+    ${OPENGL_LIBRARY} ${OpenCV_LIBS}
+    -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+    -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+)
+target_link_libraries(demo
+    panocam)
 
 install(TARGETS testocv RUNTIME DESTINATION /home/nvidia/ssd/code/0929IS)

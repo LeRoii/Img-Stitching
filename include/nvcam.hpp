@@ -1,4 +1,12 @@
 /*
+ * @Author: your name
+ * @Date: 2021-11-10 11:06:27
+ * @LastEditTime: 2021-11-10 14:41:00
+ * @LastEditors: your name
+ * @Description: 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+ * @FilePath: /0929IS/include/nvcam.hpp
+ */
+/*
  * Copyright (c) 2016-2019, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,6 +33,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
 #include <unistd.h>
@@ -48,6 +57,7 @@
 
 #include "camera_v4l2-cuda.h"
 #include "spdlog/spdlog.h"
+#include "stitcherconfig.h"
 
 #define LOG(msg) std::cout << msg
 #define LOGLN(msg) std::cout << msg << std::endl
@@ -213,7 +223,7 @@ camera_initialize(camcontext_t * ctx)
         ctx->cam_pixfmt =fmt.fmt.pix.pixelformat;
     }
 
-    printf("fmt.fmt.pix.pixelformat!!!!!!!!!!!:%d\n", fmt.fmt.pix.pixelformat);
+    // printf("fmt.fmt.pix.pixelformat!!!!!!!!!!!:%d\n", fmt.fmt.pix.pixelformat);
 
     struct v4l2_streamparm streamparm;
     memset (&streamparm, 0x00, sizeof (struct v4l2_streamparm));
@@ -459,19 +469,6 @@ stop_stream(camcontext_t * ctx)
     return true;
 }
 
-
-struct stCamCfg
-{
-    int camSrcWidth;
-    int camSrcHeight;
-	int distoredWidth;
-	int distoredHeight;
-	int retWidth;
-	int retHeight;
-	int id;
-    char name[20];
-};
-
 class nvCam
 {
 public:
@@ -506,8 +503,8 @@ public:
         NvBufferCreateParams bufparams = {0};
         retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
         bufparams.payloadType = NvBufferPayload_SurfArray;
-        bufparams.width = m_distoredWidth;
-        bufparams.height = m_distoredHeight;
+        bufparams.width = m_camSrcWidth;
+        bufparams.height = m_camSrcHeight;
         bufparams.layout = NvBufferLayout_Pitch;
         bufparams.colorFormat = NvBufferColorFormat_ARGB32;
         bufparams.nvbuf_tag = NvBufferTag_CAMERA;
@@ -531,10 +528,11 @@ public:
         cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
         cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
 
-        spdlog::info("!!!!!![%d] cam init ok!!!!!!!!!\n", m_id);
+        spdlog::info("!!!!!![{}] cam init ok!!!!!!!!!\n", m_id);
     }
     ~nvCam()
     {
+        stop_stream(&ctx);
         if (ctx.cam_fd > 0)
         close(ctx.cam_fd);
 
@@ -753,16 +751,18 @@ public:
                     &transParams))
             ERROR_RETURN("Failed to convert the yuvvvv buffer");
 
-        if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb.data))
+        if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_camSrcWidth, m_camSrcHeight, m_argb.data))
             ERROR_RETURN("Failed to NvBuffer2Raw");
 
         // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
 
-        cv::cvtColor(m_argb, m_distoredImg, cv::COLOR_RGBA2RGB);
+        cv::resize(m_argb, m_distoredImg, cv::Size(m_distoredWidth, m_distoredHeight));
+        cv::cvtColor(m_distoredImg, m_distoredImg, cv::COLOR_RGBA2RGB);
         // /*undistored*********/
         cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
         m_distoredImg = m_distoredImg(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
         cv::resize(m_distoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+        
         
         /*undistored end*/
 
@@ -777,6 +777,19 @@ public:
                     strerror(errno), errno);
         
         // printf("read_frame ctx.cam_fd:%d ok!!!\n", ctx.cam_fd);
+
+        return true;
+    }
+    
+    int getSrcFrame(cv::Mat &frame)
+    {
+        if(read_frame())
+        {
+            frame = m_argb.clone();
+            return RET_OK;
+        }
+        else
+            return RET_ERR;
     }
 
     void run()

@@ -6,7 +6,7 @@
 #include "PracticalSocket.h"
 // #include "config.h"
 #include "ocvstitcher.hpp"
-#include "stitcherconfig.h"
+
 
 // #define CAMERA_NUM 8
 // #define USED_CAMERA_NUM 6
@@ -134,13 +134,14 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     parse_cmdline(argc, argv);
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"}};
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video7"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video6"}};
 
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -196,6 +197,7 @@ int main(int argc, char *argv[])
 
     while(1)
     {
+        spdlog::debug("start loop");
         auto t = cv::getTickCount();
         auto all = cv::getTickCount();
         // cameras[0]->read_frame();
@@ -213,7 +215,7 @@ int main(int argc, char *argv[])
         //     th.join();
         
         std::thread server(serverCap);
-        server.join();
+        
 
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
@@ -221,6 +223,12 @@ int main(int argc, char *argv[])
         cameras[3]->getFrame(upImgs[3]);
         cameras[4]->getFrame(downImgs[0]);
         cameras[5]->getFrame(downImgs[1]);
+
+        spdlog::debug("master cap fini");
+
+        server.join();
+        spdlog::debug("slave cap fini");
+        
 
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+1)+".png", upImgs[i]);

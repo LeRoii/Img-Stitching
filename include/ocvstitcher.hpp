@@ -20,6 +20,7 @@
 #include "opencv2/stitching/warpers.hpp"
 
 #include "spdlog/spdlog.h"
+#include "stitcherconfig.h"
 
 using namespace std;
 using namespace cv;
@@ -70,7 +71,7 @@ class ocvStitcher
         for(int i=0;i<4;i++)
             cameraR.push_back(Mat(Size(3,3), CV_32FC1));
         
-        initCamParams();
+        (initCamParams() == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
 
     }
 
@@ -84,65 +85,67 @@ class ocvStitcher
         vector<string> res;
         string filename = "cameraparaout_" + to_string(m_id) + ".txt";
         std::ifstream fin(filename, std::ios::in);
-        if(fin.is_open())
+        if(!fin.is_open())
         {
-            std::string str;
-            int linenum = 0;
-            int paranum = 0;
+            spdlog::warn("no. {} no preset parameters found, init all!", m_id);
+            return RET_ERR;
+        }
+        std::string str;
+        int linenum = 0;
+        int paranum = 0;
 
-            while(getline(fin,str))
+        while(getline(fin,str))
+        {
+            linenum++;
+            if (std::string::npos != str.find(":"))
             {
-                linenum++;
-                if (std::string::npos != str.find(":"))
+                paranum++;
+            }
+        }
+
+        fin.clear();
+        fin.seekg(0, ios::beg);
+
+        spdlog::debug("linenum:{}, paranum:{}", linenum, paranum);
+        // cout<<"linenum:"<<linenum<<",paranum:"<<paranum<<endl;
+
+        for(int i=0;i<7*(paranum-1);i++)
+            getline(fin,str);
+
+        fin >> str;
+        // cout << "params time:" << str << endl;
+        spdlog::debug("params timestamp:{}", str);
+        fin >> str;
+        Stringsplit(str, ',', res);
+        for(int i=0;i<3;i++)
+        {
+            for(int j=0;j<3;j++)
+            {
+                cameraK.at<float>(i,j) = stof(res[i*3+j]);
+            }
+        }
+        cout<<cameraK<<endl;
+
+        for(int i=0;i<4;i++)
+        {
+            fin >> str;
+            cout<<str<<endl;
+            res.clear();
+            Stringsplit(str, ',', res);
+            for(int mi=0;mi<3;mi++)
+            {
+                for(int mj=0;mj<3;mj++)
                 {
-                    paranum++;
+                    cameraR[i].at<float>(mi,mj) = stof(res[mi*3+mj]);
                 }
             }
 
-            fin.clear();
-            fin.seekg(0, ios::beg);
+            cout<<cameraR[i]<<endl;
+        }
+        fin >> str;
+        warped_image_scale = stof(str);
 
-            spdlog::debug("linenum:{}, paranum:{}", linenum, paranum);
-            // cout<<"linenum:"<<linenum<<",paranum:"<<paranum<<endl;
-
-            for(int i=0;i<7*(paranum-1);i++)
-                getline(fin,str);
-
-                fin >> str;
-                // cout << "params time:" << str << endl;
-                spdlog::debug("params timestamp:{}", str);
-                fin >> str;
-                Stringsplit(str, ',', res);
-                for(int i=0;i<3;i++)
-                {
-                    for(int j=0;j<3;j++)
-                    {
-                        cameraK.at<float>(i,j) = stof(res[i*3+j]);
-                    }
-                }
-                cout<<cameraK<<endl;
-
-                for(int i=0;i<4;i++)
-                {
-                    fin >> str;
-                    cout<<str<<endl;
-                    res.clear();
-                    Stringsplit(str, ',', res);
-                    for(int mi=0;mi<3;mi++)
-                    {
-                        for(int mj=0;mj<3;mj++)
-                        {
-                            cameraR[i].at<float>(mi,mj) = stof(res[mi*3+mj]);
-                        }
-                    }
-
-                    cout<<cameraR[i]<<endl;
-                }
-                fin >> str;
-                warped_image_scale = stof(str);
-            }
-
-        return 0;
+        return RET_OK;
     }
 
     int saveCameraParams()
@@ -183,7 +186,7 @@ class ocvStitcher
 
     int init(vector<Mat> &imgs, bool initMode)
     {
-        if(initMode)
+        if(initMode || !presetParaOk)
             return initAll(imgs);
         else
             return initSeam(imgs);
@@ -764,6 +767,8 @@ class ocvStitcher
 
     float warped_image_scale;
     int m_id;
+
+    bool presetParaOk;
 
 };
 

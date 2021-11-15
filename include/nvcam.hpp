@@ -785,7 +785,7 @@ public:
     {
         if(read_frame())
         {
-            frame = m_argb.clone();
+            frame = m_ret.clone();
             return RET_OK;
         }
         else

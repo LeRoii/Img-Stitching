@@ -92,7 +92,7 @@ add_executable(testocv src/testocv.cpp )
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
-add_library(panocam SHARED src/panocam.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_library(panocam SHARED src/panocam.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
 add_executable(demo src/demo.cpp)
 

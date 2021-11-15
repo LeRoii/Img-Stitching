@@ -732,7 +732,7 @@ main(int argc, char *argv[])
     // CHECK_ERROR(parse_cmdline(&ctx, argc, argv), cleanup,
     //         "Invalid options specified");
 
-    ctx.cam_devname = "/dev/video0";
+    ctx.cam_devname = "/dev/video5";
     ctx.cam_w = 3840;
     ctx.cam_h = 2160;
     ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;

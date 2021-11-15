@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     if(argc > 1)
     {
         printf("aaaaaaaaaaaaaa::::%c\n", argv[1][0]);
-        if(argv[1][0] <'0' || argv[1][0] > '8')
+        if(argv[1][0] <'1' || argv[1][0] > '8')
         {
             printf("invalid argument!!!\n");
             return 0;
@@ -119,19 +119,42 @@ int main(int argc, char *argv[])
         // for(auto& th:threads)
         //     th.join();
         
+        cv::Mat ret;
+
         if(argc == 1)
         {
             std::thread server(serverCap);
             server.join();
+
+            cameras[0]->getFrame(upImgs[0]);
+            cameras[1]->getFrame(upImgs[1]);
+            cameras[2]->getFrame(upImgs[2]);
+            cameras[3]->getFrame(upImgs[3]);
+            cameras[4]->getFrame(downImgs[0]);
+            cameras[5]->getFrame(downImgs[1]);
+
+            cv::Mat up,down;
+            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+            cv::vconcat(up, down, ret);
+
+        }
+        else
+        {
+            int idx = stoi(argv[1]);
+            if(idx < 5)
+            {
+                cameras[idx-1]->getFrame(ret);
+            }
+            else
+            {
+                std::thread server(serverCap);
+                server.join();
+                ret = downImgs[idx-5];
+            }
         }
 
-        cameras[0]->getFrame(upImgs[0]);
-        cameras[1]->getFrame(upImgs[1]);
-        cameras[2]->getFrame(upImgs[2]);
-        cameras[3]->getFrame(upImgs[3]);
-        cameras[4]->getFrame(downImgs[0]);
-        cameras[5]->getFrame(downImgs[1]);
-
+        
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+1)+".png", upImgs[i]);
         // for(int i=0;i<4;i++)
@@ -151,28 +174,28 @@ int main(int argc, char *argv[])
         // cv::imshow("4", cameras[3]->m_ret);
         // cv::waitKey(1);
 
-        cv::Mat ret;
-        if(argc == 1)
-        {
-            cv::Mat up,down;
-            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-            cv::vconcat(up, down, ret);
+        
+        // if(argc == 1)
+        // {
+        //     cv::Mat up,down;
+        //     cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+        //     cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+        //     cv::vconcat(up, down, ret);
             
-        }
-        else
-        {
-            int idx = stoi(argv[1]);
+        // }
+        // else
+        // {
+        //     int idx = stoi(argv[1]);
             
-            if(idx < 5)
-            {
-                ret = upImgs[idx-1];
-            }
-            else
-            {
-                ret = downImgs[idx-5];
-            }
-        }
+        //     if(idx < 5)
+        //     {
+        //         ret = upImgs[idx-1];
+        //     }
+        //     else
+        //     {
+        //         ret = downImgs[idx-5];
+        //     }
+        // }
 
         cv::imshow("m_dev_name", ret);
 

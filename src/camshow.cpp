@@ -6,7 +6,7 @@
 #include "PracticalSocket.h"
 #include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
-
+#include "imageProcess.h"
 
 // #define CAMERA_NUM 8
 // #define USED_CAMERA_NUM 6
@@ -68,29 +68,92 @@ void serverCap()
     free(longbuf);
 }
 
-int main(int argc, char *argv[])
+std::string command;
+int framecnt = 0;
+
+void ketboardlistener()
 {
-    if(argc > 1)
+    while(1)
     {
-        printf("aaaaaaaaaaaaaa::::%c\n", argv[1][0]);
-        if(argv[1][0] <'1' || argv[1][0] > '8')
-        {
-            printf("invalid argument!!!\n");
-            return 0;
-        }
+        std::cin >> command;
+        std::cout << "command:" << command << std::endl;
+    }
+}
+
+
+bool detect = false;
+bool showall = false;
+int idx = 1;
+static int 
+parse_cmdline(int argc, char **argv)
+{
+    int c;
+
+    if (argc < 2)
+    {
+        return true;
     }
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"}};
+    while ((c = getopt(argc, argv, "c:d")) != -1)
+    {
+        switch (c)
+        {
+            case 'c':
+                if (strcmp(optarg, "a") == 0)
+                {
+                    showall = true;
+                }
+                else
+                {
+                    if(strlen(optarg) == 1 && std::isdigit(optarg[0]))
+                    {
+                        idx = std::stoi(optarg);
+                        if(0 < idx < 9)
+                            break;
+                    }
+                    spdlog::critical("invalid argument!!!\n");
+                    return RET_ERR;
+                }
+                break;
+            case 'd':
+                detect = true;
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    // if(argc > 1)
+    // {
+    //     if(argv[1][0] <'1' || argv[1][0] > '8')
+    //     {
+    //         spdlog::critical("invalid argument!!!\n");
+    //         return 0;
+    //     }
+    // }
+
+    if(RET_ERR == parse_cmdline(argc, argv))
+        return RET_ERR;
+
+    thread kblistener(ketboardlistener);
+
+    imageProcessor nvProcessor;  
+
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
-        cameras[i].reset(new nvCam(camcfgs[i]));
+        cameras[i].reset(new nvCam(camcfgs[i], true));
 
     std::vector<std::thread> threads;
     for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -121,7 +184,7 @@ int main(int argc, char *argv[])
         
         cv::Mat ret;
 
-        if(argc == 1)
+        if(showall)
         {
             std::thread server(serverCap);
             server.join();
@@ -133,6 +196,16 @@ int main(int argc, char *argv[])
             cameras[4]->getFrame(downImgs[0]);
             cameras[5]->getFrame(downImgs[1]);
 
+            cv::putText(upImgs[0], "1", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            cv::putText(upImgs[1], "2", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            cv::putText(upImgs[2], "3", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            cv::putText(upImgs[3], "4", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            cv::putText(downImgs[0], "5", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            cv::putText(downImgs[1], "6", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            cv::putText(downImgs[2], "7", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            cv::putText(downImgs[3], "8", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+
+
             cv::Mat up,down;
             cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
             cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
@@ -141,16 +214,21 @@ int main(int argc, char *argv[])
         }
         else
         {
-            int idx = stoi(argv[1]);
+            // int idx = stoi(argv[1]);
             if(idx < 5)
             {
                 cameras[idx-1]->getFrame(ret);
+                cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
             else
             {
                 std::thread server(serverCap);
+                cameras[4]->getFrame(downImgs[0]);
+                cameras[5]->getFrame(downImgs[1]);
                 server.join();
                 ret = downImgs[idx-5];
+                cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+
             }
         }
 
@@ -163,46 +241,19 @@ int main(int argc, char *argv[])
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
 
+        cv::Mat yoloret;
+        if (detect)
+        {
+            ret = nvProcessor.ProcessOnce(ret);
+        }
 
-        // cameras[0]->read_frame();
-        // // cameras[1]->read_frame();
-        // if(!rets[0].empty())
-        //     cv::imshow("1", rets[0]);
-        // cv::imshow("1", cameras[0]->m_ret);
-        // cv::imshow("2", cameras[1]->m_ret);
-        // cv::imshow("3", cameras[2]->m_ret);
-        // cv::imshow("4", cameras[3]->m_ret);
-        // cv::waitKey(1);
-
-        
-        // if(argc == 1)
-        // {
-        //     cv::Mat up,down;
-        //     cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-        //     cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-        //     cv::vconcat(up, down, ret);
-            
-        // }
-        // else
-        // {
-        //     int idx = stoi(argv[1]);
-            
-        //     if(idx < 5)
-        //     {
-        //         ret = upImgs[idx-1];
-        //     }
-        //     else
-        //     {
-        //         ret = downImgs[idx-5];
-        //     }
-        // }
+        if(command == "s")
+        {
+            cv::imwrite(std::to_string(framecnt++)+".png", ret);
+            command = "";
+        }
 
         cv::imshow("m_dev_name", ret);
-
-        // cv::imshow("1", upImgs[0]);
-        // cv::imshow("5", cameras[0]->m_ret);
-        // cv::imwrite("1.png", cam0.m_ret);
-
         cv::waitKey(1);
 
         LOGLN("all takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");

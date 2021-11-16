@@ -83,7 +83,7 @@ include_directories(
 
 # add_executable(${PROJECT_NAME} src/imageProcess.cpp src/xavier.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 
-add_executable(camshow src/camshow.cpp src/PracticalSocket.cpp  ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
+add_executable(camshow src/camshow.cpp src/imageProcess.cpp src/PracticalSocket.cpp  ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 add_executable(sti src/sti.cpp )
 add_executable(sd src/stitching_detailed.cpp )
 add_executable(mo src/stithermo.cpp )
@@ -142,10 +142,11 @@ add_executable(demo src/demo.cpp)
 # add_executable(calib calib.cpp )
 # target_link_libraries(cvtest yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 # target_link_libraries(main yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
-target_link_libraries(camshow  yuyv2rgb ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
+target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
 -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
   )
 target_link_libraries(sti   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 target_link_libraries(sd   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )

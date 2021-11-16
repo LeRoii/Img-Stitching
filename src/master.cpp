@@ -72,6 +72,8 @@ bool detect = false;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
+int waitUsec = 1;
+int videoFps = 5;
 
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
@@ -121,6 +123,7 @@ parse_cmdline(int argc, char **argv)
                 break;
             case  'v':
                 savevideo = true;
+                waitUsec = 33;
                 break;
             default:
                 break;
@@ -140,12 +143,12 @@ int main(int argc, char *argv[])
                                     stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
                                     stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
                                     stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video7"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video6"}};
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
-        cameras[i].reset(new nvCam(camcfgs[i]));
+        cameras[i].reset(new nvCam(camcfgs[i], false));
 
     // ocvStitcher ostitcherUp(960/2, 540/2, 1);
     // ocvStitcher ostitcherDown(960/2, 540/2, 2);
@@ -349,7 +352,7 @@ int main(int argc, char *argv[])
                 stringstream sstr;
                 sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
                 Size s(yoloRet.size().width, yoloRet.size().height);
-                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
+                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, s);
                 //检查是否成功创建
                 if (!writer->isOpened())
                 {
@@ -361,7 +364,8 @@ int main(int argc, char *argv[])
                 *writer << yoloRet;
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
-            cv::waitKey(1);
+            cv::waitKey(waitUsec);
+            usleep(33000);
         }
         else
         {
@@ -372,7 +376,7 @@ int main(int argc, char *argv[])
                 stringstream sstr;
                 sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
                 Size s(ret.size().width, ret.size().height);
-                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), 25, s);
+                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, s);
  
                 //检查是否成功创建
                 if (!writer->isOpened())
@@ -387,7 +391,7 @@ int main(int argc, char *argv[])
             // cv::imshow("up", stitcherOut[0]);
             // cv::imshow("down", stitcherOut[1]);
             // cv::imshow("ret", ret);
-            cv::waitKey(1);
+            cv::waitKey(waitUsec);
         }
 
         if(saveret)

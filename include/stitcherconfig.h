@@ -6,8 +6,8 @@ const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 const int camSrcWidth = 3840;
 const int camSrcHeight = 2160;
 
-const int undistorWidth = 960;
-const int undistorHeight = 540;
+const int undistorWidth =  1920;
+const int undistorHeight = 1080;
 
 const int stitcherinputWidth = 480;
 const int stitcherinputHeight = 270;

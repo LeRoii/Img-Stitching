@@ -472,9 +472,10 @@ stop_stream(camcontext_t * ctx)
 class nvCam
 {
 public:
-    nvCam(stCamCfg &camcfg):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
+    nvCam(stCamCfg &camcfg, bool withid):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
 	m_retWidth(camcfg.retWidth),m_retHeight(camcfg.retHeight),
-	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), m_id(camcfg.id)
+	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), m_id(camcfg.id),
+    m_withid(withid)
     {
 
         intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
@@ -503,8 +504,8 @@ public:
         NvBufferCreateParams bufparams = {0};
         retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
         bufparams.payloadType = NvBufferPayload_SurfArray;
-        bufparams.width = m_camSrcWidth;
-        bufparams.height = m_camSrcHeight;
+        bufparams.width = m_distoredWidth;
+        bufparams.height = m_distoredHeight;
         bufparams.layout = NvBufferLayout_Pitch;
         bufparams.colorFormat = NvBufferColorFormat_ARGB32;
         bufparams.nvbuf_tag = NvBufferTag_CAMERA;
@@ -751,7 +752,7 @@ public:
                     &transParams))
             ERROR_RETURN("Failed to convert the yuvvvv buffer");
 
-        if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_camSrcWidth, m_camSrcHeight, m_argb.data))
+        if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb.data))
             ERROR_RETURN("Failed to NvBuffer2Raw");
 
         // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
@@ -759,9 +760,13 @@ public:
         cv::resize(m_argb, m_distoredImg, cv::Size(m_distoredWidth, m_distoredHeight));
         cv::cvtColor(m_distoredImg, m_distoredImg, cv::COLOR_RGBA2RGB);
         // /*undistored*********/
-        cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
-        m_distoredImg = m_distoredImg(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
+        // cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
+        // m_distoredImg = m_distoredImg(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
         cv::resize(m_distoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+        // if(m_withid)
+        // {
+        //     cv::putText(m_ret, std::to_string(m_id), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+        // }
         
         
         /*undistored end*/
@@ -840,6 +845,7 @@ public:
     char m_dev_name[30];
     cv::Mat m_argb, m_distoredImg, m_ret, m_tmp;
 	int m_id;
+    bool m_withid;
 
     nv_buffer * retNvbuf;
     NvBufferTransformParams transParams;

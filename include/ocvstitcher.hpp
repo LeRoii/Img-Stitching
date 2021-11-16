@@ -33,7 +33,7 @@ float match_conf = 0.3f;
 float conf_thresh = .7f;
 float blend_strength = 0;
 
-int num_images = 4;
+static int num_images = 4;
 
 static void Stringsplit(string str, const char split, vector<string>& res)
 {

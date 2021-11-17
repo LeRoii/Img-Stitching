@@ -853,6 +853,4 @@ public:
     std::queue<cv::Mat> m_queue;
 
     cv::Mat mapx, mapy;
-    
-    
 };

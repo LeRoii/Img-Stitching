@@ -68,7 +68,7 @@ class ocvStitcher
         outputOk = false;
 
         cameraK = Mat(Size(3,3), CV_32FC1);
-        for(int i=0;i<4;i++)
+        for(int i=0;i<num_images;i++)
             cameraR.push_back(Mat(Size(3,3), CV_32FC1));
         
         (initCamParams() == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
@@ -166,7 +166,7 @@ class ocvStitcher
                 cameraK.at<float>(mi,mj) = cameras[0].K().at<double>(mi,mj);
             }
         }
-        for(int idx=0;idx<4;idx++)
+        for(int idx=0;idx<num_images;idx++)
         {
             fout << "\n";
             for(int mi=0;mi<3;mi++)
@@ -200,7 +200,12 @@ class ocvStitcher
         vector<ImageFeatures> features(num_images);
         for(int i=0;i<num_images;i++)
         {
-            (*finder)(imgs[i], features[i]);
+            std::vector<cv::Rect> rois = {cv::Rect(m_imgWidth/2, 0, m_imgWidth/2, m_imgHeight)};
+            // if(i == num_images - 1)
+            //     (*finder)(imgs[i], features[i], rois);
+            // else
+                (*finder)(imgs[i], features[i]);
+
             features[i].img_idx = i;
             spdlog::info("Features in image {} : {}", i, features[i].keypoints.size());
 
@@ -231,7 +236,7 @@ class ocvStitcher
             Mat R;
             cameras[i].R.convertTo(R, CV_32F);
             cameras[i].R = R;
-            LOGLN("Initial camera intrinsics #" << i+1 << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
+            LOGLN("Initial camera intrinsics #" << i << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
         }
 
         adjuster = makePtr<detail::BundleAdjusterRay>();
@@ -343,7 +348,7 @@ class ocvStitcher
             LOGLN("****first warp:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
         }
 
-        for(int i=0;i<4;i++)
+        for(int i=0;i<num_images;i++)
         {
             // blenderMask[i] = masks_warped[i].getMat(ACCESS_RW);
             masks_warped[i].copyTo(blenderMask[i]);

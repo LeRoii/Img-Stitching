@@ -140,7 +140,7 @@ bool try_cuda = false;
 double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
-float conf_thresh = .8f;
+float conf_thresh = .7f;
 string features_type = "surf";
 string matcher_type = "homography";
 string estimator_type = "homography";
@@ -400,10 +400,23 @@ int main(int argc, char* argv[])
     if (retval)
         return retval;
 
-    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
-    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/2.png");
-    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/3.png");
-    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/4.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/2.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/3.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/4.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/5.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/6.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/7.png");
+    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/8.png");
+
+    img_names.push_back("1.png");
+    img_names.push_back("2.png");
+    img_names.push_back("3.png");
+    img_names.push_back("4.png");
+    img_names.push_back("5.png");
+    img_names.push_back("6.png");
+    img_names.push_back("7.png");
+    // img_names.push_back("8.png");
     // img_names.push_back("3-dist.png");
     // img_names.push_back("4-dist.png");
     // Check if have enough images
@@ -480,7 +493,12 @@ int main(int argc, char* argv[])
             is_seam_scale_set = true;
         }
 
-        (*finder)(img, features[i]);
+        std::vector<cv::Rect> rois = {cv::Rect(img.size().width/2, 0, img.size().width/2, img.size().height)};
+        if(i == num_images - 1)
+            (*finder)(img, features[i], rois);
+        else
+            (*finder)(img, features[i]);
+        // (*finder)(img, features[i]);
         features[i].img_idx = i;
         LOGLN("Features in image #" << i+1 << ": " << features[i].keypoints.size());
 

@@ -254,7 +254,22 @@ int main(int argc, char *argv[])
         }
 
         cv::imshow("m_dev_name", ret);
-        cv::waitKey(1);
+        char c = (char)cv::waitKey(1);
+        switch(c)
+        {
+            case 's':
+            cv::imwrite("1.png", upImgs[0]);
+            cv::imwrite("2.png", upImgs[1]);
+            cv::imwrite("3.png", upImgs[2]);
+            cv::imwrite("4.png", upImgs[3]);
+            cv::imwrite("5.png", downImgs[0]);
+            cv::imwrite("6.png", downImgs[1]);
+            cv::imwrite("7.png", downImgs[2]);
+            cv::imwrite("8.png", downImgs[3]);
+            break;
+            default:
+            break;
+        }
 
         LOGLN("all takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
 

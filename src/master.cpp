@@ -69,7 +69,7 @@ void serverCap()
 
 bool saveret = false;
 bool detect = false;
-bool initonline = false;
+bool initonline = true;
 bool start_ssr = false;
 bool savevideo = false;
 int waitUsec = 1;
@@ -131,7 +131,6 @@ parse_cmdline(int argc, char **argv)
     }
 }
 
-
 int main(int argc, char *argv[])
 {
     spdlog::set_level(spdlog::level::debug);
@@ -150,8 +149,89 @@ int main(int argc, char *argv[])
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i], false));
 
-    // ocvStitcher ostitcherUp(960/2, 540/2, 1);
-    // ocvStitcher ostitcherDown(960/2, 540/2, 2);
+    /************************************stitch all *****************************************/
+    // vector<Mat> imgs(8);
+
+    // ocvStitcher stitcherall(stitcherinputWidth, stitcherinputHeight, 3);
+
+    // vector<Mat> imgss;
+    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
+    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
+    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
+    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
+    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/5.png"));
+    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/6.png"));
+    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/7.png"));
+    // // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/8.png"));
+
+    // do{
+    //     imgs.clear();
+    //     for(int i=0;i<USED_CAMERA_NUM;i++)
+    //     {
+    //         cameras[i]->read_frame();
+    //         imgs.push_back(cameras[i]->m_ret);
+    //     }
+    //     serverCap();
+    //     imgs.push_back(downImgs[2]);
+    //     imgs.push_back(downImgs[3]);
+
+        
+    // }
+    // while(stitcherall.init(imgs, initonline) != 0);
+
+    // // ocvStitcher ostitcherUp(960/2, 540/2, 1);
+    // // ocvStitcher ostitcherDown(960/2, 540/2, 2);
+    // // ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1);
+    // // ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2);
+
+    // std::vector<std::thread> threads;
+    // for(int i=0;i<USED_CAMERA_NUM;i++)
+    //     threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    // for(auto& th:threads)
+    //     th.detach();
+
+    // while(1)
+    // {
+    //     Mat ret;
+    //     imgs.clear();
+    //     spdlog::debug("start loop");
+    //     auto t = cv::getTickCount();
+    //     auto all = cv::getTickCount();
+
+    //     std::thread server(serverCap);
+    //     cameras[0]->getFrame(imgs[0]);
+    //     cameras[1]->getFrame(imgs[1]);
+    //     cameras[2]->getFrame(imgs[2]);
+    //     cameras[3]->getFrame(imgs[3]);
+    //     cameras[4]->getFrame(imgs[4]);
+    //     cameras[5]->getFrame(imgs[5]);
+    //     imgs[6] = downImgs[2];
+    //     imgs[7] = downImgs[3];
+
+    //     // imgss.clear();
+    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
+    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
+    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
+    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
+    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/5.png"));
+    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/6.png"));
+    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/7.png"));
+
+    //     spdlog::debug("master cap fini");
+    //     server.join();
+    //     spdlog::debug("slave cap fini");
+
+    //     spdlog::info("read takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
+    //     t = cv::getTickCount();
+
+    //     stitcherall.process(imgs, ret);
+
+    //     imshow("ret", ret);
+    //     waitKey(1);
+    //     spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
+    // }
+    /************************************stitch all end*****************************************/
+
     ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1);
     ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2);
 
@@ -289,6 +369,11 @@ int main(int argc, char *argv[])
         upRet = stitcherOut[0](Rect(0,15,width,height));
         downRet = stitcherOut[1](Rect(0,15,width,height));
 
+        cv::Mat up,down,ori;
+        cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+        cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+        cv::vconcat(up, down, ori);
+
         cv::vconcat(upRet, downRet, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
@@ -344,6 +429,7 @@ int main(int argc, char *argv[])
             }
             
             cv::imshow("yolo", yoloRet);
+            cv::imshow("ori", ori);
 
             if(writer == nullptr)
             {
@@ -365,7 +451,6 @@ int main(int argc, char *argv[])
             // cv::imshow("up", upRet);
             // cv::imshow("down", downRet);
             cv::waitKey(waitUsec);
-            usleep(33000);
         }
         else
         {
@@ -388,6 +473,7 @@ int main(int argc, char *argv[])
             if(savevideo)
                 *writer << ret;
             cv::imshow("ret", ret);
+            cv::imshow("ori", ori);
             // cv::imshow("up", stitcherOut[0]);
             // cv::imshow("down", stitcherOut[1]);
             // cv::imshow("ret", ret);

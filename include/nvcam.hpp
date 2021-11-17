@@ -760,8 +760,8 @@ public:
         cv::resize(m_argb, m_distoredImg, cv::Size(m_distoredWidth, m_distoredHeight));
         cv::cvtColor(m_distoredImg, m_distoredImg, cv::COLOR_RGBA2RGB);
         // /*undistored*********/
-        // cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
-        // m_distoredImg = m_distoredImg(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
+        cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
+        m_distoredImg = m_distoredImg(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
         cv::resize(m_distoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
         // if(m_withid)
         // {

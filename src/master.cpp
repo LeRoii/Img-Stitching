@@ -69,11 +69,10 @@ void serverCap()
 
 bool saveret = false;
 bool detect = false;
-bool initonline = true;
+bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
-int waitUsec = 1;
-int videoFps = 5;
+int videoFps = 10;
 
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
@@ -123,7 +122,6 @@ parse_cmdline(int argc, char **argv)
                 break;
             case  'v':
                 savevideo = true;
-                waitUsec = 33;
                 break;
             default:
                 break;
@@ -276,7 +274,9 @@ int main(int argc, char *argv[])
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
 
-	VideoWriter *writer = nullptr;
+	VideoWriter *panoWriter = nullptr;
+	VideoWriter *oriWriter = nullptr;
+    bool writerInit = false;
 
     while(1)
     {
@@ -400,90 +400,75 @@ int main(int argc, char *argv[])
         //     imwrite("8.png", downImgs[3]);
         // }
 
+        controlData ctl_command;
+        ctl_command = nvProcessor.getCtlCommand();
+        spdlog::info("***********get command: ");
+        spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
+
+        if(ctl_command.use_ssr || start_ssr) 
+            ret = nvProcessor.SSR(ret);
+
         if(detect)
         {
-            controlData ctl_command;
-
-            ctl_command = nvProcessor.getCtlCommand();
-            spdlog::info("***********get command: ");
-            spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
-
-            cv::Mat yoloRet;
-            // auto start = std::chrono::steady_clock::now();
             t = cv::getTickCount();
-            
-            if(ctl_command.use_ssr || start_ssr) {
-                ret = nvProcessor.SSR(ret);
-            }
             // yoloRet = nvProcessor.Process(ret);
-            yoloRet = nvProcessor.ProcessOnce(ret);
-            
-            // auto end = std::chrono::steady_clock::now();
-            // std::chrono::duration<double> spent = end - start;
-            // std::cout << " #############detect Time############: " << spent.count() << " sec \n";
+            ret = nvProcessor.ProcessOnce(ret);
             spdlog::info("detect takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
-           if(ctl_command.use_detect || detect){
-                nvProcessor.publishImage(yoloRet);
-            } else{
-                nvProcessor.publishImage(ret);
-            }
-            
-            cv::imshow("yolo", yoloRet);
-            cv::imshow("ori", ori);
+        //    if(ctl_command.use_detect || detect){
+        //         nvProcessor.publishImage(yoloRet);
+        //     } else{
+                // nvProcessor.publishImage(ret);
+            // }
+        }
 
-            if(writer == nullptr)
-            {
-                std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-                struct std::tm * ptm = std::localtime(&tt);
-                stringstream sstr;
-                sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
-                Size s(yoloRet.size().width, yoloRet.size().height);
-                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, s);
-                //检查是否成功创建
-                if (!writer->isOpened())
-                {
-                    spdlog::critical("Can not create video file.");
-                    return -1;
-                }
-            }
-            if(savevideo)
-                *writer << yoloRet;
-            // cv::imshow("up", upRet);
-            // cv::imshow("down", downRet);
-            cv::waitKey(waitUsec);
-        }
-        else
+        if(!writerInit)
         {
-            if(writer == nullptr)
+            std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
+            struct std::tm * ptm = std::localtime(&tt);
+            stringstream sstr;
+            sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
+            Size panoSize(ret.size().width, ret.size().height);
+            Size oriSize(ori.size().width, ori.size().height);
+            panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, panoSize);
+            oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
+
+            //检查是否成功创建
+            if (!panoWriter->isOpened() || !oriWriter->isOpened())
             {
-                std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-                struct std::tm * ptm = std::localtime(&tt);
-                stringstream sstr;
-                sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
-                Size s(ret.size().width, ret.size().height);
-                writer = new VideoWriter(sstr.str()+".avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, s);
- 
-                //检查是否成功创建
-                if (!writer->isOpened())
-                {
-                    spdlog::critical("Can not create video file.");
-                    return -1;
-                }
+                spdlog::critical("Can not create video file.");
+                return -1;
             }
-            if(savevideo)
-                *writer << ret;
-            cv::imshow("ret", ret);
-            cv::imshow("ori", ori);
-            // cv::imshow("up", stitcherOut[0]);
-            // cv::imshow("down", stitcherOut[1]);
-            // cv::imshow("ret", ret);
-            cv::waitKey(waitUsec);
+
+            writerInit = true;
         }
+        if(savevideo)
+        {
+            *panoWriter << ret;
+            *oriWriter << ori;
+        }
+
+        cv::imshow("ret", ret);
+        cv::imshow("ori", ori);
 
         if(saveret)
         {
             cv::imwrite("up.png", stitcherOut[0]);
             cv::imwrite("down.png", stitcherOut[1]);
+        }
+
+        char c = (char)cv::waitKey(1);
+        switch(c)
+        {
+            case 27:
+                return 0;
+            case 'e':
+                start_ssr = !start_ssr;
+                break;
+            case 'd':
+                detect = !detect;
+                break;
+            default:
+            break;
         }
 
         spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);

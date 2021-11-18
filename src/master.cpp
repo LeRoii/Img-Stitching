@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
             // }
         }
 
-        if(!writerInit)
+        if(!writerInit && savevideo)
         {
             std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
             struct std::tm * ptm = std::localtime(&tt);
@@ -467,8 +467,17 @@ int main(int argc, char *argv[])
             case 'd':
                 detect = !detect;
                 break;
+            case 'v':
+                if(savevideo)
+                {
+                    panoWriter->release();
+                    oriWriter->release();
+                    writerInit = false;
+                }
+                savevideo = !savevideo;
+                break;
             default:
-            break;
+                break;
         }
 
         spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);

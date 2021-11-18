@@ -1,5 +1,6 @@
 #include "panocam.h"
 #include "nvcam.hpp"
+#include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
 #include "PracticalSocket.h"
 #include "spdlog/spdlog.h"
@@ -73,13 +74,60 @@ public:
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i], false));
 
+
+        stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1));
+        stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2));
+
     }
     
     ~panocamimpl() = default;
 
-    int init()
+    int init(enInitMode mode)
     {
         spdlog::info("init");
+        bool initonlie = ((mode == INIT_ONLINE) ? true : false);
+        upImgs.clear();
+        int failnum = 0;
+        do{
+            upImgs.clear();
+            for(int i=0;i<4;i++)
+            {
+                cameras[i]->read_frame();
+                upImgs.push_back(cameras[i]->m_ret);
+            }
+            failnum++;
+            if(failnum > 5)
+            {
+                spdlog::critical("initalization failed due to environment");
+                return RET_ERR;
+            }
+        }
+        while(stitchers[0]->init(upImgs, initonlie) != 0); 
+        spdlog::info("init completed 50%");
+
+        failnum = 0;
+        do{
+            serverCap();
+            cameras[4]->read_frame();
+            cameras[5]->read_frame();
+            downImgs[0] = cameras[4]->m_ret;
+            downImgs[1] = cameras[5]->m_ret;
+            failnum++;
+            if(failnum > 5)
+            {
+                spdlog::critical("initalization failed due to environment");
+                return RET_ERR;
+            }
+        }
+        while(stitchers[1]->init(downImgs, initonlie) != 0);
+
+        std::vector<std::thread> threads;
+        for(int i=0;i<USED_CAMERA_NUM;i++)
+            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+        for(auto& th:threads)
+            th.detach();
+
+        spdlog::info("init completed!");
                 
         return RET_OK;
     }
@@ -103,8 +151,36 @@ public:
         return RET_OK;
     }
 
+    int getPanoFrame(cv::Mat &ret)
+    {
+        auto all = cv::getTickCount();
+        std::thread server(serverCap);
+        cameras[0]->getFrame(upImgs[0]);
+        cameras[1]->getFrame(upImgs[1]);
+        cameras[2]->getFrame(upImgs[2]);
+        cameras[3]->getFrame(upImgs[3]);
+        cameras[4]->getFrame(downImgs[0]);
+        cameras[5]->getFrame(downImgs[1]);
+        server.join();
+        spdlog::debug("imgs cap fini");
+        cv::Mat up, down, rett;
+        stitchers[0]->process(upImgs, up);
+        stitchers[1]->process(downImgs, down);
+
+        int width = min(up.size().width, down.size().width);
+        int height = min(up.size().height, down.size().height) - 30;
+        up = up(Rect(0,15,width,height));
+        down = down(Rect(0,15,width,height));
+
+        cv::vconcat(up, down, ret);
+        cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
+        spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
+
+    }
+
 private:
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
+    std::shared_ptr<ocvStitcher> stitchers[2];
 };
 
 panocam::panocam():pimpl{std::make_unique<panocamimpl>()}
@@ -114,12 +190,17 @@ panocam::panocam():pimpl{std::make_unique<panocamimpl>()}
 
 panocam::~panocam() = default;
 
-int panocam::init()
+int panocam::init(enInitMode mode)
 {
-    pimpl->init();
+    return pimpl->init(mode);
 }
 
 int panocam::getCamFrame(int id, cv::Mat &frame)
 {
     return pimpl->getCamFrame(id, frame);
+}
+
+int panocam::getPanoFrame(cv::Mat &ret)
+{
+    return pimpl->getPanoFrame(ret);
 }

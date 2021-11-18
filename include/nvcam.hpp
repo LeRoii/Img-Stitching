@@ -64,7 +64,8 @@
 
 static bool quit = false;
 
-int rectPara[4] = {36,53,888,440};
+// int rectPara[4] = {36,53,888,440};
+std::vector<int> rectPara(4);// = {65,105,1788,886};
 cv::Mat intrinsic_matrix[1];
 cv::Mat distortion_coeffs[1];
 
@@ -477,12 +478,24 @@ public:
 	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), m_id(camcfg.id),
     m_withid(withid)
     {
+        if(m_distoredWidth == 960)
+        {
+            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
+                            0, 959.666714085956, 280.450178308760,
+                            0, 0, 1);
 
-        intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
-                        0, 959.666714085956, 280.450178308760,
-                        0, 0, 1);
+            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
+            rectPara = vector<int>{36,53,888,440};
+        }
+        else if(m_distoredWidth == 1920)
+        {
+            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
+                                    0, 1.980908029523902e+03, 5.694739251420406e+02,
+                                    0, 0, 1);
 
-		distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
+            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
+            rectPara = vector<int>{65,105,1788,886};
+        }
 
         set_defaults(&ctx);
         strcpy(ctx.dev_name, camcfg.name);
@@ -824,7 +837,7 @@ public:
         std::unique_lock<std::mutex> lock(m_mtx[m_id]);
         while(m_queue.empty())
         {
-            // LOGLN("empty::"<<m_id);
+            spdlog::warn("wait for img");
             // return 0;
             con[m_id].wait(lock);
         }

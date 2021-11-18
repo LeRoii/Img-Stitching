@@ -83,9 +83,9 @@ void ketboardlistener()
 
 bool detect = false;
 bool showall = false;
+bool withnum = false;
 int idx = 1;
-static int 
-parse_cmdline(int argc, char **argv)
+static int parse_cmdline(int argc, char **argv)
 {
     int c;
 
@@ -94,7 +94,7 @@ parse_cmdline(int argc, char **argv)
         return true;
     }
 
-    while ((c = getopt(argc, argv, "c:d")) != -1)
+    while ((c = getopt(argc, argv, "c:dn")) != -1)
     {
         switch (c)
         {
@@ -118,6 +118,8 @@ parse_cmdline(int argc, char **argv)
             case 'd':
                 detect = true;
                 break;
+            case 'n':
+                withnum = true;
             default:
                 break;
         }
@@ -196,15 +198,17 @@ int main(int argc, char *argv[])
             cameras[4]->getFrame(downImgs[0]);
             cameras[5]->getFrame(downImgs[1]);
 
-            cv::putText(upImgs[0], "1", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            cv::putText(upImgs[1], "2", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            cv::putText(upImgs[2], "3", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            cv::putText(upImgs[3], "4", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            cv::putText(downImgs[0], "5", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            cv::putText(downImgs[1], "6", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            cv::putText(downImgs[2], "7", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            cv::putText(downImgs[3], "8", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-
+            if(withnum)
+            {
+                cv::putText(upImgs[0], "1", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                cv::putText(upImgs[1], "2", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                cv::putText(upImgs[2], "3", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                cv::putText(upImgs[3], "4", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                cv::putText(downImgs[0], "5", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                cv::putText(downImgs[1], "6", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                cv::putText(downImgs[2], "7", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                cv::putText(downImgs[3], "8", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+            }
 
             cv::Mat up,down;
             cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
@@ -218,7 +222,7 @@ int main(int argc, char *argv[])
             if(idx < 5)
             {
                 cameras[idx-1]->getFrame(ret);
-                cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                // cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
             else
             {
@@ -227,9 +231,12 @@ int main(int argc, char *argv[])
                 cameras[5]->getFrame(downImgs[1]);
                 server.join();
                 ret = downImgs[idx-5];
-                cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+                // cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
 
             }
+
+            if(withnum)
+                cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
 
         
@@ -247,28 +254,32 @@ int main(int argc, char *argv[])
             ret = nvProcessor.ProcessOnce(ret);
         }
 
-        if(command == "s")
-        {
-            cv::imwrite(std::to_string(framecnt++)+".png", ret);
-            command = "";
-        }
+        // if(command == "s")
+        // {
+        //     cv::imwrite(std::to_string(framecnt++)+".png", ret);
+        //     command = "";
+        // }
 
         cv::imshow("m_dev_name", ret);
         char c = (char)cv::waitKey(1);
         switch(c)
         {
             case 's':
-            cv::imwrite("1.png", upImgs[0]);
-            cv::imwrite("2.png", upImgs[1]);
-            cv::imwrite("3.png", upImgs[2]);
-            cv::imwrite("4.png", upImgs[3]);
-            cv::imwrite("5.png", downImgs[0]);
-            cv::imwrite("6.png", downImgs[1]);
-            cv::imwrite("7.png", downImgs[2]);
-            cv::imwrite("8.png", downImgs[3]);
-            break;
+                if(showall)
+                {
+                    cv::imwrite("1.png", upImgs[0]);
+                    cv::imwrite("2.png", upImgs[1]);
+                    cv::imwrite("3.png", upImgs[2]);
+                    cv::imwrite("4.png", upImgs[3]);
+                    cv::imwrite("5.png", downImgs[0]);
+                    cv::imwrite("6.png", downImgs[1]);
+                    cv::imwrite("7.png", downImgs[2]);
+                    cv::imwrite("8.png", downImgs[3]);
+                }
+                cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt++)+".png", ret);
+                break;
             default:
-            break;
+                break;
         }
 
         LOGLN("all takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");

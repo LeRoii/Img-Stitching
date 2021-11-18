@@ -9,8 +9,8 @@ const int camSrcHeight = 2160;
 const int undistorWidth =  1920/2;
 const int undistorHeight = 1080/2;
 
-const int stitcherinputWidth = 480;
-const int stitcherinputHeight = 270;
+const int stitcherinputWidth = 1920/4;
+const int stitcherinputHeight = 1080/4;
 
 // int stitcherinputWidth = 1920/2;
 // int stitcherinputHeight = 1080/2;

@@ -3,8 +3,9 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 // #include "ocvstitcher.hpp"
+#include "imageProcess.h"
 
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+// #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 
 #include "spdlog/spdlog.h"
 
@@ -40,7 +41,7 @@ int scanKeyboard()
     tcsetattr(0,TCSANOW,&stored_settings);
     return in;
 }
-
+/*
 int main()
 {
     // ocvStitcher ostitcher(960/2, 540/2);
@@ -265,7 +266,7 @@ int main()
     // define SPDLOG_ACTIVE_LEVEL to desired level
     SPDLOG_TRACE("Some trace message with param {}", 42);
     SPDLOG_DEBUG("Some debug message");
-    */
+    
 
  
     // while(1){
@@ -282,4 +283,19 @@ int main()
     cv::waitKey(0);
            
     return 0;
+}
+*/
+
+int main()
+{
+    imageProcessor nvProcessor;
+    cv::Mat img = cv::imread("ori/3-ori9.png");
+    cv::Mat croped = img(cv::Rect(640, 300, 640, 480));
+    std::vector<int> detret;
+    cv::Mat ret = nvProcessor.ImageDetect(croped, detret);
+    cv::imwrite("1.png", ret);
+    cv::waitKey(0);
+
+    return 0;
+
 }

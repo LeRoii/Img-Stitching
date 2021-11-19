@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
-        cameras[i].reset(new nvCam(camcfgs[i], false));
+        cameras[i].reset(new nvCam(camcfgs[i]));
 
     /************************************stitch all *****************************************/
     // vector<Mat> imgs(8);
@@ -426,7 +426,7 @@ int main(int argc, char *argv[])
             std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
             struct std::tm * ptm = std::localtime(&tt);
             stringstream sstr;
-            sstr << std::put_time(ptm,"\n%F-%H-%M-%S");
+            sstr << std::put_time(ptm,"%F-%H-%M-%S");
             Size panoSize(ret.size().width, ret.size().height);
             Size oriSize(ori.size().width, ori.size().height);
             panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, panoSize);

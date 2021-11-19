@@ -1,10 +1,10 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
-#include "stitcher.hpp"
+// #include "stitcher.hpp"
 #include <string>
 #include "ocvstitcher.hpp"
 #include "PracticalSocket.h"
-#include "config.h"
+#include "stitcherconfig.h"
 
 #define USED_CAMERA_NUM 2
 #define BUF_LEN 65540 
@@ -15,7 +15,7 @@ char buffer[BUF_LEN]; // Buffer for echo string
 string servAddress = "192.168.44.100"; // First arg: server address
 unsigned short servPort = Socket::resolveService("10001", "udp");
 
-int jpegqual =  ENCODE_QUALITY;
+int jpegqual =  80;
 
 int main(int argc, char *argv[])
 {
@@ -26,13 +26,13 @@ int main(int argc, char *argv[])
                                     stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,5,"/dev/video4"},
                                     stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,5,"/dev/video5"},
                                     stCamCfg{3840,2160,1920/2,1080/2,1920/4,1080/4,6,"/dev/video6"}};
-    gmslCamera cameras[CAMERA_NUM] = {gmslCamera{camcfgs[0]},
-                                    gmslCamera{camcfgs[1]},
-                                    gmslCamera{camcfgs[2]},
-                                    gmslCamera{camcfgs[3]},
-                                    gmslCamera{camcfgs[4]},
-                                    gmslCamera{camcfgs[5]},
-                                    gmslCamera{camcfgs[6]}};
+    // gmslCamera cameras[CAMERA_NUM] = {gmslCamera{camcfgs[0]},
+    //                                 gmslCamera{camcfgs[1]},
+    //                                 gmslCamera{camcfgs[2]},
+    //                                 gmslCamera{camcfgs[3]},
+    //                                 gmslCamera{camcfgs[4]},
+    //                                 gmslCamera{camcfgs[5]},
+    //                                 gmslCamera{camcfgs[6]}};
     cv::Mat ret;// = cv::Mat(2160, 3840, CV_8UC3);
 
     // stitcherCfg stitchercfg;
@@ -68,19 +68,22 @@ int main(int argc, char *argv[])
     // unsigned short sourcePort; // Port of datagram source
     vector < uchar > encoded;
     Mat up,down;
-    while(1)
+    // while(1)
+    for(int i=0;i<1;i++)
     {
         // cam0.read_frame();
         // cam1.read_frame();
         // cameras[0].read_frame();
-		std::vector<std::thread> threads;
-		for(int i=0;i<USED_CAMERA_NUM;i++)
-			threads.push_back(std::thread(&gmslCamera::read_frame, std::ref(cameras[i])));
-		for(auto& th:threads)
-			th.join();
+		// std::vector<std::thread> threads;
+		// for(int i=0;i<USED_CAMERA_NUM;i++)
+		// 	threads.push_back(std::thread(&gmslCamera::read_frame, std::ref(cameras[i])));
+		// for(auto& th:threads)
+		// 	th.join();
+
+        cv::Mat im1 = cv::imread("2-0.png");
 
         
-        cv::hconcat(vector<Mat>{cameras[0].m_ret, cameras[1].m_ret}, up);
+        cv::hconcat(vector<Mat>{im1, im1}, up);
 
         //send to master
         vector < int > compression_params;
@@ -88,11 +91,11 @@ int main(int argc, char *argv[])
         compression_params.push_back(jpegqual);
 
         send = up.clone();
-        // send = imread("1.png");
+        // send = imread("final.png");
 
         imencode(".jpg", send, encoded, compression_params);
         // imshow("send", send);
-        int total_pack = 1 + (encoded.size() - 1) / PACK_SIZE;
+        int total_pack = 1 + (encoded.size() - 1) / SLAVE_PCIE_UDP_PACK_SIZE;
         cout << "encodeed size:" << encoded.size() << "total_pack:" << total_pack << endl;
 
         int ibuf[1];
@@ -100,7 +103,7 @@ int main(int argc, char *argv[])
         sock.sendTo(ibuf, sizeof(int), servAddress, servPort);
         cout << "before send data:" << endl;
         for (int i = 0; i < total_pack; i++)
-            sock.sendTo( & encoded[i * PACK_SIZE], PACK_SIZE, servAddress, servPort);
+            sock.sendTo( & encoded[i * SLAVE_PCIE_UDP_PACK_SIZE], SLAVE_PCIE_UDP_PACK_SIZE, servAddress, servPort);
 
         waitKey(1);
         

@@ -72,7 +72,7 @@ public:
                                         stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video6"}};
 
         for(int i=0;i<USED_CAMERA_NUM;i++)
-            cameras[i].reset(new nvCam(camcfgs[i], false));
+            cameras[i].reset(new nvCam(camcfgs[i]));
 
 
         stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1));

@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     //         return 0;
     //     }
     // }
-
+    spdlog::set_level(spdlog::level::debug);
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
 
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
-        cameras[i].reset(new nvCam(camcfgs[i], true));
+        cameras[i].reset(new nvCam(camcfgs[i]));
 
     std::vector<std::thread> threads;
     for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -247,11 +247,11 @@ int main(int argc, char *argv[])
 
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
-
+        cv::Mat ori = ret.clone();
         cv::Mat yoloret;
         if (detect)
         {
-            ret = nvProcessor.ProcessOnce(ret);
+            yoloret = nvProcessor.ProcessOnce(ret);
         }
 
         // if(command == "s")
@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
         //     command = "";
         // }
 
-        cv::imshow("m_dev_name", ret);
+        cv::imshow("m_dev_name", yoloret);
         char c = (char)cv::waitKey(1);
         switch(c)
         {
@@ -276,7 +276,8 @@ int main(int argc, char *argv[])
                     cv::imwrite("7.png", downImgs[2]);
                     cv::imwrite("8.png", downImgs[3]);
                 }
-                cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt++)+".png", ret);
+                cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt++)+".png", yoloret);
+                cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ori);
                 break;
             default:
                 break;

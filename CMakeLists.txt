@@ -88,9 +88,11 @@ add_executable(sti src/sti.cpp )
 add_executable(sd src/stitching_detailed.cpp )
 add_executable(mo src/stithermo.cpp )
 # add_executable(testocv src/testocv.cpp src/imageProcess.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
-add_executable(testocv src/testocv.cpp )
+add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
+add_executable(slave src/slave.cpp  src/PracticalSocket.cpp)
 
 add_library(panocam SHARED src/panocam.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
@@ -157,7 +159,10 @@ target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 # -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
 # spdlog::spdlog)
 target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
-spdlog::spdlog)
+-L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
 
 target_link_libraries(cameracuda  
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
@@ -172,5 +177,10 @@ target_link_libraries(panocam
 )
 target_link_libraries(demo
     panocam)
+
+target_link_libraries(server 
+    ${OpenCV_LIBS})
+target_link_libraries(slave 
+    ${OpenCV_LIBS})
 
 install(TARGETS testocv RUNTIME DESTINATION /home/nvidia/ssd/code/0929IS)

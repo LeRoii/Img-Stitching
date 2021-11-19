@@ -2,6 +2,7 @@
 #define _STITCHERCONFIG_H_
 
 const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
+// const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
 
 const int camSrcWidth = 3840;
 const int camSrcHeight = 2160;

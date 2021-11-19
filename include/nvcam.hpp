@@ -473,10 +473,10 @@ stop_stream(camcontext_t * ctx)
 class nvCam
 {
 public:
-    nvCam(stCamCfg &camcfg, bool withid):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
+    nvCam(stCamCfg &camcfg):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
 	m_retWidth(camcfg.retWidth),m_retHeight(camcfg.retHeight),
-	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), m_id(camcfg.id),
-    m_withid(withid)
+	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), m_id(camcfg.id)
+    
     {
         if(m_distoredWidth == 960)
         {
@@ -820,8 +820,11 @@ public:
 			std::unique_lock<std::mutex> lock(m_mtx[m_id]);
 			// m_mtx[m_id].lock();
 			while(m_queue.size() >= 10)
+            {
+                spdlog::warn("wait for consumer");
 				// m_queue.pop_front();
                 con[m_id].wait(lock);
+            }
             if(m_ret.size().width > 0)
             {
 			    m_queue.push(m_ret);

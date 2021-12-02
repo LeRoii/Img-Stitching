@@ -20,6 +20,8 @@ public:
     int getCamFrame(int id, unsigned char *pData, unsigned int nDataSize);
     int getCamFrame(int id, cv::Mat &frame);
     int getPanoFrame(cv::Mat &ret);
+    int detect(cv::Mat &img, std::vector<int> &ret);
+    int imgEnhancement(cv::Mat &img);
 
 private:
     class panocamimpl;

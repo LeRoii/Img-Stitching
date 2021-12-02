@@ -16,7 +16,7 @@ unsigned long nbytes;
 int angle_x;  //第一个目标中心坐标-角度
 int angle_y;  //第一个目标中心坐标-角度
 
-tk::dnn::Yolo3Detection detNN;
+
 
 int n_batch = 1;
 std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
@@ -24,7 +24,7 @@ std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; 
 
 targetInfo sendData;
 
-jetsonEncoder nvEncoder;
+
 
 canCmd can_recv_data;
 
@@ -149,8 +149,6 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
     batch_frame.push_back(img);
     // this will be resized to the net format
     batch_dnn_input.push_back(img.clone());
-
-    auto start = std::chrono::steady_clock::now();
 
     detNN.update(batch_dnn_input, n_batch);
     detret.clear();

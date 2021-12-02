@@ -88,13 +88,13 @@ add_executable(sti src/sti.cpp )
 add_executable(sd src/stitching_detailed.cpp )
 add_executable(mo src/stithermo.cpp )
 # add_executable(testocv src/testocv.cpp src/imageProcess.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
-add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(testocv src/testocv.cpp)# src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
 add_executable(slave src/slave.cpp  src/PracticalSocket.cpp)
 
-add_library(panocam SHARED src/panocam.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_library(panocam SHARED src/panocam.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
 add_executable(demo src/demo.cpp)
 
@@ -174,6 +174,7 @@ target_link_libraries(panocam
     ${OPENGL_LIBRARY} ${OpenCV_LIBS}
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
 )
 target_link_libraries(demo
     panocam)

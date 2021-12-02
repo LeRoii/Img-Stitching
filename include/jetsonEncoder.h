@@ -49,14 +49,15 @@ typedef struct
     float target_velocity[200];
 } targetInfo;
 
-typedef struct
+struct controlData
 {
     bool use_ssr;
     bool use_flip;
     bool use_detect;
     int contrast;
     int bright;
-} controlData;
+    controlData():use_ssr(false),use_flip(false),use_detect(false){}
+};
 
 
 

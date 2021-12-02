@@ -3,6 +3,7 @@
 #include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
 #include "PracticalSocket.h"
+#include "imageProcess.h"
 #include "spdlog/spdlog.h"
 
 static unsigned short servPort = 10001;
@@ -178,9 +179,25 @@ public:
 
     }
 
+    int detect(cv::Mat &img, std::vector<int> &ret)
+    {
+        img = imgProc.ImageDetect(img, ret);
+
+        return RET_OK;
+    }
+
+    int imgEnhancement(cv::Mat &img)
+    {
+        img = imgProc.SSR(img);
+
+        return RET_OK;
+    }
+    
+
 private:
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     std::shared_ptr<ocvStitcher> stitchers[2];
+    imageProcessor imgProc; 
 };
 
 panocam::panocam():pimpl{std::make_unique<panocamimpl>()}
@@ -203,4 +220,14 @@ int panocam::getCamFrame(int id, cv::Mat &frame)
 int panocam::getPanoFrame(cv::Mat &ret)
 {
     return pimpl->getPanoFrame(ret);
+}
+
+int panocam::detect(cv::Mat &img, std::vector<int> &ret)
+{
+    return pimpl->detect(img, ret);
+}
+
+int panocam::imgEnhancement(cv::Mat &img)
+{
+    return pimpl->imgEnhancement(img);
 }

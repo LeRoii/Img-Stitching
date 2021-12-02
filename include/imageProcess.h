@@ -64,6 +64,8 @@ class imageProcessor
     
     void cut_img(cv::Mat &src_img, std::vector<cv::Mat> &ceil_img);  //将拼接好的图像裁成2*1图像块并存储到vector中
     cv::Mat processImage(std::vector<cv::Mat> &ceil_img);    //调用图像裁剪、检测和检测结果拼接、UDP发送目标信息、CAN发送目标信息
+    tk::dnn::Yolo3Detection detNN;
+    jetsonEncoder nvEncoder;
 };
 
 #endif

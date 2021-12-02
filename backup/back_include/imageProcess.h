@@ -24,7 +24,8 @@ class imageProcessor
     cv::Mat getROIimage(cv::Mat srcImg);
     
     void cut_img(cv::Mat &src_img,std::vector<cv::Mat> &ceil_img);
-
+    tk::dnn::Yolo3Detection detNN;
+    jetsonEncoder nvEncoder;
 };
 
 #endif

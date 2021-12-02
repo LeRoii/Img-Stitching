@@ -72,11 +72,22 @@ bool detect = false;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
+bool displayori = false;
 int videoFps = 10;
 
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
+static std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
+
+stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
 void stitcherTh(int id, ocvStitcher *stitcher)
 {
@@ -104,7 +115,7 @@ parse_cmdline(int argc, char **argv)
         return true;
     }
 
-    while ((c = getopt(argc, argv, "sdihv")) != -1)
+    while ((c = getopt(argc, argv, "sdievo")) != -1)
     {
         switch (c)
         {
@@ -117,15 +128,64 @@ parse_cmdline(int argc, char **argv)
             case 'i':
                 initonline = true;
                 break;
-            case 'h':
+            case 'e':
                 start_ssr = true;
                 break;
             case  'v':
                 savevideo = true;
                 break;
+            case 'o':
+                displayori = true;
             default:
                 break;
         }
+    }
+}
+
+static int detCamNum = 0;
+static void OnMouseAction(int event, int x, int y, int flags, void *data)
+{
+    if(event==CV_EVENT_LBUTTONDOWN)
+    {
+        int ancientDetCamNum = detCamNum;
+        // cv::Point* pt = static_cast<cv::Point*>(data);
+        spdlog::critical("CV_EVENT_LBUTTONDOWN::[{},{}]", x, y);
+        int height = ret.size().height;
+        int width = ret.size().width;
+        if(y<height/2)
+        {
+            if(x < width/4)
+                detCamNum =  4;
+            else if(x < width/2)
+                detCamNum =  3;
+            else if(x < width *3/4)
+                detCamNum =  2;
+            else
+                detCamNum =  1;
+        }
+        else
+        {
+             if(x < width/4)
+                detCamNum =  8;
+            else if(x < width/2)
+                detCamNum =  7;
+            else if(x < width *3/4)
+                detCamNum =  6;
+            else
+                detCamNum =  5;
+        }
+        
+        // if(ancientDetCamNum == detCamNum)
+        //     return;
+        // if(ancientDetCamNum != 0)
+        //     cameras[ancientDetCamNum-1]->setDistoredSize(960);
+        // if(detCamNum > 6)
+        // {
+        //     spdlog::warn("src not available");
+        //     detCamNum = 0;
+        //     return;
+        // }
+        // cameras[detCamNum-1]->setDistoredSize(1920);
     }
 }
 
@@ -134,16 +194,9 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     parse_cmdline(argc, argv);
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+    
 
-    std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
+    
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
@@ -278,6 +331,7 @@ int main(int argc, char *argv[])
 	VideoWriter *oriWriter = nullptr;
     bool writerInit = false;
 
+    
     while(1)
     {
         spdlog::debug("start loop");
@@ -370,9 +424,12 @@ int main(int argc, char *argv[])
         downRet = stitcherOut[1](Rect(0,15,width,height));
 
         cv::Mat up,down,ori;
-        cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-        cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-        cv::vconcat(up, down, ori);
+        if(displayori)
+        {
+            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+            cv::vconcat(up, down, ori);
+        }
 
         cv::vconcat(upRet, downRet, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
@@ -405,7 +462,8 @@ int main(int argc, char *argv[])
         spdlog::info("***********get command: ");
         spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
 
-        if(ctl_command.use_ssr || start_ssr) 
+        // if(ctl_command.use_ssr || start_ssr) 
+        if(start_ssr) 
             ret = nvProcessor.SSR(ret);
 
         if(detect)
@@ -448,8 +506,20 @@ int main(int argc, char *argv[])
         }
 
         cv::imshow("ret", ret);
-        cv::imshow("ori", ori);
+        setMouseCallback("ret",OnMouseAction);
 
+        if(detCamNum!=0)
+        {
+            spdlog::critical("detCamNum::{}", detCamNum);
+            cv::Mat croped = cameras[detCamNum-1]->m_distoredImg(cv::Rect(640, 300, 640, 480)).clone();
+            croped = nvProcessor.ProcessOnce(croped);
+            cv::imshow("det", croped);
+        }
+
+        if(displayori)
+            cv::imshow("ori", ori);
+
+        
         if(saveret)
         {
             cv::imwrite("up.png", stitcherOut[0]);
@@ -475,6 +545,12 @@ int main(int argc, char *argv[])
                     writerInit = false;
                 }
                 savevideo = !savevideo;
+                break;
+            case 'o':
+                displayori = !displayori;
+                break;
+            case 'x':
+                detCamNum = 0;
                 break;
             default:
                 break;

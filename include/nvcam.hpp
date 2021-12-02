@@ -65,14 +65,15 @@
 static bool quit = false;
 
 // int rectPara[4] = {36,53,888,440};
-std::vector<int> rectPara(4);// = {65,105,1788,886};
-cv::Mat intrinsic_matrix[1];
-cv::Mat distortion_coeffs[1];
+std::vector<std::vector<int>> rectPara(2);// = {65,105,1788,886};
+cv::Mat intrinsic_matrix[2];
+cv::Mat distortion_coeffs[2];
 
 using namespace std;
 
 std::mutex m_mtx[8];
 std::condition_variable con[8];
+std::mutex changeszmtx;
 
 static void
 set_defaults(camcontext_t * ctx)
@@ -478,24 +479,28 @@ public:
 	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), m_id(camcfg.id)
     
     {
-        if(m_distoredWidth == 960)
-        {
-            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
+        // if(m_distoredWidth == 960)
+        // {
+            
+        // }
+        // else if(m_distoredWidth == 1920)
+        // {
+           
+        // }
+
+        intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
+                                0, 1.980908029523902e+03, 5.694739251420406e+02,
+                                0, 0, 1);
+
+        distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
+        rectPara[0] = vector<int>{65,105,1788,886};
+
+        intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
                             0, 959.666714085956, 280.450178308760,
                             0, 0, 1);
 
-            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
-            rectPara = vector<int>{36,53,888,440};
-        }
-        else if(m_distoredWidth == 1920)
-        {
-            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
-                                    0, 1.980908029523902e+03, 5.694739251420406e+02,
-                                    0, 0, 1);
-
-            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
-            rectPara = vector<int>{65,105,1788,886};
-        }
+        distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
+        rectPara[1] = vector<int>{36,53,888,440};
 
         set_defaults(&ctx);
         strcpy(ctx.dev_name, camcfg.name);
@@ -515,17 +520,25 @@ public:
             spdlog::critical("ERROR: {}(): (line:{})", __FUNCTION__, __LINE__);
 
         NvBufferCreateParams bufparams = {0};
-        retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+        retNvbuf = (nv_buffer *)malloc(2*sizeof(nv_buffer));
+        // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
         bufparams.payloadType = NvBufferPayload_SurfArray;
-        bufparams.width = m_distoredWidth;
-        bufparams.height = m_distoredHeight;
+        bufparams.width = 1920;
+        bufparams.height = 1080;
         bufparams.layout = NvBufferLayout_Pitch;
         bufparams.colorFormat = NvBufferColorFormat_ARGB32;
         bufparams.nvbuf_tag = NvBufferTag_CAMERA;
-        if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
-                spdlog::critical("Failed to create NvBuffer");
+        if (-1 == NvBufferCreateEx(&retNvbuf[0].dmabuff_fd, &bufparams))
+                spdlog::critical("Failed to create NvBuffer 1920");
 
-        m_argb = cv::Mat(bufparams.height, bufparams.width, CV_8UC4);
+        bufparams.width = 960;
+        bufparams.height = 540;
+        if (-1 == NvBufferCreateEx(&retNvbuf[1].dmabuff_fd, &bufparams))
+                spdlog::critical("Failed to create NvBuffer 960");
+
+        // m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        m_argb[0] = cv::Mat(1080, 1920, CV_8UC4);
+        m_argb[1] = cv::Mat(540, 960, CV_8UC4);
 
         /* Init the NvBufferTransformParams */
         memset(&transParams, 0, sizeof(transParams));
@@ -534,16 +547,25 @@ public:
 
         // m_queue.resize(10);
 
-        cv::Size image_size = cv::Size(m_distoredWidth, m_distoredHeight);
+        cv::Size image_size = cv::Size(1920, 1080);
         cv::Size undistorSize = image_size;
-        mapx = cv::Mat(undistorSize,CV_32FC1);
-        mapy = cv::Mat(undistorSize,CV_32FC1);
+        mapx[0] = cv::Mat(undistorSize,CV_32FC1);
+        mapy[0] = cv::Mat(undistorSize,CV_32FC1);
         cv::Mat R = cv::Mat::eye(3,3,CV_32F);
         cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
-        cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx, mapy);
+        cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx[0], mapy[0]);
+        
+        image_size = cv::Size(960, 540);
+        undistorSize = image_size;
+        mapx[1] = cv::Mat(undistorSize,CV_32FC1);
+        mapy[1] = cv::Mat(undistorSize,CV_32FC1);
+        optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[1], distortion_coeffs[1], image_size, 1, undistorSize, 0);
+        cv::initUndistortRectifyMap(intrinsic_matrix[1],distortion_coeffs[1], R, optMatrix, undistorSize, CV_32FC1, mapx[1], mapy[1]);
 
+        setDistoredSize(m_distoredWidth);
         spdlog::info("!!!!!![{}] cam init ok!!!!!!!!!\n", m_id);
     }
+
     ~nvCam()
     {
         stop_stream(&ctx);
@@ -565,7 +587,31 @@ public:
             free(ctx.g_buff);
         }
 
-        // NvBufferDestroy(ctx.render_dmabuf_fd);
+        NvBufferDestroy(retNvbuf[0].dmabuff_fd);
+        NvBufferDestroy(retNvbuf[1].dmabuff_fd);
+    }
+
+    void setDistoredSize(int width)
+    {
+        changeszmtx.lock();
+        while(!m_queue.empty())
+            m_queue.pop();
+        if(width == 1920)
+        {
+            m_distoredWidth = 1920;
+            m_distoredHeight = 1080;
+            distoredszIdx = 0;
+        }
+        else if(width == 960)
+        {
+            m_distoredWidth = 960;
+            m_distoredHeight = 540;
+            distoredszIdx = 1;
+        }
+        else
+            spdlog::critical("invalid distored size");
+        changeszmtx.unlock();
+
     }
 
     // bool start_capture()
@@ -761,21 +807,23 @@ public:
         //             &transParams))
         //     ERROR_RETURN("Failed to convert the buffer");
 
-        if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd,
+        if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf[distoredszIdx].dmabuff_fd,
                     &transParams))
             ERROR_RETURN("Failed to convert the yuvvvv buffer");
 
-        if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb.data))
+        if(-1 == NvBuffer2Raw(retNvbuf[distoredszIdx].dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb[distoredszIdx].data))
             ERROR_RETURN("Failed to NvBuffer2Raw");
 
         // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
 
-        cv::resize(m_argb, m_distoredImg, cv::Size(m_distoredWidth, m_distoredHeight));
-        cv::cvtColor(m_distoredImg, m_distoredImg, cv::COLOR_RGBA2RGB);
+        cv::Mat tmp;
+        cv::resize(m_argb[distoredszIdx], tmp, cv::Size(m_distoredWidth, m_distoredHeight));
+        cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
+        m_distoredImg = tmp.clone();
         // /*undistored*********/
-        cv::remap(m_distoredImg,m_distoredImg,mapx, mapy, cv::INTER_CUBIC);
-        m_distoredImg = m_distoredImg(cv::Rect(rectPara[0],rectPara[1],rectPara[2],rectPara[3]));
-        cv::resize(m_distoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+        cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+        tmp = tmp(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        cv::resize(tmp, m_ret, cv::Size(m_retWidth, m_retHeight));
         // if(m_withid)
         // {
         //     cv::putText(m_ret, std::to_string(m_id), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
@@ -859,14 +907,15 @@ public:
 	int m_distoredWidth, m_distoredHeight;
     int m_fd_video;
     char m_dev_name[30];
-    cv::Mat m_argb, m_distoredImg, m_ret, m_tmp;
+    cv::Mat m_argb[2], m_distoredImg, m_undistoredImg, m_ret, m_tmp;
 	int m_id;
     bool m_withid;
 
-    nv_buffer * retNvbuf;
+    nv_buffer *retNvbuf;//for 1920 and 960
     NvBufferTransformParams transParams;
 
     std::queue<cv::Mat> m_queue;
 
-    cv::Mat mapx, mapy;
+    cv::Mat mapx[2], mapy[2];
+    int distoredszIdx;
 };

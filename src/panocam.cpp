@@ -61,16 +61,16 @@ int  serverCap()
 class panocam::panocamimpl
 {
 public:
-    panocamimpl(std::string net, std::string cfgpath)
+    panocamimpl(int camwidth, int camheight, std::string net, std::string cfgpath)
     {
-        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                        stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                        stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                        stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                        stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                        stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                        stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video7"},
-                                        stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video6"}};
+        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video7"},
+                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video6"}};
 
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
@@ -80,7 +80,7 @@ public:
         stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2, cfgpath));
 
         pImgProc = new imageProcessor(net);
-
+        spdlog::debug("panocam ctor complete");
     }
     
     ~panocamimpl() = default;
@@ -202,7 +202,8 @@ private:
     imageProcessor *pImgProc; 
 };
 
-panocam::panocam(std::string net, std::string cfgpath):pimpl{std::make_unique<panocamimpl>(net, cfgpath)}
+panocam::panocam(int camwidth, int camheight, std::string net, std::string cfgpath):
+    pimpl{std::make_unique<panocamimpl>(camwidth, camheight, net, cfgpath)}
 {
 
 }

@@ -733,7 +733,7 @@ main(int argc, char *argv[])
     //         "Invalid options specified");
 
     ctx.cam_devname = "/dev/video5";
-    ctx.cam_w = 3840;
+    ctx.cam_w = 384;
     ctx.cam_h = 2160;
     ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;
     ctx.enable_cuda = true;

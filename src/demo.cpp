@@ -7,7 +7,7 @@ int main()
     std::string cfgpath = "/home/nvidia/ssd/code/0929IS/cfg/";
 
 
-    panocam *pcam = new panocam(net, cfgpath);
+    panocam *pcam = new panocam(3840, 2160, net, cfgpath);
     pcam->init(INIT_OFFLINE);
     cv::Mat frame;
     while(1)

@@ -793,9 +793,10 @@ public:
         v4l2_buf.memory = V4L2_MEMORY_DMABUF;
         
         if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
+        {
             ERROR_RETURN("Failed to dequeue camera buff: %s (%d)",
                     strerror(errno), errno);
-
+        }
         ctx.frame++;
 
         /* Cache sync for VIC operation since the data is from CPU */
@@ -815,7 +816,6 @@ public:
             ERROR_RETURN("Failed to NvBuffer2Raw");
 
         // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
-
         cv::Mat tmp;
         cv::resize(m_argb[distoredszIdx], tmp, cv::Size(m_distoredWidth, m_distoredHeight));
         cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
@@ -836,7 +836,6 @@ public:
         // cv::waitKey(1);
 
         // cv::imwrite("rf.png", m_ret);
-
         /* Enqueue camera buffer back to driver */
         if (ioctl(ctx.cam_fd, VIDIOC_QBUF, &v4l2_buf))
             ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
@@ -851,7 +850,7 @@ public:
     {
         if(read_frame())
         {
-            frame = m_ret.clone();
+            frame = m_distoredImg.clone();
             return RET_OK;
         }
         else

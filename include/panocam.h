@@ -13,7 +13,7 @@ enum enInitMode
 class __attribute__((visibility("default"))) panocam
 {
 public:
-    panocam(std::string net, std::string cfgpath);
+    panocam(int camwidth, int camheight, std::string net, std::string cfgpath);
     ~panocam();
     int init(enInitMode mode);
     // int captureFrames();

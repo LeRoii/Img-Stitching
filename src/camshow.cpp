@@ -82,7 +82,7 @@ void ketboardlistener()
 
 
 bool detect = false;
-bool showall = false;
+bool showall = true;
 bool withnum = false;
 int idx = 1;
 static int parse_cmdline(int argc, char **argv)
@@ -142,7 +142,9 @@ int main(int argc, char *argv[])
 
     thread kblistener(ketboardlistener);
 
-    imageProcessor nvProcessor;  
+    std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
+
+    imageProcessor nvProcessor(net);  
 
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
                                     stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
@@ -248,7 +250,7 @@ int main(int argc, char *argv[])
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
         cv::Mat ori = ret.clone();
-        cv::Mat yoloret;
+        cv::Mat yoloret = ret;
         if (detect)
         {
             yoloret = nvProcessor.ProcessOnce(ret);
@@ -260,7 +262,7 @@ int main(int argc, char *argv[])
         //     command = "";
         // }
 
-        cv::imshow("m_dev_name", yoloret);
+        cv::imshow("m_dev_name", ret);
         char c = (char)cv::waitKey(1);
         switch(c)
         {

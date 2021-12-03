@@ -19,12 +19,8 @@ int angle_y;  //第一个目标中心坐标-角度
 
 
 int n_batch = 1;
-std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
-
 
 targetInfo sendData;
-
-
 
 canCmd can_recv_data;
 
@@ -331,7 +327,7 @@ controlData imageProcessor::getCtlCommand(){
     return ctl_data;
 }
 //Init here
-imageProcessor::imageProcessor() {
+imageProcessor::imageProcessor(std::string net) {
     pthread_t tid;
     canInit();
     printf("can init ok!\n");

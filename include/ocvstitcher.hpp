@@ -47,7 +47,7 @@ static void Stringsplit(string str, const char split, vector<string>& res)
 class ocvStitcher
 {
     public:
-    ocvStitcher(int width, int height, int id):m_imgWidth(width), m_imgHeight(height), m_id(id)
+    ocvStitcher(int width, int height, int id, std::string cfgpath):m_imgWidth(width), m_imgHeight(height), m_id(id)
     {
         // auto gpu = cuda::getCudaEnabledDeviceCount();
         // if (gpu > 0)
@@ -71,7 +71,7 @@ class ocvStitcher
         for(int i=0;i<num_images;i++)
             cameraR.push_back(Mat(Size(3,3), CV_32FC1));
         
-        (initCamParams() == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
+        (initCamParams(cfgpath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
 
     }
 
@@ -80,10 +80,10 @@ class ocvStitcher
 
     }
 
-    int initCamParams()
+    int initCamParams(std::string cfgpath)
     {
         vector<string> res;
-        string filename = "cameraparaout_" + to_string(m_id) + ".txt";
+        string filename = cfgpath + "cameraparaout_" + to_string(m_id) + ".txt";
         std::ifstream fin(filename, std::ios::in);
         if(!fin.is_open())
         {

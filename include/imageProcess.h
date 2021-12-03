@@ -50,7 +50,7 @@ typedef struct
 class imageProcessor
 {
     public:
-    imageProcessor();
+    imageProcessor(std::string net);
     cv::Mat Process(cv::Mat &img);
     cv::Mat ProcessOnce(cv::Mat &img);
     void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储

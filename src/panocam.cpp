@@ -61,7 +61,7 @@ int  serverCap()
 class panocam::panocamimpl
 {
 public:
-    panocamimpl()
+    panocamimpl(std::string net, std::string cfgpath)
     {
         stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
                                         stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
@@ -76,8 +76,10 @@ public:
             cameras[i].reset(new nvCam(camcfgs[i]));
 
 
-        stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1));
-        stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2));
+        stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1, cfgpath));
+        stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2, cfgpath));
+
+        pImgProc = new imageProcessor(net);
 
     }
     
@@ -181,14 +183,14 @@ public:
 
     int detect(cv::Mat &img, std::vector<int> &ret)
     {
-        img = imgProc.ImageDetect(img, ret);
+        img = pImgProc->ImageDetect(img, ret);
 
         return RET_OK;
     }
 
     int imgEnhancement(cv::Mat &img)
     {
-        img = imgProc.SSR(img);
+        img = pImgProc->SSR(img);
 
         return RET_OK;
     }
@@ -197,10 +199,10 @@ public:
 private:
     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
     std::shared_ptr<ocvStitcher> stitchers[2];
-    imageProcessor imgProc; 
+    imageProcessor *pImgProc; 
 };
 
-panocam::panocam():pimpl{std::make_unique<panocamimpl>()}
+panocam::panocam(std::string net, std::string cfgpath):pimpl{std::make_unique<panocamimpl>(net, cfgpath)}
 {
 
 }

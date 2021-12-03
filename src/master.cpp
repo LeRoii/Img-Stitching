@@ -194,9 +194,8 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     parse_cmdline(argc, argv);
 
-    
+    std::string cfgpath = "/home/nvidia/ssd/code/0929IS/cfg/";
 
-    
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
@@ -283,8 +282,8 @@ int main(int argc, char *argv[])
     // }
     /************************************stitch all end*****************************************/
 
-    ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1);
-    ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2);
+    ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1, cfgpath);
+    ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2, cfgpath);
 
     do{
         upImgs.clear();
@@ -322,7 +321,9 @@ int main(int argc, char *argv[])
     for(auto& th:threads)
         th.detach();
 
-    imageProcessor nvProcessor;     //图像处理类
+    std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
+
+    imageProcessor nvProcessor(net);     //图像处理类
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);

@@ -1,15 +1,15 @@
-#include <chrono>
-#include <termio.h>
-#include <stdio.h>
-#include <opencv2/opencv.hpp>
-// #include "ocvstitcher.hpp"
-// #include "imageProcess.h"
+// #include <chrono>
+// #include <termio.h>
+// #include <stdio.h>
+// #include <opencv2/opencv.hpp>
+// // #include "ocvstitcher.hpp"
+// // #include "imageProcess.h"
 
-// #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+// // #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 
-#include "spdlog/spdlog.h"
+// #include "spdlog/spdlog.h"
 
-using namespace cv;
+// using namespace cv;
 
 // #include "imageProcess.h"
 
@@ -23,24 +23,24 @@ using namespace cv;
 //     }
 // }
 
-int scanKeyboard()
-{
-    int in;
-    struct termios new_settings;
-    struct termios stored_settings;
-    tcgetattr(0,&stored_settings);
-    new_settings = stored_settings;
-    new_settings.c_lflag &= (~ICANON);
-    new_settings.c_cc[VTIME] = 0;
-    tcgetattr(0,&stored_settings);
-    new_settings.c_cc[VMIN] = 1;
-    tcsetattr(0,TCSANOW,&new_settings);
+// int scanKeyboard()
+// {
+//     int in;
+//     struct termios new_settings;
+//     struct termios stored_settings;
+//     tcgetattr(0,&stored_settings);
+//     new_settings = stored_settings;
+//     new_settings.c_lflag &= (~ICANON);
+//     new_settings.c_cc[VTIME] = 0;
+//     tcgetattr(0,&stored_settings);
+//     new_settings.c_cc[VMIN] = 1;
+//     tcsetattr(0,TCSANOW,&new_settings);
 
-    in = getchar();
+//     in = getchar();
 
-    tcsetattr(0,TCSANOW,&stored_settings);
-    return in;
-}
+//     tcsetattr(0,TCSANOW,&stored_settings);
+//     return in;
+// }
 /*
 int main()
 {
@@ -332,73 +332,82 @@ int main()
    printf("Machine = %s\n", buf1.machine);
 }
 */
-#include <string>
-#include <net/if.h>
-#include <sys/ioctl.h>
+/* test yaml*/
+// #include <string>
+// #include <net/if.h>
+// #include <sys/ioctl.h>
 
-using namespace std;
+// using namespace std;
 
-int _System(const char * cmd, char *pRetMsg, int msg_len)
-{
-	FILE * fp;
-	char * p = NULL;
-	int res = -1;
-	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
-	{
-		printf("Param Error!\n");
-		return -1;
-	}
-	if ((fp = popen(cmd, "r") ) == NULL)
-	{
-		printf("Popen Error!\n");
-		return -2;
-	}
-	else
-	{
-		memset(pRetMsg, 0, msg_len);
-		//get lastest result
-		while(fgets(pRetMsg, msg_len, fp) != NULL)
-		{
-			printf("Msg:%s",pRetMsg); //print all info
-		}
+// int _System(const char * cmd, char *pRetMsg, int msg_len)
+// {
+// 	FILE * fp;
+// 	char * p = NULL;
+// 	int res = -1;
+// 	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
+// 	{
+// 		printf("Param Error!\n");
+// 		return -1;
+// 	}
+// 	if ((fp = popen(cmd, "r") ) == NULL)
+// 	{
+// 		printf("Popen Error!\n");
+// 		return -2;
+// 	}
+// 	else
+// 	{
+// 		memset(pRetMsg, 0, msg_len);
+// 		//get lastest result
+// 		while(fgets(pRetMsg, msg_len, fp) != NULL)
+// 		{
+// 			printf("Msg:%s",pRetMsg); //print all info
+// 		}
  
-		if ( (res = pclose(fp)) == -1)
-		{
-			printf("close popenerror!\n");
-			return -3;
-		}
-		pRetMsg[strlen(pRetMsg)-1] = '\0';
-		return 0;
-	}
-}
+// 		if ( (res = pclose(fp)) == -1)
+// 		{
+// 			printf("close popenerror!\n");
+// 			return -3;
+// 		}
+// 		pRetMsg[strlen(pRetMsg)-1] = '\0';
+// 		return 0;
+// 	}
+// }
 
-void get_mac(char * mac_a)
-{
-    int                 sockfd;
-    struct ifreq        ifr;
+// void get_mac(char * mac_a)
+// {
+//     int                 sockfd;
+//     struct ifreq        ifr;
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd == -1) {
-        perror("socket error");
-        exit(1);
-    }
-    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+//     if (sockfd == -1) {
+//         perror("socket error");
+//         exit(1);
+//     }
+//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-        memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
-    }
-}
+//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+//         memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
+//     }
+// }
+
+// int main()
+// {
+//     // string str1 = "cat /sys/class/net/eth0/address";
+//     // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
+//     // system(command1);
+//     char buf[100];
+//     int msg_len = 100;
+//     // _System("cat /sys/class/net/eth0/address", buf, msg_len);
+//     char * this_mac = new char[6];
+//     get_mac(this_mac);
+//     printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+
+// }
+
+#include "yaml-cpp/yaml.h"
 
 int main()
 {
-    // string str1 = "cat /sys/class/net/eth0/address";
-    // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
-    // system(command1);
-    char buf[100];
-    int msg_len = 100;
-    // _System("cat /sys/class/net/eth0/address", buf, msg_len);
-    char * this_mac = new char[6];
-    get_mac(this_mac);
-    printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-
+    YAML::Node config = YAML::LoadFile("yamlpath");
+    return 0;
 }

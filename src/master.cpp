@@ -352,6 +352,7 @@ int main(int argc, char *argv[])
         // for(auto& th:threads)
         //     th.join();
         
+        spdlog::debug("capture slave start");
         std::thread server(serverCap);
         
 

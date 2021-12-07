@@ -24,6 +24,7 @@
 #include <time.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include "cansender.hpp"
 #include "yolo_v2_class.hpp"
 #include "Yolo3Detection.h"
 
@@ -50,7 +51,7 @@ typedef struct
 class imageProcessor
 {
     public:
-    imageProcessor(std::string net);
+    imageProcessor(std::string net, std::string canname = "can0");
     cv::Mat Process(cv::Mat &img);
     cv::Mat ProcessOnce(cv::Mat &img);
     void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
@@ -66,6 +67,7 @@ class imageProcessor
     cv::Mat processImage(std::vector<cv::Mat> &ceil_img);    //调用图像裁剪、检测和检测结果拼接、UDP发送目标信息、CAN发送目标信息
     tk::dnn::Yolo3Detection detNN;
     jetsonEncoder nvEncoder;
+    cansender *pCanSender;
 };
 
 #endif

@@ -1,10 +1,12 @@
 #include "panocam.h"
+#include "yaml-cpp/yaml.h"
 #include "nvcam.hpp"
 #include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
 #include "PracticalSocket.h"
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
+
 
 static unsigned short servPort = 10001;
 static UDPSocket sock(servPort);
@@ -61,25 +63,32 @@ int  serverCap()
 class panocam::panocamimpl
 {
 public:
-    panocamimpl(int camwidth, int camheight, std::string net, std::string cfgpath)
+    panocamimpl(std::string yamlpath)
     {
-        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video7"},
-                                        stCamCfg{camwidth,camheight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video6"}};
+        YAML::Node config = YAML::LoadFile(yamlpath);
+        int camw = config["camwidth"].as<int>();
+        int camh = config["camheight"].as<int>();
+        std::string net = config["netpath"].as<string>();
+        std::string camcfg = config["camcfgpath"].as<string>();
+        std::string canname = config["canname"].as<string>();
+
+        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                        stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                        stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                        stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                        stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                        stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                        stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video7"},
+                                        stCamCfg{camw,camh,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video6"}};
 
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
 
 
-        stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1, cfgpath));
-        stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2, cfgpath));
+        stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1, camcfg));
+        stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2, camcfg));
 
-        pImgProc = new imageProcessor(net);
+        pImgProc = new imageProcessor(net, canname);
         spdlog::debug("panocam ctor complete");
     }
     
@@ -202,8 +211,8 @@ private:
     imageProcessor *pImgProc; 
 };
 
-panocam::panocam(int camwidth, int camheight, std::string net, std::string cfgpath):
-    pimpl{std::make_unique<panocamimpl>(camwidth, camheight, net, cfgpath)}
+panocam::panocam(std::string yamlpath):
+    pimpl{std::make_unique<panocamimpl>(yamlpath)}
 {
 
 }

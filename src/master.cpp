@@ -1,6 +1,7 @@
 #include <thread>
 #include <memory>
 #include <opencv2/core/utility.hpp>
+#include "yaml-cpp/yaml.h"
 #include "imageProcess.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
@@ -78,16 +79,7 @@ int videoFps = 10;
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
-static std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
-
-stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+std::string stitchercfgpath = "/home/nvidia/ssd/code/0929IS/cfg/stitchercfg.yaml";
 
 void stitcherTh(int id, ocvStitcher *stitcher)
 {
@@ -114,8 +106,8 @@ parse_cmdline(int argc, char **argv)
     {
         return true;
     }
-
-    while ((c = getopt(argc, argv, "sdievo")) != -1)
+    string cfgpath;
+    while ((c = getopt(argc, argv, "sdievoc:")) != -1)
     {
         switch (c)
         {
@@ -136,6 +128,15 @@ parse_cmdline(int argc, char **argv)
                 break;
             case 'o':
                 displayori = true;
+                break;
+            case 'c':
+                cfgpath = optarg;
+                spdlog::info("cfg path:{}", cfgpath);
+                if(std::string::npos == cfgpath.find(".yaml"))
+                    spdlog::warn("input cfgpath invalid, use default");
+                else
+                    stitchercfgpath = cfgpath;
+                break;
             default:
                 break;
         }
@@ -194,8 +195,29 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     parse_cmdline(argc, argv);
 
-    std::string cfgpath = "/home/nvidia/ssd/code/0929IS/cfg/";
+    YAML::Node config = YAML::LoadFile(stitchercfgpath);
+    camSrcWidth = config["camsrcwidth"].as<int>();
+    camSrcHeight = config["camsrcheight"].as<int>();
+    undistorWidth = config["undistorWidth"].as<int>();
+    undistorHeight = config["undistorHeight"].as<int>();
+    stitcherinputWidth = config["stitcherinputWidth"].as<int>();
+    stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+    USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
+    std::string net = config["netpath"].as<string>();
+    std::string cfgpath = config["camcfgpath"].as<string>();
+    std::string canname = config["canname"].as<string>();
 
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+
+
+    static std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
@@ -320,8 +342,6 @@ int main(int argc, char *argv[])
         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
     for(auto& th:threads)
         th.detach();
-
-    std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
 
     imageProcessor nvProcessor(net);     //图像处理类
 

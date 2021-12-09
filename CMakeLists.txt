@@ -110,7 +110,7 @@ add_executable(demo src/demo.cpp)
 #   yuyv2rgb
 #  )
 
- target_link_libraries(master  
+ target_link_libraries(master  -lyaml-cpp
  -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
@@ -144,7 +144,7 @@ add_executable(demo src/demo.cpp)
 # add_executable(calib calib.cpp )
 # target_link_libraries(cvtest yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 # target_link_libraries(main yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
-target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
+target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
 -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}

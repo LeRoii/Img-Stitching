@@ -11,6 +11,7 @@
 static unsigned short servPort = 10001;
 static UDPSocket sock(servPort);
 static char buffer[SLAVE_PCIE_UDP_BUF_LEN];
+// static const int USED_CAMERA_NUM = 6;
 
 std::vector<cv::Mat> upImgs(4);
 std::vector<cv::Mat> downImgs(4);
@@ -206,7 +207,7 @@ public:
     
 
 private:
-    std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
+    std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     std::shared_ptr<ocvStitcher> stitchers[2];
     imageProcessor *pImgProc; 
 };

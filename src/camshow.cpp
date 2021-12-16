@@ -1,7 +1,7 @@
 #include <thread>
 #include <memory>
 #include <opencv2/core/utility.hpp>
-
+#include "yaml-cpp/yaml.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
 #include "ocvstitcher.hpp"
@@ -82,7 +82,7 @@ void ketboardlistener()
 
 
 bool detect = false;
-bool showall = true;
+bool showall = false;
 bool withnum = false;
 int idx = 1;
 static int parse_cmdline(int argc, char **argv)
@@ -139,10 +139,17 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
-
-    thread kblistener(ketboardlistener);
-
-    std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
+    YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/0929IS/cfg/stitchercfg.yaml");
+    camSrcWidth = config["camsrcwidth"].as<int>();
+    camSrcHeight = config["camsrcheight"].as<int>();
+    undistorWidth = config["undistorWidth"].as<int>();
+    undistorHeight = config["undistorHeight"].as<int>();
+    stitcherinputWidth = config["stitcherinputWidth"].as<int>();
+    stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+    int USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
+    std::string net = config["netpath"].as<string>();
+    std::string cfgpath = config["camcfgpath"].as<string>();
+    std::string canname = config["canname"].as<string>();
 
     imageProcessor nvProcessor(net);  
 
@@ -155,7 +162,7 @@ int main(int argc, char *argv[])
                                     stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
                                     stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
-    std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
+    std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 

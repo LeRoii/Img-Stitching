@@ -47,7 +47,8 @@ static void Stringsplit(string str, const char split, vector<string>& res)
 class ocvStitcher
 {
     public:
-    ocvStitcher(int width, int height, int id, std::string cfgpath):m_imgWidth(width), m_imgHeight(height), m_id(id)
+    ocvStitcher(int width, int height, int id, std::string cfgpath):
+    m_imgWidth(width), m_imgHeight(height), m_id(id), m_cfgpath(cfgpath)
     {
         // auto gpu = cuda::getCudaEnabledDeviceCount();
         // if (gpu > 0)
@@ -154,10 +155,10 @@ class ocvStitcher
         struct std::tm * ptm = std::localtime(&tt);
         // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
 
-        string filename = "cameraparaout_" + to_string(m_id) + ".txt";
+        string filename = m_cfgpath + "cameraparaout_" + to_string(m_id) + ".txt";
         ofstream fout(filename, std::ofstream::out | std::ofstream::app);
 
-        fout << std::put_time(ptm,"\n%F-%H-%M-%S:\n");
+        fout << std::put_time(ptm,"%F-%H-%M-%S:\n");
         for(int mi=0;mi<3;mi++)
         {
             for(int mj=0;mj<3;mj++)
@@ -179,7 +180,7 @@ class ocvStitcher
             }
         }
         fout << "\n";
-        fout << warped_image_scale;
+        fout << warped_image_scale << "\n";
 
         return 0;
     }
@@ -774,6 +775,7 @@ class ocvStitcher
     int m_id;
 
     bool presetParaOk;
+    std::string m_cfgpath;
 
 };
 

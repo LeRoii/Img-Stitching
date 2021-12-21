@@ -503,6 +503,22 @@ public:
         distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
         rectPara[1] = vector<int>{36,53,888,440};
 
+        //imx390 960x540 undistored
+        intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.015264419405688e+03, 0, 5.175898502304585e+02,
+                            0, 1.011960767907845e+03, 2.927908447845667e+02,
+                            0, 0, 1);
+
+        distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6027, 0.2956, 0, 0);
+        rectPara[1] = vector<int>{45,64,882,423};
+
+        //imx390 1920x1080 undistored
+        intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.946119547414241e+03, 0, 1.016749758038493e+03,
+                            0, 1.943374997244887e+03, 5.679760696574299e+02,
+                            0, 0, 1);
+
+        distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.5554, 0.2303, 0, 0);
+        rectPara[0] = vector<int>{95,130,1751,840};
+
         set_defaults(&ctx);
         strcpy(ctx.dev_name, camcfg.name);
         ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;
@@ -675,16 +691,15 @@ public:
         cv::Mat tmp;
         cv::resize(m_argb[distoredszIdx], tmp, cv::Size(m_distoredWidth, m_distoredHeight));
         cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
-        m_distoredImg = tmp.clone();
-        // /*undistored*********/
+        // m_distoredImg = tmp.clone();
+        // // /*undistored*********/
         cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
-        tmp = tmp(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        cv::resize(tmp, m_ret, cv::Size(m_retWidth, m_retHeight));
+        m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
         // if(m_withid)
         // {
         //     cv::putText(m_ret, std::to_string(m_id), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         // }
-        
         
         /*undistored end*/
 

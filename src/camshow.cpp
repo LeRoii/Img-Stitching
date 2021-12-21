@@ -197,9 +197,11 @@ int main(int argc, char *argv[])
 
         if(showall)
         {
+
             spdlog::info("wait for slave");
             std::thread server(serverCap);
             server.join();
+
 
             cameras[0]->getFrame(upImgs[0]);
             cameras[1]->getFrame(upImgs[1]);
@@ -207,6 +209,8 @@ int main(int argc, char *argv[])
             cameras[3]->getFrame(upImgs[3]);
             cameras[4]->getFrame(downImgs[0]);
             cameras[5]->getFrame(downImgs[1]);
+            cameras[6]->getFrame(downImgs[2]);
+            cameras[7]->getFrame(downImgs[3]);
 
             if(withnum)
             {
@@ -228,32 +232,10 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // int idx = stoi(argv[1]);
-            if(idx < 5)
-            {
-                cameras[idx-1]->getFrame(ret);
-                // cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            }
-            else
-            {
-                std::thread server(serverCap);
-                cameras[4]->getFrame(downImgs[0]);
-                cameras[5]->getFrame(downImgs[1]);
-                server.join();
-                ret = downImgs[idx-5];
-                // cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-
-            }
-
+            cameras[idx-1]->getFrame(ret);
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
-
-        
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+1)+".png", upImgs[i]);
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
 
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();

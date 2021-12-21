@@ -17,7 +17,7 @@
 class cansender
 {
 public:
-    cansender(char *canname)
+    cansender(const char *canname)
     {
         struct sockaddr_can addr;
         struct ifreq ifr;

@@ -1,13 +1,13 @@
 #include "panocam.h"
 #include "spdlog/spdlog.h"
 
-int main()
+int main(int argc, char *argv[])
 {
-    std::string net ="/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt" ; //yolo4_320_fp16.rt（44ms, double detect）, yolo4_berkeley_fp16.rt(64ms),  kitti_yolo4_int8.rt 
-    std::string cfgpath = "/home/nvidia/ssd/code/0929IS/cfg/";
+    std::string yamlpath = "/home/nvidia/ssd/code/0929IS/cfg/pamocfg.yaml";
+    if(argc > 1)
+        yamlpath = argv[1];
 
-
-    panocam *pcam = new panocam(3840, 2160, net, cfgpath);
+    panocam *pcam = new panocam(yamlpath);
     pcam->init(INIT_OFFLINE);
     cv::Mat frame;
     while(1)

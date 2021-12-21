@@ -22,6 +22,7 @@ set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS} --maxrregcount=32; -G;-g;-std=c++11) # n
 set(CUDIR /usr/src/jetson_multimedia_api/samples/common/algorithm/cuda)
 set(COMMONCLS /usr/src/jetson_multimedia_api/samples/common/classes)
 
+
 # add_subdirectory(cudasrc)
 # include_directories(cudasrc)
 
@@ -109,7 +110,7 @@ add_executable(demo src/demo.cpp)
 #   yuyv2rgb
 #  )
 
- target_link_libraries(master  
+ target_link_libraries(master  -lyaml-cpp
  -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
@@ -143,7 +144,7 @@ add_executable(demo src/demo.cpp)
 # add_executable(calib calib.cpp )
 # target_link_libraries(cvtest yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 # target_link_libraries(main yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
-target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
+target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
 -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
@@ -157,11 +158,13 @@ target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 #  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
 # -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
 # spdlog::spdlog)
-target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
--L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
- -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
-  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
-  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
+
+# target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
+# -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+#  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+#   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+#   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
+target_link_libraries(testocv  -lyaml-cpp)
 
 target_link_libraries(cameracuda  
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
@@ -170,10 +173,11 @@ target_link_libraries(cameracuda
      )
 
 target_link_libraries(panocam
-    ${OPENGL_LIBRARY} ${OpenCV_LIBS}
+    ${OPENGL_LIBRARY} ${OpenCV_LIBS} -lyaml-cpp
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
     -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+    
 )
 target_link_libraries(demo
     panocam)

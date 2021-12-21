@@ -1,15 +1,15 @@
-#include <chrono>
-#include <termio.h>
-#include <stdio.h>
-#include <opencv2/opencv.hpp>
-// #include "ocvstitcher.hpp"
-// #include "imageProcess.h"
+// #include <chrono>
+// #include <termio.h>
+// #include <stdio.h>
+// #include <opencv2/opencv.hpp>
+// // #include "ocvstitcher.hpp"
+// // #include "imageProcess.h"
 
-// #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+// // #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
 
-#include "spdlog/spdlog.h"
+// #include "spdlog/spdlog.h"
 
-using namespace cv;
+// using namespace cv;
 
 // #include "imageProcess.h"
 
@@ -23,24 +23,24 @@ using namespace cv;
 //     }
 // }
 
-int scanKeyboard()
-{
-    int in;
-    struct termios new_settings;
-    struct termios stored_settings;
-    tcgetattr(0,&stored_settings);
-    new_settings = stored_settings;
-    new_settings.c_lflag &= (~ICANON);
-    new_settings.c_cc[VTIME] = 0;
-    tcgetattr(0,&stored_settings);
-    new_settings.c_cc[VMIN] = 1;
-    tcsetattr(0,TCSANOW,&new_settings);
+// int scanKeyboard()
+// {
+//     int in;
+//     struct termios new_settings;
+//     struct termios stored_settings;
+//     tcgetattr(0,&stored_settings);
+//     new_settings = stored_settings;
+//     new_settings.c_lflag &= (~ICANON);
+//     new_settings.c_cc[VTIME] = 0;
+//     tcgetattr(0,&stored_settings);
+//     new_settings.c_cc[VMIN] = 1;
+//     tcsetattr(0,TCSANOW,&new_settings);
 
-    in = getchar();
+//     in = getchar();
 
-    tcsetattr(0,TCSANOW,&stored_settings);
-    return in;
-}
+//     tcsetattr(0,TCSANOW,&stored_settings);
+//     return in;
+// }
 /*
 int main()
 {
@@ -332,7 +332,9 @@ int main()
    printf("Machine = %s\n", buf1.machine);
 }
 */
+
 #include <string>
+#include <string.h>
 #include <net/if.h>
 #include <sys/ioctl.h>
 
@@ -402,3 +404,12 @@ int main()
     printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
 
 }
+
+/* test yaml*/
+// #include "yaml-cpp/yaml.h"
+
+// int main()
+// {
+//     YAML::Node config = YAML::LoadFile("yamlpath");
+//     return 0;
+// }

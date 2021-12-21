@@ -22,9 +22,8 @@ set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS} --maxrregcount=32; -G;-g;-std=c++11) # n
 set(CUDIR /usr/src/jetson_multimedia_api/samples/common/algorithm/cuda)
 set(COMMONCLS /usr/src/jetson_multimedia_api/samples/common/classes)
 
-
-add_subdirectory(cudasrc)
-include_directories(cudasrc)
+# add_subdirectory(cudasrc)
+# include_directories(cudasrc)
 
 set(OpenCV_DIR "/usr/local/share/OpenCV/OpenCVConfig.cmake")
 find_package( OpenCV 3 REQUIRED )

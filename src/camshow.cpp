@@ -197,6 +197,7 @@ int main(int argc, char *argv[])
 
         if(showall)
         {
+            spdlog::info("wait for slave");
             std::thread server(serverCap);
             server.join();
 

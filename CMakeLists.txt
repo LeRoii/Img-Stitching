@@ -187,4 +187,4 @@ target_link_libraries(server
 target_link_libraries(slave 
     ${OpenCV_LIBS})
 
-install(TARGETS testocv RUNTIME DESTINATION /home/nvidia/ssd/code/0929IS)
+# install(TARGETS testocv RUNTIME DESTINATION /home/nvidia/ssd/code/0929IS)

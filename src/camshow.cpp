@@ -198,6 +198,11 @@ int main(int argc, char *argv[])
         if(showall)
         {
 
+            spdlog::info("wait for slave");
+            std::thread server(serverCap);
+            server.join();
+
+
             cameras[0]->getFrame(upImgs[0]);
             cameras[1]->getFrame(upImgs[1]);
             cameras[2]->getFrame(upImgs[2]);

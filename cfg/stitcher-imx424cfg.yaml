@@ -1,0 +1,10 @@
+camsrcwidth: 3840
+camsrcheight: 2160
+undistorWidth: 960
+undistorHeight: 540
+stitcherinputWidth: 480
+stitcherinputHeight: 270
+USED_CAMERA_NUM: 8
+netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
+camcfgpath: "/home/nvidia/ssd/code/0929IS/cfg/424camcfg/"
+canname: "can0" 

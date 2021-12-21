@@ -487,7 +487,7 @@ public:
         // {
            
         // }
-
+        //4k camera 1080 undistored
         intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
                                 0, 1.980908029523902e+03, 5.694739251420406e+02,
                                 0, 0, 1);
@@ -495,6 +495,7 @@ public:
         distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
         rectPara[0] = vector<int>{65,105,1788,886};
 
+        //4k camera 540 undistored
         intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
                             0, 959.666714085956, 280.450178308760,
                             0, 0, 1);
@@ -613,151 +614,6 @@ public:
         changeszmtx.unlock();
 
     }
-
-    // bool start_capture()
-    // {
-    //     struct sigaction sig_action;
-    //     struct pollfd fds[1];
-    //     NvBufferTransformParams transParams;
-
-    //     /* Register a shuwdown handler to ensure
-    //     a clean shutdown if user types <ctrl+c> */
-    //     sig_action.sa_handler = signal_handle;
-    //     sigemptyset(&sig_action.sa_mask);
-    //     sig_action.sa_flags = 0;
-    //     sigaction(SIGINT, &sig_action, NULL);
-
-    //     // if (ctx->cam_pixfmt == V4L2_PIX_FMT_MJPEG)
-    //     //     ctx->jpegdec = NvJPEGDecoder::createJPEGDecoder("jpegdec");
-
-    //     /* Init the NvBufferTransformParams */
-    //     memset(&transParams, 0, sizeof(transParams));
-    //     transParams.transform_flag = NVBUFFER_TRANSFORM_FILTER;
-    //     transParams.transform_filter = NvBufferTransform_Filter_Smart;
-
-    //     /* Enable render profiling information */
-    //     // ctx.renderer->enableProfiling();
-
-    //     fds[0].fd = ctx.cam_fd;
-    //     fds[0].events = POLLIN;
-
-    //     /* read a raw YUYV data from disk and display*/
-    //     // int img = open("../camera.YUYV", O_RDONLY);
-    //     // if (-1 == img)
-    //     //     ERROR_RETURN("Failed to open file for rendering");
-    //     // int bufsize = 3840*2160*2;
-    //     // unsigned char *buf = (unsigned char*)malloc(bufsize);
-    //     // int cnt = read(img, buf, bufsize);
-    //     //     printf("read %d bytes\n", cnt);
-
-    //     // NvBufferCreateParams bufparams = {0};
-    //     // nv_buffer *nvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
-    //     // bufparams.payloadType = NvBufferPayload_SurfArray;
-    //     // bufparams.width = ctx.cam_w;
-    //     // bufparams.height = ctx.cam_h;
-    //     // bufparams.layout = NvBufferLayout_Pitch;
-    //     // bufparams.colorFormat = get_nvbuff_color_fmt(V4L2_PIX_FMT_YUYV);
-    //     // bufparams.nvbuf_tag = NvBufferTag_CAMERA;
-    //     // if (-1 == NvBufferCreateEx(&nvbuf->dmabuff_fd, &bufparams))
-    //     //         ERROR_RETURN("Failed to create NvBuffer");
-        
-    //     // if(-1 == Raw2NvBuffer(buf, 0, 3840, 2160, nvbuf->dmabuff_fd))
-    //     //         ERROR_RETURN("Failed to Raw2NvBuffer");
-        
-    //     // // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx.render_dmabuf_fd,
-    //     // //                     &transParams))
-    //     // //             ERROR_RETURN("Failed to convert the yuvvvv buffer");
-        
-    //     // // ctx.renderer->render(ctx.render_dmabuf_fd);
-
-    //     // int rgbRender;
-    //     // bufparams.colorFormat = NvBufferColorFormat_ARGB32;
-    //     // bufparams.width = 960;
-    //     // bufparams.height = 540;
-    //     // if (-1 == NvBufferCreateEx(&rgbRender, &bufparams))
-    //     //         ERROR_RETURN("Failed to create NvBuffer");
-        
-    //     // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, rgbRender,
-    //     //                     &transParams))
-    //     //             ERROR_RETURN("Failed to convert the yuvvvv buffer");
-        
-    //     // // while (poll(fds, 1, 5000) > 0 && !quit)
-    //     // // {
-    //     // //     ctx->renderer->render(rgbRender);
-    //     // // }
-
-    //     // unsigned char *rgbbuf = (unsigned char*)malloc(bufparams.width*bufparams.height*4);
-    //     // if(-1 == NvBuffer2Raw(rgbRender, 0, bufparams.width, bufparams.height, rgbbuf))
-    //     //     ERROR_RETURN("Failed to NvBuffer2Raw");
-        
-    //     // cv::Mat mtt(bufparams.height, bufparams.width, CV_8UC4, rgbbuf);
-    //     // cv::imshow("a", mtt);
-    //     // cv::waitKey(0);
-
-    //     // return 0;
-
-    //     /* Wait for camera event with timeout = 5000 ms */
-    //     while (poll(fds, 1, 5000) > 0 && !quit)
-    //     {
-    //         if (fds[0].revents & POLLIN) {
-    //             struct v4l2_buffer v4l2_buf;
-
-    //             /* Dequeue a camera buff */
-    //             memset(&v4l2_buf, 0, sizeof(v4l2_buf));
-    //             v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    //             if (ctx.capture_dmabuf)
-    //                 v4l2_buf.memory = V4L2_MEMORY_DMABUF;
-    //             else
-    //                 v4l2_buf.memory = V4L2_MEMORY_MMAP;
-    //             if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
-    //                 ERROR_RETURN("Failed to dequeue camera buff: %s (%d)",
-    //                         strerror(errno), errno);
-
-    //             ctx.frame++;
-
-    //             if (ctx.capture_dmabuf) {
-    //                 /* Cache sync for VIC operation since the data is from CPU */
-    //                 NvBufferMemSyncForDevice(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0,
-    //                         (void**)&ctx.g_buff[v4l2_buf.index].start);
-    //             } else {
-    //                 /* Copies raw buffer plane contents to an NvBuffer plane */
-    //                 Raw2NvBuffer(ctx.g_buff[v4l2_buf.index].start, 0,
-    //                             ctx.cam_w, ctx.cam_h, ctx.g_buff[v4l2_buf.index].dmabuff_fd);
-    //             }
-
-    //             /*  Convert the camera buffer from YUV422 to YUV420P */
-    //             if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, ctx.render_dmabuf_fd,
-    //                         &transParams))
-    //                 ERROR_RETURN("Failed to convert the buffer");
-
-    //             if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd,
-    //                         &transParams))
-    //                 ERROR_RETURN("Failed to convert the yuvvvv buffer");
-
-    //             if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_ret.data))
-    //                 ERROR_RETURN("Failed to NvBuffer2Raw");
-
-    //             // cv::imshow("1", m_ret);
-    //             // cv::waitKey(1);
-
-    //             /* Preview */
-    //             // ctx.renderer->render(ctx.render_dmabuf_fd);
-    //             // ctx->renderer->render(nvbuf->dmabuff_fd);
-    //             // ctx->renderer->render(img);
-
-    //             /* Enqueue camera buffer back to driver */
-    //             if (ioctl(ctx.cam_fd, VIDIOC_QBUF, &v4l2_buf))
-    //                 ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
-    //                         strerror(errno), errno);
-    //         }
-    //     }
-
-    //     /* Print profiling information when streaming stops */
-    //     // ctx->renderer->printProfilingStats();
-
-
-    //     return true;
-    // }
 
     bool read_frame()
     {

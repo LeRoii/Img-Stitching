@@ -79,7 +79,7 @@ int videoFps = 10;
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
-std::string stitchercfgpath = "/home/nvidia/ssd/code/0929IS/cfg/stitchercfg.yaml";
+std::string stitchercfgpath = "/home/nvidia/ssd/code/0929IS/cfg/stitcher-imx390cfg.yaml";
 
 void stitcherTh(int id, ocvStitcher *stitcher)
 {
@@ -327,11 +327,12 @@ int main(int argc, char *argv[])
     // }
     
     do{
-        serverCap();
-        cameras[4]->read_frame();
-        cameras[5]->read_frame();
-        downImgs[0] = cameras[4]->m_ret;
-        downImgs[1] = cameras[5]->m_ret;
+        downImgs.clear();
+        for(int i=0;i<4;i++)
+        {
+            cameras[i+4]->read_frame();
+            downImgs.push_back(cameras[i]->m_ret);
+        } 
     }
     while(ostitcherDown.init(downImgs, initonline) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
@@ -372,8 +373,8 @@ int main(int argc, char *argv[])
         // for(auto& th:threads)
         //     th.join();
         
-        spdlog::debug("capture slave start");
-        std::thread server(serverCap);
+        // spdlog::debug("capture slave start");
+        // std::thread server(serverCap);
         
 
         cameras[0]->getFrame(upImgs[0]);
@@ -382,11 +383,13 @@ int main(int argc, char *argv[])
         cameras[3]->getFrame(upImgs[3]);
         cameras[4]->getFrame(downImgs[0]);
         cameras[5]->getFrame(downImgs[1]);
+        cameras[6]->getFrame(downImgs[2]);
+        cameras[7]->getFrame(downImgs[3]);
 
         spdlog::debug("master cap fini");
 
-        server.join();
-        spdlog::debug("slave cap fini");
+        // server.join();
+        // spdlog::debug("slave cap fini");
         
 
         // for(int i=0;i<4;i++)

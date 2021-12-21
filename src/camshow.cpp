@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
-    YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/0929IS/cfg/stitchercfg.yaml");
+    YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/0929IS/cfg/stitcher-imx390cfg.yaml");
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
     undistorWidth = config["undistorWidth"].as<int>();
@@ -227,33 +227,10 @@ int main(int argc, char *argv[])
         }
         else
         {
-            // int idx = stoi(argv[1]);
-            // if(idx < 5)
-            // {
-            //     cameras[idx-1]->getFrame(ret);
-            //     // cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            // }
-            // else
-            // {
-            //     std::thread server(serverCap);
-            //     cameras[4]->getFrame(downImgs[0]);
-            //     cameras[5]->getFrame(downImgs[1]);
-            //     server.join();
-            //     ret = downImgs[idx-5];
-            //     // cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-
-            // }
             cameras[idx-1]->getFrame(ret);
-
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
-
-        
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+1)+".png", upImgs[i]);
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
 
         LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
         t = cv::getTickCount();
@@ -263,12 +240,6 @@ int main(int argc, char *argv[])
         {
             yoloret = nvProcessor.ProcessOnce(ret);
         }
-
-        // if(command == "s")
-        // {
-        //     cv::imwrite(std::to_string(framecnt++)+".png", ret);
-        //     command = "";
-        // }
 
         cv::imshow("m_dev_name", ret);
         char c = (char)cv::waitKey(1);
@@ -286,7 +257,10 @@ int main(int argc, char *argv[])
                     cv::imwrite("7.png", downImgs[2]);
                     cv::imwrite("8.png", downImgs[3]);
                 }
-                cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt++)+".png", yoloret);
+                if (detect)
+                {
+                    cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt++)+".png", yoloret);
+                }
                 cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ori);
                 break;
             default:

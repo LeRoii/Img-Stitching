@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
-    YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/0929IS/cfg/stitcher-imx390cfg.yaml");
+    YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/1221/cfg/stitcher-imx390cfg.yaml");
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
     undistorWidth = config["undistorWidth"].as<int>();
@@ -197,11 +197,11 @@ int main(int argc, char *argv[])
 
         if(showall)
         {
-
+#if CAM_IMX424
             spdlog::info("wait for slave");
             std::thread server(serverCap);
             server.join();
-
+#endif
 
             cameras[0]->getFrame(upImgs[0]);
             cameras[1]->getFrame(upImgs[1]);
@@ -209,8 +209,11 @@ int main(int argc, char *argv[])
             cameras[3]->getFrame(upImgs[3]);
             cameras[4]->getFrame(downImgs[0]);
             cameras[5]->getFrame(downImgs[1]);
+            
+#if CAM_IMX390     
             cameras[6]->getFrame(downImgs[2]);
             cameras[7]->getFrame(downImgs[3]);
+#endif
 
             if(withnum)
             {
@@ -232,7 +235,23 @@ int main(int argc, char *argv[])
         }
         else
         {
+#if CAM_IMX424
+            if(idx < 5)
+            {
+                cameras[idx-1]->getFrame(ret);
+            }
+            else
+            {
+                std::thread server(serverCap);
+                cameras[4]->getFrame(downImgs[0]);
+                cameras[5]->getFrame(downImgs[1]);
+                server.join();
+                ret = downImgs[idx-5];
+            }
+#elif CAM_IMX390
             cameras[idx-1]->getFrame(ret);
+#endif
+
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }

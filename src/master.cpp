@@ -79,7 +79,7 @@ int videoFps = 10;
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
-std::string stitchercfgpath = "/home/nvidia/ssd/code/0929IS/cfg/stitcher-imx390cfg.yaml";
+std::string stitchercfgpath = "/home/nvidia/ssd/code/1221/cfg/stitcher-imx390cfg.yaml";
 
 void stitcherTh(int id, ocvStitcher *stitcher)
 {
@@ -318,23 +318,26 @@ int main(int argc, char *argv[])
     while(ostitcherUp.init(upImgs, initonline) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    // if(saveret)
-    // {
-    //     imwrite("1.png", upImgs[0]);
-    //     imwrite("2.png", upImgs[1]);
-    //     imwrite("3.png", upImgs[2]);
-    //     imwrite("4.png", upImgs[3]);
-    // }
-    
+
     do{
+#if CAM_IMX390
         downImgs.clear();
         for(int i=0;i<4;i++)
         {
             cameras[i+4]->read_frame();
             downImgs.push_back(cameras[i]->m_ret);
-        } 
+        }
+#elif CAM_IMX424
+        serverCap();
+        cameras[4]->read_frame();
+        cameras[5]->read_frame();
+        downImgs[0] = cameras[4]->m_ret;
+        downImgs[1] = cameras[5]->m_ret;
+#endif
     }
     while(ostitcherDown.init(downImgs, initonline) != 0);
+
+
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
 
@@ -373,23 +376,26 @@ int main(int argc, char *argv[])
         // for(auto& th:threads)
         //     th.join();
         
-        // spdlog::debug("capture slave start");
-        // std::thread server(serverCap);
+#if CAM_IMX424
+        spdlog::debug("capture slave start");
+        std::thread server(serverCap);
+#endif
         
-
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
         cameras[2]->getFrame(upImgs[2]);
         cameras[3]->getFrame(upImgs[3]);
         cameras[4]->getFrame(downImgs[0]);
         cameras[5]->getFrame(downImgs[1]);
+#if CAM_IMX390
         cameras[6]->getFrame(downImgs[2]);
         cameras[7]->getFrame(downImgs[3]);
-
+#endif
         spdlog::debug("master cap fini");
-
-        // server.join();
-        // spdlog::debug("slave cap fini");
+#if CAM_IMX424
+        server.join();
+        spdlog::debug("slave cap fini");
+#endif
         
 
         // for(int i=0;i<4;i++)

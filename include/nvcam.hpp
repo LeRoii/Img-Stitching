@@ -487,37 +487,46 @@ public:
         // {
            
         // }
-        //4k camera 1080 undistored
-        intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
-                                0, 1.980908029523902e+03, 5.694739251420406e+02,
+        if(m_camSrcWidth == 3840)
+        {
+            //4k camera 1080 undistored
+            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
+                                    0, 1.980908029523902e+03, 5.694739251420406e+02,
+                                    0, 0, 1);
+
+            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
+            rectPara[0] = vector<int>{65,105,1788,886};
+
+            //4k camera 540 undistored
+            intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
+                                0, 959.666714085956, 280.450178308760,
                                 0, 0, 1);
 
-        distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
-        rectPara[0] = vector<int>{65,105,1788,886};
+            distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
+            rectPara[1] = vector<int>{36,53,888,440};
+        }
+        else if(m_camSrcWidth == 1920)
+        {
+            //imx390 960x540 undistored
+            intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.015264419405688e+03, 0, 5.175898502304585e+02,
+                                0, 1.011960767907845e+03, 2.927908447845667e+02,
+                                0, 0, 1);
 
-        //4k camera 540 undistored
-        intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
-                            0, 959.666714085956, 280.450178308760,
-                            0, 0, 1);
+            distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6027, 0.2956, 0, 0);
+            rectPara[1] = vector<int>{45,64,882,423};
 
-        distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
-        rectPara[1] = vector<int>{36,53,888,440};
+            //imx390 1920x1080 undistored
+            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.946119547414241e+03, 0, 1.016749758038493e+03,
+                                0, 1.943374997244887e+03, 5.679760696574299e+02,
+                                0, 0, 1);
 
-        //imx390 960x540 undistored
-        intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.015264419405688e+03, 0, 5.175898502304585e+02,
-                            0, 1.011960767907845e+03, 2.927908447845667e+02,
-                            0, 0, 1);
-
-        distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6027, 0.2956, 0, 0);
-        rectPara[1] = vector<int>{45,64,882,423};
-
-        //imx390 1920x1080 undistored
-        intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.946119547414241e+03, 0, 1.016749758038493e+03,
-                            0, 1.943374997244887e+03, 5.679760696574299e+02,
-                            0, 0, 1);
-
-        distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.5554, 0.2303, 0, 0);
-        rectPara[0] = vector<int>{95,130,1751,840};
+            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.5554, 0.2303, 0, 0);
+            rectPara[0] = vector<int>{95,130,1751,840};
+        }
+        else
+        {
+            spdlog::critical("invalid camSrcWidth:{}", m_camSrcWidth);
+        }
 
         set_defaults(&ctx);
         strcpy(ctx.dev_name, camcfg.name);

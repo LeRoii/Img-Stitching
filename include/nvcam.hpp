@@ -748,7 +748,7 @@ public:
 			// m_mtx[m_id].lock();
 			while(m_queue.size() >= 10)
             {
-                spdlog::warn("wait for consumer");
+                spdlog::warn("cam:[{}] wait for consumer", m_id);
 				// m_queue.pop_front();
                 con[m_id].wait(lock);
             }
@@ -767,7 +767,7 @@ public:
         std::unique_lock<std::mutex> lock(m_mtx[m_id]);
         while(m_queue.empty())
         {
-            spdlog::warn("wait for img");
+            spdlog::warn("cam:[{}] wait for img", m_id);
             // return 0;
             con[m_id].wait(lock);
         }

@@ -202,7 +202,6 @@ int main(int argc, char *argv[])
             std::thread server(serverCap);
             server.join();
 #endif
-
             cameras[0]->getFrame(upImgs[0]);
             cameras[1]->getFrame(upImgs[1]);
             cameras[2]->getFrame(upImgs[2]);

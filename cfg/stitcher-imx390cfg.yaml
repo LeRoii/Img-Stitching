@@ -5,6 +5,7 @@ undistorHeight: 540
 stitcherinputWidth: 480
 stitcherinputHeight: 270
 USED_CAMERA_NUM: 8
-netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
+# netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
+netpath: "/home/nvidia/ssd/model/yolo4tiny_fp16.rt"
 camcfgpath: "/home/nvidia/ssd/code/1221/cfg/390camcfg/"
 canname: "can0" 

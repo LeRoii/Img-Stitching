@@ -7,6 +7,7 @@
 #include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
 #include "imageProcess.h"
+#include "helper_timer.h"
 
 // #define CAMERA_NUM 8
 // #define USED_CAMERA_NUM 6
@@ -68,18 +69,9 @@ void serverCap()
     free(longbuf);
 }
 
-std::string command;
+std::string cfgpath;
+std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
 int framecnt = 0;
-
-void ketboardlistener()
-{
-    while(1)
-    {
-        std::cin >> command;
-        std::cout << "command:" << command << std::endl;
-    }
-}
-
 
 bool detect = false;
 bool showall = false;
@@ -94,7 +86,7 @@ static int parse_cmdline(int argc, char **argv)
         return true;
     }
 
-    while ((c = getopt(argc, argv, "c:dn")) != -1)
+    while ((c = getopt(argc, argv, "c:dnp:")) != -1)
     {
         switch (c)
         {
@@ -114,6 +106,14 @@ static int parse_cmdline(int argc, char **argv)
                     spdlog::critical("invalid argument!!!\n");
                     return RET_ERR;
                 }
+                break;
+            case 'p':
+                cfgpath = optarg;
+                spdlog::info("cfg path:{}", cfgpath);
+                if(std::string::npos == cfgpath.find(".yaml"))
+                    spdlog::warn("input cfgpath invalid, use default");
+                else
+                    defaultcfgpath = cfgpath;
                 break;
             case 'd':
                 detect = true;
@@ -139,7 +139,8 @@ int main(int argc, char *argv[])
     spdlog::set_level(spdlog::level::debug);
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
-    YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/1221/cfg/stitcher-imx390cfg.yaml");
+
+    YAML::Node config = YAML::LoadFile(defaultcfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
     undistorWidth = config["undistorWidth"].as<int>();
@@ -174,8 +175,14 @@ int main(int argc, char *argv[])
 
     Mat rets[USED_CAMERA_NUM];
 
+    StopWatchInterface *timer = NULL;
+    sdkCreateTimer(&timer);
+    sdkResetTimer(&timer);
+    sdkStartTimer(&timer);
+
     while(1)
     {
+        sdkResetTimer(&timer);
         auto t = cv::getTickCount();
         // cameras[0]->read_frame();
         // cameras[1]->read_frame();
@@ -210,8 +217,8 @@ int main(int argc, char *argv[])
             cameras[5]->getFrame(downImgs[1]);
             
 #if CAM_IMX390     
-            cameras[6]->getFrame(downImgs[2]);
-            cameras[7]->getFrame(downImgs[3]);
+            // cameras[6]->getFrame(downImgs[2]);
+            // cameras[7]->getFrame(downImgs[3]);
 #endif
 
             if(withnum)
@@ -226,10 +233,20 @@ int main(int argc, char *argv[])
                 cv::putText(downImgs[3], "8", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
 
+            // cv::Mat up,down;
+            // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+            // cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+            // cv::vconcat(up, down, ret);
+
             cv::Mat up,down;
-            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+            cv::hconcat(vector<cv::Mat>{upImgs[2], upImgs[1], upImgs[0]}, up);
+            cv::hconcat(vector<cv::Mat>{upImgs[3], downImgs[1], downImgs[0]}, down);
             cv::vconcat(up, down, ret);
+
+            // cv::Mat up,down;
+            // cv::hconcat(vector<cv::Mat>{upImgs[1], upImgs[0]}, up);
+            // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2]}, down);
+            // cv::vconcat(up, down, ret);
 
         }
         else
@@ -249,13 +266,16 @@ int main(int argc, char *argv[])
             }
 #elif CAM_IMX390
             cameras[idx-1]->getFrame(ret);
+            // cameras[idx-1]->read_frame();
+            // ret = cameras[idx-1]->m_ret;
 #endif
 
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
 
-        LOGLN("read takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+        spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
+        
         t = cv::getTickCount();
         cv::Mat ori = ret.clone();
         cv::Mat yoloret = ret;
@@ -290,7 +310,7 @@ int main(int argc, char *argv[])
                 break;
         }
 
-        LOGLN("all takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
+        spdlog::info("all takes:{} ms", sdkGetTimerValue(&timer));
 
     }
     return 0;

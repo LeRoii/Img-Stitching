@@ -165,7 +165,7 @@ target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 #  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
 #   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
 #   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
-target_link_libraries(testocv  -lyaml-cpp)
+target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} )
 
 target_link_libraries(cameracuda  
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  

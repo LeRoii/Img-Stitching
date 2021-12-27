@@ -406,10 +406,72 @@ int main()
 // }
 
 /* test yaml*/
-#include "yaml-cpp/yaml.h"
+// #include "yaml-cpp/yaml.h"
 
-int main()
+// int main()
+// {
+//     YAML::Node config = YAML::LoadFile("yamlpath");
+//     return 0;
+// }
+
+/********* test nvidia timer *********/
+// #include <unistd.h> //sleep usleep
+// #include <stdio.h>
+// #include "helper_timer.h"
+
+// int main()
+// {
+//     StopWatchInterface *timer = NULL;
+//     sdkCreateTimer(&timer);
+//     sdkResetTimer(&timer);
+//     sdkStartTimer(&timer);
+
+//     for(int i=0;i<50;i++)
+//     {
+//         sdkResetTimer(&timer);
+//         printf("loop:%d\n",i);
+//         usleep(1000*300);
+
+//         // sdkStopTimer(&timer);
+//         // printf("sdkGetAverageTimerValue:%f ms\n", sdkGetAverageTimerValue(&timer));
+//         printf("sdkGetTimerValue:%f ms\n", sdkGetTimerValue(&timer));
+
+//         usleep(1000*500);
+
+//         // sdkStopTimer(&timer);
+//         // printf("sdkGetAverageTimerValue:%f ms\n", sdkGetAverageTimerValue(&timer));
+//         printf("sdkGetTimerValue:%f ms\n", sdkGetTimerValue(&timer));
+//     }
+
+//     return 0;
+// }
+
+/********* test opencv video capture *********/
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudaimgproc.hpp> 
+using namespace std;
+using namespace cv;
+int main(int argc, char **argv)
 {
-    YAML::Node config = YAML::LoadFile("yamlpath");
-    return 0;
+    cv::cuda::GpuMat a;
+	VideoCapture cap;
+	cap.open(0);
+    cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
+	while (1)
+	{
+		Mat frame;//定义一个变量把视频源一帧一帧显示
+		cap >> frame;
+		if (frame.empty())
+		{
+			cout << "Finish" << endl;
+			break;
+		}
+		imshow("Input video", frame);
+		waitKey(30);
+	}
+	cap.release();
+	return 0;
+ 
 }

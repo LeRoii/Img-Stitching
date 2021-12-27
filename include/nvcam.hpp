@@ -34,6 +34,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <opencv2/core/cuda.hpp>
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
 #include <unistd.h>
@@ -58,13 +60,11 @@
 #include "camera_v4l2-cuda.h"
 #include "spdlog/spdlog.h"
 #include "stitcherconfig.h"
+#include "helper_timer.h"
 
-#define LOG(msg) std::cout << msg
-#define LOGLN(msg) std::cout << msg << std::endl
 
 static bool quit = false;
 
-// int rectPara[4] = {36,53,888,440};
 std::vector<std::vector<int>> rectPara(2);// = {65,105,1788,886};
 cv::Mat intrinsic_matrix[2];
 cv::Mat distortion_coeffs[2];
@@ -566,6 +566,12 @@ public:
         m_argb[0] = cv::Mat(1080, 1920, CV_8UC4);
         m_argb[1] = cv::Mat(540, 960, CV_8UC4);
 
+        m_gpuargb[0] = cv::cuda::GpuMat(1080, 1920, CV_8UC4);
+        m_gpuargb[1] = cv::cuda::GpuMat(540, 960, CV_8UC4);
+
+        m_gpuDistoredImg = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        m_gpuUndistoredImg = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+
         /* Init the NvBufferTransformParams */
         memset(&transParams, 0, sizeof(transParams));
         transParams.transform_flag = NVBUFFER_TRANSFORM_FILTER;
@@ -575,11 +581,15 @@ public:
 
         cv::Size image_size = cv::Size(1920, 1080);
         cv::Size undistorSize = image_size;
+
+        // cv::Mat mapx[2], mapy[2];
         mapx[0] = cv::Mat(undistorSize,CV_32FC1);
         mapy[0] = cv::Mat(undistorSize,CV_32FC1);
         cv::Mat R = cv::Mat::eye(3,3,CV_32F);
         cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
         cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx[0], mapy[0]);
+        gpuMapx[0] = cv::cuda::GpuMat(mapx[0].clone());
+        gpuMapy[0] = cv::cuda::GpuMat(mapy[0].clone());
         
         image_size = cv::Size(960, 540);
         undistorSize = image_size;
@@ -587,9 +597,15 @@ public:
         mapy[1] = cv::Mat(undistorSize,CV_32FC1);
         optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[1], distortion_coeffs[1], image_size, 1, undistorSize, 0);
         cv::initUndistortRectifyMap(intrinsic_matrix[1],distortion_coeffs[1], R, optMatrix, undistorSize, CV_32FC1, mapx[1], mapy[1]);
+        gpuMapx[1] = cv::cuda::GpuMat(mapx[1]);
+        gpuMapy[1] = cv::cuda::GpuMat(mapy[1]);
 
         setDistoredSize(m_distoredWidth);
         spdlog::info("!!!!!![{}] cam init ok!!!!!!!!!\n", m_id);
+
+        sdkCreateTimer(&timer);
+        sdkResetTimer(&timer);
+        sdkStartTimer(&timer);
     }
 
     ~nvCam()
@@ -642,6 +658,7 @@ public:
 
     bool read_frame()
     {
+        sdkResetTimer(&timer);
         struct pollfd fds[1];
         fds[0].fd = ctx.cam_fd;
         fds[0].events = POLLIN;
@@ -672,6 +689,8 @@ public:
         //                 ctx.cam_w, ctx.cam_h, ctx.g_buff[v4l2_buf.index].dmabuff_fd);
         // }
         v4l2_buf.memory = V4L2_MEMORY_DMABUF;
+
+        spdlog::trace("read frame before ioctl takes :{} ms", sdkGetTimerValue(&timer));
         
         if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
         {
@@ -680,48 +699,66 @@ public:
         }
         ctx.frame++;
 
+        spdlog::trace("read frame before NvBufferMemSyncForDevice takes :{} ms", sdkGetTimerValue(&timer));
+
         /* Cache sync for VIC operation since the data is from CPU */
         NvBufferMemSyncForDevice(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0,
                 (void**)&ctx.g_buff[v4l2_buf.index].start);
 
-        /*  Convert the camera buffer from YUV422 to YUV420P */
-        // if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, ctx.render_dmabuf_fd,
-        //             &transParams))
-        //     ERROR_RETURN("Failed to convert the buffer");
+        spdlog::trace("read frame before NvBufferTransform takes :{} ms", sdkGetTimerValue(&timer));
 
         if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf[distoredszIdx].dmabuff_fd,
                     &transParams))
             ERROR_RETURN("Failed to convert the yuvvvv buffer");
 
+        spdlog::trace("read frame before NvBuffer2Raw takes :{} ms", sdkGetTimerValue(&timer));
+
         if(-1 == NvBuffer2Raw(retNvbuf[distoredszIdx].dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb[distoredszIdx].data))
             ERROR_RETURN("Failed to NvBuffer2Raw");
 
-        // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
+        spdlog::trace("read frame before undistor takes :{} ms", sdkGetTimerValue(&timer));
+
         cv::Mat tmp;
-        cv::resize(m_argb[distoredszIdx], tmp, cv::Size(m_distoredWidth, m_distoredHeight));
-        cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
-        // m_distoredImg = tmp.clone();
-        // // /*undistored*********/
-        cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
-        m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
-        // if(m_withid)
-        // {
-        //     cv::putText(m_ret, std::to_string(m_id), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-        // }
+        /***** gpu undistor *****/
+        m_gpuargb[distoredszIdx].upload(m_argb[distoredszIdx]);
+        cv::cuda::resize(m_gpuargb[distoredszIdx], m_gpuDistoredImg, cv::Size(m_distoredWidth, m_distoredHeight));
         
-        /*undistored end*/
+        spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+        cv::cuda::remap(m_gpuDistoredImg, m_gpuUndistoredImg, gpuMapx[distoredszIdx], gpuMapy[distoredszIdx], cv::INTER_CUBIC);
+        
+        spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+        m_gpuUndistoredImg = m_gpuUndistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        cv::cuda::resize(m_gpuUndistoredImg, m_gpuUndistoredImg, cv::Size(m_retWidth, m_retHeight));
+        m_gpuUndistoredImg.download(m_ret);
+        /***** gpu undistor end *****/
 
-        // cv::imshow("1", m_ret);
-        // cv::waitKey(1);
+        /***** cpu undistor *****/
+        // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
+        // cv::Mat tmp;
+        // cv::resize(m_argb[distoredszIdx], m_ret, cv::Size(m_distoredWidth, m_distoredHeight));
+        // cv::resize(m_argb[distoredszIdx], tmp, cv::Size(m_distoredWidth, m_distoredHeight));
+        // // cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
+        // // m_distoredImg = tmp.clone();
+        // // // /*undistored*********/
 
-        // cv::imwrite("rf.png", m_ret);
+        // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+        // cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+
+        // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+        // m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        // cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+        
+        /***** cpu undistor end*****/
+
+        spdlog::trace("read frame before VIDIOC_QBUF takes :{} ms", sdkGetTimerValue(&timer));
         /* Enqueue camera buffer back to driver */
         if (ioctl(ctx.cam_fd, VIDIOC_QBUF, &v4l2_buf))
             ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
                     strerror(errno), errno);
         
         // printf("read_frame ctx.cam_fd:%d ok!!!\n", ctx.cam_fd);
+
+        spdlog::trace("read frame takes :{} ms\n", sdkGetTimerValue(&timer));
 
         return true;
     }
@@ -797,4 +834,9 @@ public:
 
     cv::Mat mapx[2], mapy[2];
     int distoredszIdx;
+
+    StopWatchInterface *timer;
+
+    cv::cuda::GpuMat gpuMapx[2], gpuMapy[2];
+    cv::cuda::GpuMat m_gpuargb[2], m_gpuDistoredImg, m_gpuUndistoredImg;
 };

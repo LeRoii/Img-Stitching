@@ -5,6 +5,10 @@ if(COMMAND cmake_policy)
     cmake_policy(SET CMP0003 NEW)
 endif(COMMAND cmake_policy)
 
+set(LIB_PANO_MAJOR 1)
+set(LIB_PANO_MINOR 0)
+set(LIB_PANO_PATCH 0)
+
 #add -no-pie to generate executable files, otherwise generate shared library
 # set(CMAKE_CXX_FLAGS "-no-pie -g -Wall")
 #-------------------------------------------------------------------------------
@@ -165,7 +169,7 @@ target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 #  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
 #   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
 #   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
-target_link_libraries(testocv  -lyaml-cpp)
+target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} )
 
 target_link_libraries(cameracuda  
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
@@ -187,5 +191,7 @@ target_link_libraries(server
     ${OpenCV_LIBS})
 target_link_libraries(slave 
     ${OpenCV_LIBS})
+
+set_target_properties(panocam PROPERTIES VERSION ${LIB_PANO_MAJOR}.${LIB_PANO_MINOR}.${LIB_PANO_PATCH} SOVERSION ${LIB_PANO_MAJOR})
 
 # install(TARGETS testocv RUNTIME DESTINATION /home/nvidia/ssd/code/0929IS)

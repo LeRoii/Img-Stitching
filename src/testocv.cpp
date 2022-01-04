@@ -1,316 +1,39 @@
-// #include <chrono>
-// #include <termio.h>
-// #include <stdio.h>
-// #include <opencv2/opencv.hpp>
-// // #include "ocvstitcher.hpp"
-// // #include "imageProcess.h"
-
-// // #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
-
-// #include "spdlog/spdlog.h"
-
-// using namespace cv;
-
+/********* test detector *********/
 // #include "imageProcess.h"
-
-// void Stringsplit(string str, const char split, vector<string>& res)
+// // #include <opencv2/opencv.hpp>
+// #include <iostream>
+// int main()
 // {
-//     istringstream iss(str);	// 输入流
-//     string token;			// 接收缓冲区
-//     while (getline(iss, token, split))	// 以split为分隔符
+//     std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt";
+//     imageProcessor nvProcessor(net);
+//     // cv::Mat img = cv::imread("/home/nvidia/ssd/data/1.jpg");
+//     cv::Mat img = cv::imread("/home/nvidia/ssd/data/7.png");
+//     if (img.empty()) //check whether the image is loaded or not
 //     {
-//         res.push_back(token);
+//         std::cout << "Error : Image cannot be loaded..!!" << std::endl;
+//         //system("pause"); //wait for a key press
+//         return -1;
 //     }
+//     // cv::imshow("1", img);
+//     // cv::waitKey(0);
+//     // cv::imwrite("3.jpg", img);
+//     // cv::Mat croped = img(cv::Rect(640, 300, 640, 480));
+//     std::vector<int> detret;
+//     int cnt = 0;
+//     cv::Mat ret = nvProcessor.ImageDetect(img, detret);
+//     // cnt++;
+//     cv::imshow("1", ret);
+//     cv::waitKey(1);
+
+//     cv::imwrite("det.png", ret);
+//     // cv::waitKey(0);
+
+//     return 0;
+
 // }
 
-// int scanKeyboard()
-// {
-//     int in;
-//     struct termios new_settings;
-//     struct termios stored_settings;
-//     tcgetattr(0,&stored_settings);
-//     new_settings = stored_settings;
-//     new_settings.c_lflag &= (~ICANON);
-//     new_settings.c_cc[VTIME] = 0;
-//     tcgetattr(0,&stored_settings);
-//     new_settings.c_cc[VMIN] = 1;
-//     tcsetattr(0,TCSANOW,&new_settings);
 
-//     in = getchar();
-
-//     tcsetattr(0,TCSANOW,&stored_settings);
-//     return in;
-// }
-/*
-int main()
-{
-    // ocvStitcher ostitcher(960/2, 540/2);
-    // vector<Mat> imgs;
-
-    // // imgs.push_back(imread("../tmp/1-dist.png"));
-    // // imgs.push_back(imread("../tmp/2-dist.png"));
-    // // imgs.push_back(imread("../tmp/3-dist.png"));
-    // // imgs.push_back(imread("../tmp/4-dist.png"));
-
-    // imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
-    // imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
-    // imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
-    // imgs.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
-
-    // for(int i=0;i<1;i++)
-    //     ostitcher.init(imgs);
-
-    // Mat ret;
-    // ostitcher.process(imgs, ret);
-
-    // for(int i=0;i<4;i++)
-    // {
-    //     resize(imgs[i], imgs[i], Size(), 0.5, 0.5, INTER_LINEAR_EXACT);
-    // }
-
-    // imwrite("1.png", imgs[0]);
-    // imwrite("2.png", imgs[1]);
-    // imwrite("3.png", imgs[2]);
-    // imwrite("4.png", imgs[3]);
-
-    // Mat img = imread("/home/nvidia/ssd/code/0929IS/build/1-blenderMask.png");
-    // img(Rect(img.size().width*0.7,0,img.size().width*0.3,img.size().height)).setTo(255);
-    // imwrite("1blendm.png", img);
-
-    // imageProcessor nvProcessor;
-    // Mat img = imread("1.jpg");
-    // resize(img,img,Size(480,270));
-    // std::vector<int> detret;
-    // Mat yoloRet = nvProcessor.ImageDetect(img, detret);
-    // imwrite("1-ret.png",yoloRet);
-
-    // Mat mt = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
-    //                     0, 959.666714085956, 280.450178308760,
-    //                     0, 0, 1);
-
-    // MatConstIterator_<double> it1 = mt.begin<double>(), it1_end = mt.end<double>();
-    // for( ; it1 != it1_end; ++it1)
-    //     LOGLN("iterate:::" << *(it1));
-
-    // ocvStitcher ostitcherUp(960/2, 540/2);
-    // vector<Mat> upImgs(4);
-
-    // upImgs.clear();
-    // Mat img = imread("/home/nvidia/ssd/code/0929IS/2222/1.png");
-    // // resize(img, img, Size(960/2, 540/2));
-    // upImgs.push_back(img);
-    // img = imread("/home/nvidia/ssd/code/0929IS/2222/2.png");
-    // // resize(img, img, Size(960/2, 540/2));
-    // upImgs.push_back(img);
-    // img = imread("/home/nvidia/ssd/code/0929IS/2222/3.png");
-    // // resize(img, img, Size(960/2, 540/2));
-    // upImgs.push_back(img);
-    // img = imread("/home/nvidia/ssd/code/0929IS/2222/4.png");
-    // // resize(img, img, Size(960/2, 540/2));
-    // upImgs.push_back(img);
-
-    // ostitcherUp.init(upImgs);
-
-
-
-    // std::ifstream fin("camerapara.txt", std::ios::in);
-    // Mat cameraK = Mat(Size(3,3), CV_64FC1);
-    // vector<Mat> cameraR;
-    // for(int i=0;i<4;i++)
-    //     cameraR.push_back(Mat(Size(3,3), CV_32FC1));
-
-    // vector<string> res;
-    // if(fin.is_open())
-    // {
-    //     cout<<"in if"<<endl;
-    //     std::string str;
-    //     fin >> str;
-    //     cout<<str<<endl;
-    //     Stringsplit(str, ',', res);
-    //     for(int i=0;i<3;i++)
-    //     {
-    //         for(int j=0;j<3;j++)
-    //         {
-    //             cameraK.at<double>(i,j) = stod(res[i*3+j]);
-    //         }
-    //     }
-    //     cout<<cameraK<<endl;
-
-    //     for(int i=0;i<4;i++)
-    //     {
-    //         fin >> str;
-    //         cout<<str<<endl;
-    //         res.clear();
-    //         Stringsplit(str, ',', res);
-    //         for(int mi=0;mi<3;mi++)
-    //         {
-    //             for(int mj=0;mj<3;mj++)
-    //             {
-    //                 cameraR[i].at<float>(mi,mj) = stod(res[mi*3+mj]);
-    //             }
-    //         }
-
-    //         cout<<cameraR[i]<<endl;
-    //     }
-    // }
-
-    // std::chrono::system_clock::time_point now = chrono::system_clock::now();//当前时间time_point格式
-    // std::time_t oldTime = time(nullptr);//c函数获取当前时间
-    // cout << "oldTime = " << oldTime << endl;
-    // chrono::system_clock::time_point timePoint = chrono::system_clock::now();//stl库获取当前时间
-    // std::time_t newTime = chrono::system_clock::to_time_t(timePoint);//转换为旧式接口，单位:秒
-    // cout<<"newTime = " << newTime <<endl;// oldTime == timeT
-
-
-    // std::time_t nowTime = chrono::system_clock::to_time_t(now);//转换为 std::time_t 格式 
-    // std::put_time(std::localtime(&nowTime), "%Y-%m-%d %X"); // 2019-06-18 14:25:56
-    
-    // // !std::localtime非线程安全，使用localtime_r函数代替
-    // struct tm cutTm = {0};
-    // std::put_time(localtime_r(&nowTime, &cutTm), "%Y-%m-%d %X");// 2019-06-18 14:25:56
-
-    // std::chrono::system_clock::time_point now = chrono::system_clock::now();
-    // time_t tt = chrono::system_clock::to_time_t(now);
-    // cout << "string format: " << ctime(&tt) << endl;
-
-    // std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-    // struct std::tm * ptm = std::localtime(&tt);
-    // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-
-    /*
-    vector<Mat> cameraR;
-    Mat cameraK;
-    cameraK = Mat(Size(3,3), CV_32FC1);
-    for(int i=0;i<4;i++)
-        cameraR.push_back(Mat(Size(3,3), CV_32FC1));
-
-    vector<string> res;
-    string filename = "cameraparaout_2.txt";
-    std::ifstream fin(filename, std::ios::in);
-    if(fin.is_open())
-    {
-        int linenum = 0;
-        int paranum = 0;
-        std::string str;
-
-        while(getline(fin,str))
-        {
-            linenum++;
-            if (std::string::npos != str.find(":"))
-            {
-                paranum++;
-            }
-        }
-
-        fin.clear();
-        fin.seekg(0, ios::beg);
-
-        cout<<"linenum:"<<linenum<<",paranum:"<<paranum<<endl;
-
-        for(int i=0;i<7*(paranum-1);i++)
-            getline(fin,str);
-
-        cout<<"in if"<<endl;
-        
-        fin >> str;
-        cout<<str<<endl;
-        fin >> str;
-        Stringsplit(str, ',', res);
-        for(int i=0;i<3;i++)
-        {
-            for(int j=0;j<3;j++)
-            {
-                cameraK.at<float>(i,j) = stof(res[i*3+j]);
-            }
-        }
-        cout<<cameraK<<endl;
-
-        for(int i=0;i<4;i++)
-        {
-            fin >> str;
-            cout<<str<<endl;
-            res.clear();
-            Stringsplit(str, ',', res);
-            for(int mi=0;mi<3;mi++)
-            {
-                for(int mj=0;mj<3;mj++)
-                {
-                    cameraR[i].at<float>(mi,mj) = stof(res[mi*3+mj]);
-                }
-            }
-
-            cout<<cameraR[i]<<endl;
-        }
-        fin >> str;
-        float warped_image_scale = stof(str);
-    }
-    */
-
-   /*
-    spdlog::info("Welcome to spdlog!");
-    spdlog::error("Some error message with arg: {}", 1);
-    
-    spdlog::warn("Easy padding in numbers like {:08d}", 12);
-    spdlog::critical("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
-    spdlog::info("Support for floats {:03.2f}", 1.23456);
-    spdlog::info("Positional args are {1} {0}..", "too", "supported");
-    spdlog::info("{:<30}", "left aligned");
-    
-    spdlog::set_level(spdlog::level::debug); // Set global log level to debug
-    spdlog::debug("This message should be displayed..");    
-    
-    // change log pattern
-    spdlog::set_pattern("[%H:%M:%S %z] [%n] [%^---%L---%$] [thread %t] %v");
-    
-    // Compile time log levels
-    // define SPDLOG_ACTIVE_LEVEL to desired level
-    SPDLOG_TRACE("Some trace message with param {}", 42);
-    SPDLOG_DEBUG("Some debug message");
-    
-
- 
-    // while(1){
-    //     printf(":%d",scanKeyboard());
-    // }
-
-    printf("aaaaaaaa\n");
-    Mat img = imread("/home/nvidia/ssd/code/0929IS/buildbk/1.jpg");
-    cv::resize(img, img, cv::Size(1920, 1080));
-    cv::namedWindow("FreespaceSeg", CV_WINDOW_NORMAL);
-    cv::setWindowProperty("FreespaceSeg", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-    cv::moveWindow("FreespaceSeg", 0, 0);
-    cv::imshow("FreespaceSeg", img);
-    cv::waitKey(0);
-           
-    return 0;
-}
-*/
-
-/*
-int main()
-{
-    imageProcessor nvProcessor;
-    cv::Mat img = cv::imread("ori/3-ori9.png");
-    cv::Mat croped = img(cv::Rect(640, 300, 640, 480));
-    std::vector<int> detret;
-    int cnt = 0;
-    while(1)
-    {
-        auto t = cv::getTickCount();
-        cv::Mat ret = nvProcessor.ImageDetect(croped, detret);
-        cnt++;
-        cv::imshow("1", ret);
-        cv::waitKey(1);
-        printf("takes:%f\n",  ((getTickCount() - t) / getTickFrequency()) * 1000);
-    }
-
-    // cv::imwrite("1.png", ret);
-    // cv::waitKey(0);
-
-    return 0;
-
-}
-*/
+/********* test binding mac address *********/
 /*
 #include<stdio.h>
 #include<stdlib.h>
@@ -405,7 +128,7 @@ int main()
 
 // }
 
-/* test yaml*/
+/********* test yaml *********/
 // #include "yaml-cpp/yaml.h"
 
 // int main()
@@ -447,31 +170,288 @@ int main()
 // }
 
 /********* test opencv video capture *********/
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaimgproc.hpp> 
-using namespace std;
-using namespace cv;
-int main(int argc, char **argv)
-{
-    cv::cuda::GpuMat a;
-	VideoCapture cap;
-	cap.open(0);
-    cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
-	while (1)
-	{
-		Mat frame;//定义一个变量把视频源一帧一帧显示
-		cap >> frame;
-		if (frame.empty())
-		{
-			cout << "Finish" << endl;
-			break;
-		}
-		imshow("Input video", frame);
-		waitKey(30);
-	}
-	cap.release();
-	return 0;
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include <opencv2/core/cuda.hpp>
+// #include <opencv2/cudaimgproc.hpp> 
+// using namespace std;
+// using namespace cv;
+// int main(int argc, char **argv)
+// {
+//     cv::cuda::GpuMat a;
+// 	VideoCapture cap;
+// 	cap.open(0);
+//     cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
+// 	while (1)
+// 	{
+// 		Mat frame;//定义一个变量把视频源一帧一帧显示
+// 		cap >> frame;
+// 		if (frame.empty())
+// 		{
+// 			cout << "Finish" << endl;
+// 			break;
+// 		}
+// 		imshow("Input video", frame);
+// 		waitKey(30);
+// 	}
+// 	cap.release();
+// 	return 0;
  
+// }
+
+/********* test nvcam *********/
+#include <thread>
+#include <memory>
+#include <opencv2/core/utility.hpp>
+#include "yaml-cpp/yaml.h"
+#include "nvcam.hpp"
+#include "PracticalSocket.h"
+// #include "ocvstitcher.hpp"
+#include "stitcherconfig.h"
+#include "imageProcess.h"
+#include "helper_timer.h"
+
+using namespace cv;
+
+vector<Mat> upImgs(4);
+vector<Mat> downImgs(4);
+Mat upRet, downRet;
+
+vector<Mat> imgs(CAMERA_NUM);
+
+#if CAM_IMX424
+unsigned short servPort = 10001;
+UDPSocket sock(servPort);
+char buffer[SLAVE_PCIE_UDP_BUF_LEN]; // Buffer for echo string
+
+void serverCap()
+{
+    downImgs.clear();
+    int recvMsgSize; // Size of received message
+    string sourceAddress; // Address of datagram source
+    unsigned short sourcePort; // Port of datagram source
+    Mat recvedFrame;
+
+    do {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+    } while (recvMsgSize > sizeof(int));
+    int total_pack = ((int * ) buffer)[0];
+
+    spdlog::debug("expecting length of packs: {}", total_pack);
+    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
+    for (int i = 0; i < total_pack; i++) {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
+            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
+            free(longbuf);
+            return;
+        }
+        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
+    }
+
+    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
+
+    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
+    recvedFrame = imdecode(rawData, IMREAD_COLOR);
+    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
+    if (recvedFrame.size().width == 0) {
+        spdlog::warn("decode failure!");
+        // continue;
+    }
+    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    imgs[6] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    imgs[7] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // imwrite("7.png", downImgs[2]);
+    // imwrite("8.png", downImgs[3]);
+    // imshow("recv", recvedFrame);
+    // waitKey(1);
+    free(longbuf);
 }
+#endif
+
+std::string cfgpath;
+std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
+int framecnt = 0;
+
+bool detect = false;
+bool showall = false;
+bool withnum = false;
+int idx = 3;
+static int parse_cmdline(int argc, char **argv)
+{
+    int c;
+
+    if (argc < 2)
+    {
+        return true;
+    }
+
+    while ((c = getopt(argc, argv, "c:dnp:")) != -1)
+    {
+        switch (c)
+        {
+            case 'c':
+                if (strcmp(optarg, "a") == 0)
+                {
+                    showall = true;
+                }
+                else
+                {
+                    if(strlen(optarg) == 1 && std::isdigit(optarg[0]))
+                    {
+                        showall = false;
+                        idx = std::stoi(optarg);
+                        if(0 < idx < 9)
+                            break;
+                    }
+                    spdlog::critical("invalid argument!!!\n");
+                    return RET_ERR;
+                }
+                break;
+            case 'p':
+                cfgpath = optarg;
+                spdlog::info("cfg path:{}", cfgpath);
+                if(std::string::npos == cfgpath.find(".yaml"))
+                    spdlog::warn("input cfgpath invalid, use default");
+                else
+                    defaultcfgpath = cfgpath;
+                break;
+            case 'd':
+                detect = true;
+                break;
+            case 'n':
+                withnum = true;
+            default:
+                break;
+        }
+    }
+}
+
+imageProcessor *nvProcessor = nullptr;
+
+int main(int argc, char *argv[])
+{
+    spdlog::set_level(spdlog::level::trace);
+    
+
+    YAML::Node config = YAML::LoadFile(defaultcfgpath);
+    camSrcWidth = config["camsrcwidth"].as<int>();
+    camSrcHeight = config["camsrcheight"].as<int>();
+    distorWidth = config["distorWidth"].as<int>();
+    distorHeight = config["distorHeight"].as<int>();
+    undistorWidth = config["undistorWidth"].as<int>();
+    undistorHeight = config["undistorHeight"].as<int>();
+    stitcherinputWidth = config["stitcherinputWidth"].as<int>();
+    stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+    int USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
+    std::string net = config["netpath"].as<string>();
+    std::string cfgpath = config["camcfgpath"].as<string>();
+    std::string canname = config["canname"].as<string>();
+    showall = config["showall"].as<bool>();
+
+    if(RET_ERR == parse_cmdline(argc, argv))
+        return RET_ERR;
+
+    imgs = std::vector<Mat>(CAMERA_NUM, Mat(stitcherinputHeight, stitcherinputWidth, CV_8UC4));
+    
+    if (detect)
+        nvProcessor = new imageProcessor(net);  
+
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+
+    std::shared_ptr<nvCam> cameras[CAMERA_NUM];
+    if(showall)
+    {
+        for(int i=0;i<USED_CAMERA_NUM;i++)
+            cameras[i].reset(new nvCam(camcfgs[i]));
+
+        std::vector<std::thread> threads;
+        for(int i=0;i<USED_CAMERA_NUM;i++)
+            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+        for(auto& th:threads)
+            th.detach();
+    }
+    else
+    {
+        cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
+        // std::thread t(&nvCam::run, cameras[idx-1].get());
+        // t.detach();
+    }
+
+    // cameras[idx-1]->start_capture();
+
+    while(1)
+    {
+        cameras[idx-1]->read_frame();
+        // cameras[idx-1]->ctx.renderer->render(cameras[idx-1]->retNvbuf[cameras[idx-1]->distoredszIdx].dmabuff_fd);
+        // imshow("a", cameras[idx-1]->m_ret);
+        // waitKey(1);
+    }
+    return 0;
+}
+
+/********* test yuv 2 rgb *********/
+// #include <opencv2/opencv.hpp>
+// #include <fcntl.h>
+// #include <stdio.h>
+// #include <unistd.h>
+
+// int main()
+// {
+//    // int img = open("./camera.YUYV", O_RDONLY);
+//    //  if (-1 == img)
+//    //      printf("Failed to open file for rendering");
+//    //  int bufsize = 1920*1080*2;
+//    //  unsigned char *buf = (unsigned char*)malloc(bufsize);
+//    //  int cnt = read(img, buf, bufsize);
+//    //  printf("read %d bytes\n", cnt);
+//    //  cv::Mat mt(1080,1920,CV_8UC2);
+
+//    //  memcpy(mt.data, buf, 1920 * 1080 * 2 * sizeof(unsigned char));
+
+//    //  cv::Mat rgbi;
+//    //  cv::cvtColor(mt, rgbi, cv::COLOR_YUV2BGR_YUYV);
+//    //  cv::imshow("11", rgbi);
+//    //  cv::waitKey(0);
+
+//    // cv::Mat i420;
+//    // cv::cvtColor(rgbi, i420, cv::COLOR_RGB2YUV_I420);
+//    // int ii = open("i420", O_CREAT | O_WRONLY | O_APPEND | O_TRUNC,
+//    //          S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+//    // if(-1 == write(ii, i420.data, 1920*1080*3/2))
+//    // {
+//    //    printf("aaaaaa\n");
+//    // }
+
+//    // close(ii);
+
+//    int img = open("i420", O_RDONLY);
+//     if (-1 == img)
+//         printf("Failed to open file for rendering");
+//     int bufsize = 1920*1080*3/2;
+//     unsigned char *buf = (unsigned char*)malloc(bufsize);
+//     int cnt = read(img, buf, bufsize);
+//     printf("read %d bytes\n", cnt);
+//     cv::Mat mt(1080*3/2,1920,CV_8UC1);
+
+//     memcpy(mt.data, buf, 1920 * 1080 * 3/2 * sizeof(unsigned char));
+
+//     cv::Mat rgbi;
+//     cv::cvtColor(mt, rgbi, cv::COLOR_YUV2BGR_I420);
+//     cv::imshow("11", rgbi);
+//     cv::waitKey(0);
+
+
+
+
+//     return 0;
+
+// }

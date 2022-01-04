@@ -4,17 +4,9 @@
 #include "yaml-cpp/yaml.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
-#include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
 #include "imageProcess.h"
 #include "helper_timer.h"
-
-// #define CAMERA_NUM 8
-// #define USED_CAMERA_NUM 6
-// #define BUF_LEN 65540 
-
-#define LOG(msg) std::cout << msg
-#define LOGLN(msg) std::cout << msg << std::endl
 
 using namespace cv;
 
@@ -80,9 +72,9 @@ std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
 int framecnt = 0;
 
 bool detect = false;
-bool showall = true;
+bool showall = false;
 bool withnum = false;
-int idx = 1;
+int idx = 3;
 static int parse_cmdline(int argc, char **argv)
 {
     int c;
@@ -105,6 +97,7 @@ static int parse_cmdline(int argc, char **argv)
                 {
                     if(strlen(optarg) == 1 && std::isdigit(optarg[0]))
                     {
+                        showall = false;
                         idx = std::stoi(optarg);
                         if(0 < idx < 9)
                             break;
@@ -132,25 +125,18 @@ static int parse_cmdline(int argc, char **argv)
     }
 }
 
+imageProcessor *nvProcessor = nullptr;
+
 int main(int argc, char *argv[])
 {
-    // if(argc > 1)
-    // {
-    //     if(argv[1][0] <'1' || argv[1][0] > '8')
-    //     {
-    //         spdlog::critical("invalid argument!!!\n");
-    //         return 0;
-    //     }
-    // }
-
-    
     spdlog::set_level(spdlog::level::debug);
-    if(RET_ERR == parse_cmdline(argc, argv))
-        return RET_ERR;
+    
 
     YAML::Node config = YAML::LoadFile(defaultcfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
+    distorWidth = config["distorWidth"].as<int>();
+    distorHeight = config["distorHeight"].as<int>();
     undistorWidth = config["undistorWidth"].as<int>();
     undistorHeight = config["undistorHeight"].as<int>();
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
@@ -161,19 +147,22 @@ int main(int argc, char *argv[])
     std::string canname = config["canname"].as<string>();
     showall = config["showall"].as<bool>();
 
+    if(RET_ERR == parse_cmdline(argc, argv))
+        return RET_ERR;
+
     imgs = std::vector<Mat>(CAMERA_NUM, Mat(stitcherinputHeight, stitcherinputWidth, CV_8UC4));
     
+    if (detect)
+        nvProcessor = new imageProcessor(net);  
 
-    imageProcessor nvProcessor(net);  
-
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     if(showall)
@@ -188,7 +177,11 @@ int main(int argc, char *argv[])
             th.detach();
     }
     else
+    {
         cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
+        // std::thread t(&nvCam::run, cameras[idx-1].get());
+        // t.detach();
+    }
 
 
 
@@ -199,10 +192,20 @@ int main(int argc, char *argv[])
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
 
+    NvEglRenderer *nvrender  =  NvEglRenderer::createEglRenderer("renderer0", stitcherinputWidth, stitcherinputHeight, 0, 0);
+    if(!nvrender)
+        spdlog::critical("Failed to create EGL renderer");
+    nvrender->setFPS(30);
+
+    void *sBaseAddr[1] = {NULL};
+    Mat mmat(1080, 1920, CV_8UC4);
+    // Mat mmat = cv::Mat(1080, 1920, cv::CV_8UC4);
+    NvBufferMemMap (cameras[idx-1]->ctx.render_dmabuf_fd, 0, NvBufferMem_Read_Write, &sBaseAddr[0]);
+    mmat.data = (uchar*)sBaseAddr[0];
+    
     while(1)
     {
         sdkResetTimer(&timer);
-        auto t = cv::getTickCount();
         // cameras[0]->read_frame();
         // cameras[1]->read_frame();
         // cameras[2]->read_frame();
@@ -223,23 +226,6 @@ int main(int argc, char *argv[])
 
         if(showall)
         {
-// #if CAM_IMX424
-//             spdlog::info("wait for slave");
-//             std::thread server(serverCap);
-//             server.join();
-// #endif
-//             cameras[0]->getFrame(upImgs[0]);
-//             cameras[1]->getFrame(upImgs[1]);
-//             cameras[2]->getFrame(upImgs[2]);
-//             cameras[3]->getFrame(upImgs[3]);
-//             cameras[4]->getFrame(downImgs[0]);
-//             cameras[5]->getFrame(downImgs[1]);
-            
-// #if CAM_IMX390     
-//             // cameras[6]->getFrame(downImgs[2]);
-//             // cameras[7]->getFrame(downImgs[3]);
-// #endif
-
 #if CAM_IMX424
             spdlog::info("wait for slave");
             std::thread server(serverCap);
@@ -252,19 +238,7 @@ int main(int argc, char *argv[])
                 if(withnum)
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
-
-
-            // if(withnum)
-            // {
-            //     cv::putText(upImgs[0], "1", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(upImgs[1], "2", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(upImgs[2], "3", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(upImgs[3], "4", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[0], "5", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[1], "6", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[2], "7", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[3], "8", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            // }
+            nvrender->render(cameras[0]->ctx.render_dmabuf_fd);
 
             // cv::Mat up,down;
             // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
@@ -281,11 +255,11 @@ int main(int argc, char *argv[])
             // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2]}, down);
             // cv::vconcat(up, down, ret);
 
-            cv::Mat up,down;
-            cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
-            cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
-            cout<<"up type:"<<up.type()<<"down type:"<<down.type()<<endl;
-            cv::vconcat(up, down, ret);
+            // cv::Mat up,down;
+            // cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
+            // cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
+            // cout<<"up type:"<<up.type()<<"down type:"<<down.type()<<endl;
+            // cv::vconcat(up, down, ret);
 
         }
         else
@@ -306,24 +280,34 @@ int main(int argc, char *argv[])
 #elif CAM_IMX390
             // cameras[idx-1]->getFrame(ret);
             cameras[idx-1]->read_frame();
-            ret = cameras[idx-1]->m_ret;
+            
+            // ret = cameras[idx-1]->m_ret;
+
+            // NvBufferMemSyncForCpu (cameras[idx-1]->ctx.render_dmabuf_fd, 0,&sBaseAddr[0]);
+            // cv::putText(mmat, std::to_string(100), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+
+            // nvrender->render(cameras[idx-1]->ctx.render_dmabuf_fd);
+            nvrender->render(cameras[idx-1]->retNvbuf[0].dmabuff_fd);
+            // cv::imshow("mmm", mmat);
+            // cv::waitKey(1);
+
+            
 #endif
 
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
 
-        spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
+        spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         
-        t = cv::getTickCount();
-        cv::Mat ori = ret.clone();
+        // cv::Mat ori = ret.clone();
         cv::Mat yoloret = ret;
         if (detect)
         {
-            yoloret = nvProcessor.ProcessOnce(ret);
+            yoloret = nvProcessor->ProcessOnce(ret);
         }
 
-        cv::imshow("m_dev_name", ret);
+        // cv::imshow("m_dev_name", ret);
         char c = (char)cv::waitKey(1);
         switch(c)
         {
@@ -341,15 +325,15 @@ int main(int argc, char *argv[])
                 }
                 if (detect)
                 {
-                    cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt++)+".png", yoloret);
+                    cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt)+".png", yoloret);
                 }
-                cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ori);
+                // cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ori);
                 break;
             default:
                 break;
         }
 
-        spdlog::info("all takes:{} ms", sdkGetTimerValue(&timer));
+        spdlog::info("frame [{}], all takes:{} ms", framecnt++, sdkGetTimerValue(&timer));
 
     }
     return 0;

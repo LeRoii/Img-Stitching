@@ -7,6 +7,9 @@ const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 int camSrcWidth = 3840;
 int camSrcHeight = 2160;
 
+int distorWidth =  1920/2;
+int distorHeight = 1080/2;
+
 int undistorWidth =  1920/2;
 int undistorHeight = 1080/2;
 
@@ -26,6 +29,8 @@ struct stCamCfg
     int camSrcHeight;
 	int distoredWidth;
 	int distoredHeight;
+	int undistoredWidth;
+	int undistoredHeight;
 	int retWidth;
 	int retHeight;
 	int id;

@@ -72,9 +72,9 @@ std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
 int framecnt = 0;
 
 bool detect = false;
-bool showall = false;
+bool showall = true;
 bool withnum = false;
-int idx = 3;
+int idx = 1;
 static int parse_cmdline(int argc, char **argv)
 {
     int c;
@@ -165,23 +165,32 @@ int main(int argc, char *argv[])
                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
-    if(showall)
-    {
-        for(int i=0;i<USED_CAMERA_NUM;i++)
+    // if(showall)
+    // {
+    //     for(int i=0;i<USED_CAMERA_NUM;i++)
+    //         cameras[i].reset(new nvCam(camcfgs[i]));
+
+    //     std::vector<std::thread> threads;
+    //     for(int i=0;i<USED_CAMERA_NUM;i++)
+    //         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    //     for(auto& th:threads)
+    //         th.detach();
+    // }
+    // else
+    // {
+    //     cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
+    //     // std::thread t(&nvCam::run, cameras[idx-1].get());
+    //     // t.detach();
+    // }
+
+    for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
 
-        std::vector<std::thread> threads;
-        for(int i=0;i<USED_CAMERA_NUM;i++)
-            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-        for(auto& th:threads)
-            th.detach();
-    }
-    else
-    {
-        cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
-        // std::thread t(&nvCam::run, cameras[idx-1].get());
-        // t.detach();
-    }
+    std::vector<std::thread> threads;
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    for(auto& th:threads)
+        th.detach();
 
 
 
@@ -200,8 +209,9 @@ int main(int argc, char *argv[])
     void *sBaseAddr[1] = {NULL};
     Mat mmat(1080, 1920, CV_8UC4);
     // Mat mmat = cv::Mat(1080, 1920, cv::CV_8UC4);
-    NvBufferMemMap (cameras[idx-1]->ctx.render_dmabuf_fd, 0, NvBufferMem_Read_Write, &sBaseAddr[0]);
-    mmat.data = (uchar*)sBaseAddr[0];
+    // NvBufferMemMap (cameras[idx-1]->ctx.render_dmabuf_fd, 0, NvBufferMem_Read_Write, &sBaseAddr[0]);
+    NvBufferMemMap (cameras[idx-1]->retNvbuf->dmabuff_fd, 0, NvBufferMem_Read_Write, (void**)&mmat.data);
+    // mmat.data = (uchar*)sBaseAddr[0];
     
     while(1)
     {
@@ -234,6 +244,7 @@ int main(int argc, char *argv[])
 
             for(int i=0;i<USED_CAMERA_NUM;i++)
             {
+                // cameras[i]->read_frame();
                 cameras[i]->getFrame(imgs[i]);
                 if(withnum)
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
@@ -258,8 +269,12 @@ int main(int argc, char *argv[])
             // cv::Mat up,down;
             // cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
             // cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
-            // cout<<"up type:"<<up.type()<<"down type:"<<down.type()<<endl;
             // cv::vconcat(up, down, ret);
+
+            // // cv::imshow("mmm", cameras[0]->m_argb);
+            // // cv::imshow("mmm", cameras[0]->m_ret);
+            // cv::imshow("mmm", ret);
+            // cv::waitKey(1);
 
         }
         else
@@ -278,8 +293,8 @@ int main(int argc, char *argv[])
                 ret = downImgs[idx-5];
             }
 #elif CAM_IMX390
-            // cameras[idx-1]->getFrame(ret);
-            cameras[idx-1]->read_frame();
+            cameras[idx-1]->getFrame(ret);
+            // cameras[idx-1]->read_frame();
             
             // ret = cameras[idx-1]->m_ret;
 
@@ -287,9 +302,11 @@ int main(int argc, char *argv[])
             // cv::putText(mmat, std::to_string(100), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
 
             // nvrender->render(cameras[idx-1]->ctx.render_dmabuf_fd);
-            nvrender->render(cameras[idx-1]->retNvbuf[0].dmabuff_fd);
-            // cv::imshow("mmm", mmat);
-            // cv::waitKey(1);
+            // nvrender->render(cameras[idx-1]->retNvbuf->dmabuff_fd);
+            cv::imshow("mmm", cameras[idx-1]->m_ret);
+            cv::waitKey(1);
+
+
 
             
 #endif

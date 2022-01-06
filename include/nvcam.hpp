@@ -164,30 +164,30 @@ nvbuff_do_clearchroma (int dmabuf_fd)
   return true;
 }
 
-static bool
-display_initialize(camcontext_t * ctx)
-{
-    /* Create EGL renderer */
-    ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
-            ctx->cam_w/2, ctx->cam_h/2, 0, 0);
-    if (!ctx->renderer)
-        ERROR_RETURN("Failed to create EGL renderer");
-    ctx->renderer->setFPS(ctx->fps);
+// static bool
+// display_initialize(camcontext_t * ctx)
+// {
+//     /* Create EGL renderer */
+//     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
+//             ctx->cam_w/2, ctx->cam_h/2, 0, 0);
+//     if (!ctx->renderer)
+//         ERROR_RETURN("Failed to create EGL renderer");
+//     ctx->renderer->setFPS(ctx->fps);
 
-    if (ctx->enable_cuda)
-    {
-        /* Get defalut EGL display */
-        ctx->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        if (ctx->egl_display == EGL_NO_DISPLAY)
-            ERROR_RETURN("Failed to get EGL display connection");
+//     if (ctx->enable_cuda)
+//     {
+//         /* Get defalut EGL display */
+//         ctx->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+//         if (ctx->egl_display == EGL_NO_DISPLAY)
+//             ERROR_RETURN("Failed to get EGL display connection");
 
-        /* Init EGL display connection */
-        if (!eglInitialize(ctx->egl_display, NULL, NULL))
-            ERROR_RETURN("Failed to initialize EGL display connection");
-    }
+//         /* Init EGL display connection */
+//         if (!eglInitialize(ctx->egl_display, NULL, NULL))
+//             ERROR_RETURN("Failed to initialize EGL display connection");
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
 static bool
 camera_initialize(camcontext_t * ctx)
@@ -395,8 +395,8 @@ prepare_buffers(camcontext_t * ctx)
     input_params.colorFormat = NvBufferColorFormat_ABGR32 ;
     input_params.nvbuf_tag = NvBufferTag_NONE;
     /* Create Render buffer */
-    if (-1 == NvBufferCreateEx(&ctx->render_dmabuf_fd, &input_params))
-        ERROR_RETURN("Failed to create NvBuffer");
+    // if (-1 == NvBufferCreateEx(&ctx->render_dmabuf_fd, &input_params))
+    //     ERROR_RETURN("Failed to create NvBuffer");
 
     if (ctx->capture_dmabuf) {
         if (!request_camera_buff(ctx))
@@ -557,10 +557,10 @@ public:
         m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
         m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
 
-        // bufparams.width = m_retWidth;
-        // bufparams.height = m_retHeight;
-        // if (-1 == NvBufferCreateEx(&ctx.render_dmabuf_fd, &bufparams))
-        //         spdlog::critical("Failed to create NvBuffer ctx->render_dmabuf_fd");
+        bufparams.width = m_retWidth;
+        bufparams.height = m_retHeight;
+        if (-1 == NvBufferCreateEx(&ctx.render_dmabuf_fd, &bufparams))
+                spdlog::critical("Failed to create NvBuffer ctx->render_dmabuf_fd");
 
         // m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
         // m_argb[0] = cv::Mat(1080, 1920, CV_8UC4);
@@ -569,8 +569,9 @@ public:
         // m_gpuargb[0] = cv::cuda::GpuMat(1080, 1920, CV_8UC4);
         // m_gpuargb[1] = cv::cuda::GpuMat(540, 960, CV_8UC4);
 
-        m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredWidth, m_undistoredHeight, CV_8UC4);
-        m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredWidth, m_undistoredHeight, CV_8UC4);
+        m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+        m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+        m_gpuret = cv::cuda::GpuMat(m_retHeight, m_retWidth, CV_8UC4);
 
         /* Init the NvBufferTransformParams */
         memset(&transParams, 0, sizeof(transParams));
@@ -606,6 +607,8 @@ public:
         sdkCreateTimer(&timer);
         sdkResetTimer(&timer);
         sdkStartTimer(&timer);
+
+        printf("m_gpuDistoredImg:%p, m_gpuUndistoredImg:%p, m_gpuargb:%p\n", m_gpuDistoredImg.data, m_gpuUndistoredImg.data, m_gpuargb.data);
     }
 
     ~nvCam()
@@ -629,8 +632,8 @@ public:
             free(ctx.g_buff);
         }
 
-        NvBufferDestroy(retNvbuf[0].dmabuff_fd);
-        NvBufferDestroy(retNvbuf[1].dmabuff_fd);
+        NvBufferDestroy(retNvbuf->dmabuff_fd);
+        // NvBufferDestroy(retNvbuf[1].dmabuff_fd);
     }
 
     void setDistoredSize(int width)
@@ -687,21 +690,51 @@ public:
         if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_argb.size().width, m_argb.size().height, m_argb.data))
                 ERROR_RETURN("Failed to NvBuffer2Raw");
         
+        spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
+
+        
+
+        /***** cpu undistor *****/
+        cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
+        cv::Mat tmp;
+        cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
+        // cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
+        // m_distoredImg = tmp.clone();
+        // // /*undistored*********/
+
+        spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+        cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+
+        spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+        m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+        
+        /***** cpu undistor end*****/
+
+        
         /***** gpu undistor *****/
-        m_gpuargb.upload(m_argb);
-        cv::cuda::resize(m_gpuargb, m_gpuDistoredImg, cv::Size(m_undistoredWidth, m_undistoredHeight));
-        
-        // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
-        cv::cuda::remap(m_gpuDistoredImg, m_gpuUndistoredImg, gpuMapx[distoredszIdx], gpuMapy[distoredszIdx], cv::INTER_CUBIC);
-        
-        m_gpuUndistoredImg = m_gpuUndistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        cv::cuda::resize(m_gpuUndistoredImg, m_gpuUndistoredImg, cv::Size(m_retWidth, m_retHeight));
-        m_gpuUndistoredImg.download(m_ret);
-        /***** gpu undistor end *****/
+        // m_gpuargb.upload(m_argb);
+        // cv::cuda::resize(m_gpuargb, m_gpuDistoredImg, cv::Size(m_undistoredWidth, m_undistoredHeight));
+        // // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+        // cv::cuda::remap(m_gpuDistoredImg, m_gpuUndistoredImg, gpuMapx[distoredszIdx], gpuMapy[distoredszIdx], cv::INTER_CUBIC);
+        // m_gpuUndistoredImg = m_gpuDistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        // cv::cuda::resize(m_gpuUndistoredImg, m_gpuret, cv::Size(m_retWidth, m_retHeight));
+        // m_gpuret.download(m_ret);
+
+        // cv::imshow("img"+std::to_string(m_id), m_argb);
+        // cv::waitKey(1);
+        // // m_ret = m_ret(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+
+        // /***** gpu undistor end *****/
+
+        // // cv::cuda::resize(m_gpuargb, m_gpuret, cv::Size(m_retWidth, m_retHeight));
+        // // m_gpuret.download(m_ret);
+        /***** gpu undistor end*****/
+
         spdlog::trace("undistor takes :{} ms", sdkGetTimerValue(&timer));
 
-
-        // Raw2NvBuffer(m_ret.data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
+        // cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
+        Raw2NvBuffer(m_ret.data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
         // Raw2NvBuffer(m_argb[distoredszIdx].data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
 
         /******* render_dmabuf_fd to argb ok *******/
@@ -825,7 +858,6 @@ public:
                 continue;
             }
 			std::unique_lock<std::mutex> lock(m_mtx[m_id]);
-			// m_mtx[m_id].lock();
 			while(m_queue.size() >= 10)
             {
                 spdlog::warn("cam:[{}] wait for consumer", m_id);
@@ -836,7 +868,6 @@ public:
             {
 			    m_queue.push(m_ret);
             }
-			// m_mtx[m_id].unlock();
             con[m_id].notify_all();
 			// printf("run ok!!!!!!!!!!!!1\n");
 		}
@@ -883,4 +914,5 @@ public:
 
     cv::cuda::GpuMat gpuMapx[2], gpuMapy[2];
     cv::cuda::GpuMat m_gpuargb, m_gpuDistoredImg, m_gpuUndistoredImg;
+    cv::cuda::GpuMat m_gpuret;
 };

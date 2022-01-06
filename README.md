@@ -69,4 +69,7 @@ make
 01.04.
 - 目前同时运行8个camshow，延时大概在150ms左右，与camera_v4l2_cuda延时相近，主要改进一个是显示部分用NvEglRenderer替代opnecv，另一个是在NvBufferTransform时保持输入与输出分辨率一致，后一个因素对延迟的影响很大，之前`NvBufferTransform`输出的分辨率是输入的一半，延迟大概在50-60ms
 
+01.06.
+- 延迟问题解决，效果与camera_v4l2_cuda相同，gpu去畸变有问题，多线程时同一个render会出现不同相机的画面，暂时用cpu去畸变
+
 

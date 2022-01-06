@@ -7,6 +7,7 @@
 #include "stitcherconfig.h"
 #include "imageProcess.h"
 #include "helper_timer.h"
+#include "nvrender.hpp"
 
 using namespace cv;
 
@@ -141,11 +142,22 @@ int main(int argc, char *argv[])
     undistorHeight = config["undistorHeight"].as<int>();
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+
+    renderWidth = config["renderWidth"].as<int>();
+    renderHeight = config["renderHeight"].as<int>();
+    renderX = config["renderX"].as<int>();
+    renderY = config["renderY"].as<int>();
+    renderBufWidth = config["renderBufWidth"].as<int>();
+    renderBufHeight = config["renderBufHeight"].as<int>();
+
     int USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
     std::string net = config["netpath"].as<string>();
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
     showall = config["showall"].as<bool>();
+
+    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
+    nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
@@ -201,18 +213,17 @@ int main(int argc, char *argv[])
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
 
-    NvEglRenderer *nvrender  =  NvEglRenderer::createEglRenderer("renderer0", stitcherinputWidth, stitcherinputHeight, 0, 0);
-    if(!nvrender)
-        spdlog::critical("Failed to create EGL renderer");
-    nvrender->setFPS(30);
+    // NvEglRenderer *nvrender  =  NvEglRenderer::createEglRenderer("renderer0", stitcherinputWidth/2, stitcherinputHeight/2, 0, 0);
+    // if(!nvrender)
+    //     spdlog::critical("Failed to create EGL renderer");
+    // nvrender->setFPS(30);
 
-    void *sBaseAddr[1] = {NULL};
-    Mat mmat(1080, 1920, CV_8UC4);
+    // Mat mmat(1080, 1920, CV_8UC4);
     // Mat mmat = cv::Mat(1080, 1920, cv::CV_8UC4);
     // NvBufferMemMap (cameras[idx-1]->ctx.render_dmabuf_fd, 0, NvBufferMem_Read_Write, &sBaseAddr[0]);
-    NvBufferMemMap (cameras[idx-1]->retNvbuf->dmabuff_fd, 0, NvBufferMem_Read_Write, (void**)&mmat.data);
+    // NvBufferMemMap (cameras[idx-1]->retNvbuf->dmabuff_fd, 0, NvBufferMem_Read_Write, (void**)&mmat.data);
     // mmat.data = (uchar*)sBaseAddr[0];
-    
+
     while(1)
     {
         sdkResetTimer(&timer);
@@ -249,7 +260,7 @@ int main(int argc, char *argv[])
                 if(withnum)
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
-            nvrender->render(cameras[0]->ctx.render_dmabuf_fd);
+            
 
             // cv::Mat up,down;
             // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
@@ -266,15 +277,18 @@ int main(int argc, char *argv[])
             // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2]}, down);
             // cv::vconcat(up, down, ret);
 
-            // cv::Mat up,down;
-            // cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
-            // cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
-            // cv::vconcat(up, down, ret);
+            cv::Mat up,down;
+            cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
+            cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
+            cv::vconcat(up, down, ret);
 
             // // cv::imshow("mmm", cameras[0]->m_argb);
             // // cv::imshow("mmm", cameras[0]->m_ret);
             // cv::imshow("mmm", ret);
             // cv::waitKey(1);
+            // nvrender->render(cameras[0]->ctx.render_dmabuf_fd);
+            // renderer->render(ret.data);
+            renderer->render(ret);
 
         }
         else

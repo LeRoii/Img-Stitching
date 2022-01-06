@@ -16,6 +16,13 @@ int undistorHeight = 1080/2;
 int stitcherinputWidth = 1920/4;
 int stitcherinputHeight = 1080/4;
 
+int renderWidth = 1920;
+int renderHeight = 1080;
+int renderX = 0;
+int renderY = 0;
+int renderBufWidth = 960; 
+int renderBufHeight = 540;
+
 const int CAMERA_NUM = 8;
 int USED_CAMERA_NUM = 6;
 const int SLAVE_PCIE_UDP_BUF_LEN = 65540;

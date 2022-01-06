@@ -200,203 +200,203 @@ int main()
 // }
 
 /********* test nvcam *********/
-#include <thread>
-#include <memory>
-#include <opencv2/core/utility.hpp>
-#include "yaml-cpp/yaml.h"
-#include "nvcam.hpp"
-#include "PracticalSocket.h"
-// #include "ocvstitcher.hpp"
-#include "stitcherconfig.h"
-#include "imageProcess.h"
-#include "helper_timer.h"
+// #include <thread>
+// #include <memory>
+// #include <opencv2/core/utility.hpp>
+// #include "yaml-cpp/yaml.h"
+// #include "nvcam.hpp"
+// #include "PracticalSocket.h"
+// // #include "ocvstitcher.hpp"
+// #include "stitcherconfig.h"
+// #include "imageProcess.h"
+// #include "helper_timer.h"
 
-using namespace cv;
+// using namespace cv;
 
-vector<Mat> upImgs(4);
-vector<Mat> downImgs(4);
-Mat upRet, downRet;
+// vector<Mat> upImgs(4);
+// vector<Mat> downImgs(4);
+// Mat upRet, downRet;
 
-vector<Mat> imgs(CAMERA_NUM);
+// vector<Mat> imgs(CAMERA_NUM);
 
-#if CAM_IMX424
-unsigned short servPort = 10001;
-UDPSocket sock(servPort);
-char buffer[SLAVE_PCIE_UDP_BUF_LEN]; // Buffer for echo string
+// #if CAM_IMX424
+// unsigned short servPort = 10001;
+// UDPSocket sock(servPort);
+// char buffer[SLAVE_PCIE_UDP_BUF_LEN]; // Buffer for echo string
 
-void serverCap()
-{
-    downImgs.clear();
-    int recvMsgSize; // Size of received message
-    string sourceAddress; // Address of datagram source
-    unsigned short sourcePort; // Port of datagram source
-    Mat recvedFrame;
+// void serverCap()
+// {
+//     downImgs.clear();
+//     int recvMsgSize; // Size of received message
+//     string sourceAddress; // Address of datagram source
+//     unsigned short sourcePort; // Port of datagram source
+//     Mat recvedFrame;
 
-    do {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-    } while (recvMsgSize > sizeof(int));
-    int total_pack = ((int * ) buffer)[0];
+//     do {
+//         recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+//     } while (recvMsgSize > sizeof(int));
+//     int total_pack = ((int * ) buffer)[0];
 
-    spdlog::debug("expecting length of packs: {}", total_pack);
-    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
-    for (int i = 0; i < total_pack; i++) {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
-            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
-            free(longbuf);
-            return;
-        }
-        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
-    }
+//     spdlog::debug("expecting length of packs: {}", total_pack);
+//     char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
+//     for (int i = 0; i < total_pack; i++) {
+//         recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+//         if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
+//             spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
+//             free(longbuf);
+//             return;
+//         }
+//         memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
+//     }
 
-    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
+//     spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
 
-    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
-    recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
-    if (recvedFrame.size().width == 0) {
-        spdlog::warn("decode failure!");
-        // continue;
-    }
-    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    imgs[6] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    imgs[7] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    // imwrite("7.png", downImgs[2]);
-    // imwrite("8.png", downImgs[3]);
-    // imshow("recv", recvedFrame);
-    // waitKey(1);
-    free(longbuf);
-}
-#endif
+//     Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
+//     recvedFrame = imdecode(rawData, IMREAD_COLOR);
+//     spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
+//     if (recvedFrame.size().width == 0) {
+//         spdlog::warn("decode failure!");
+//         // continue;
+//     }
+//     // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+//     // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+//     imgs[6] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+//     imgs[7] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+//     // imwrite("7.png", downImgs[2]);
+//     // imwrite("8.png", downImgs[3]);
+//     // imshow("recv", recvedFrame);
+//     // waitKey(1);
+//     free(longbuf);
+// }
+// #endif
 
-std::string cfgpath;
-std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
-int framecnt = 0;
+// std::string cfgpath;
+// std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
+// int framecnt = 0;
 
-bool detect = false;
-bool showall = false;
-bool withnum = false;
-int idx = 3;
-static int parse_cmdline(int argc, char **argv)
-{
-    int c;
+// bool detect = false;
+// bool showall = false;
+// bool withnum = false;
+// int idx = 3;
+// static int parse_cmdline(int argc, char **argv)
+// {
+//     int c;
 
-    if (argc < 2)
-    {
-        return true;
-    }
+//     if (argc < 2)
+//     {
+//         return true;
+//     }
 
-    while ((c = getopt(argc, argv, "c:dnp:")) != -1)
-    {
-        switch (c)
-        {
-            case 'c':
-                if (strcmp(optarg, "a") == 0)
-                {
-                    showall = true;
-                }
-                else
-                {
-                    if(strlen(optarg) == 1 && std::isdigit(optarg[0]))
-                    {
-                        showall = false;
-                        idx = std::stoi(optarg);
-                        if(0 < idx < 9)
-                            break;
-                    }
-                    spdlog::critical("invalid argument!!!\n");
-                    return RET_ERR;
-                }
-                break;
-            case 'p':
-                cfgpath = optarg;
-                spdlog::info("cfg path:{}", cfgpath);
-                if(std::string::npos == cfgpath.find(".yaml"))
-                    spdlog::warn("input cfgpath invalid, use default");
-                else
-                    defaultcfgpath = cfgpath;
-                break;
-            case 'd':
-                detect = true;
-                break;
-            case 'n':
-                withnum = true;
-            default:
-                break;
-        }
-    }
-}
+//     while ((c = getopt(argc, argv, "c:dnp:")) != -1)
+//     {
+//         switch (c)
+//         {
+//             case 'c':
+//                 if (strcmp(optarg, "a") == 0)
+//                 {
+//                     showall = true;
+//                 }
+//                 else
+//                 {
+//                     if(strlen(optarg) == 1 && std::isdigit(optarg[0]))
+//                     {
+//                         showall = false;
+//                         idx = std::stoi(optarg);
+//                         if(0 < idx < 9)
+//                             break;
+//                     }
+//                     spdlog::critical("invalid argument!!!\n");
+//                     return RET_ERR;
+//                 }
+//                 break;
+//             case 'p':
+//                 cfgpath = optarg;
+//                 spdlog::info("cfg path:{}", cfgpath);
+//                 if(std::string::npos == cfgpath.find(".yaml"))
+//                     spdlog::warn("input cfgpath invalid, use default");
+//                 else
+//                     defaultcfgpath = cfgpath;
+//                 break;
+//             case 'd':
+//                 detect = true;
+//                 break;
+//             case 'n':
+//                 withnum = true;
+//             default:
+//                 break;
+//         }
+//     }
+// }
 
-imageProcessor *nvProcessor = nullptr;
+// imageProcessor *nvProcessor = nullptr;
 
-int main(int argc, char *argv[])
-{
-    spdlog::set_level(spdlog::level::trace);
+// int main(int argc, char *argv[])
+// {
+//     spdlog::set_level(spdlog::level::trace);
     
 
-    YAML::Node config = YAML::LoadFile(defaultcfgpath);
-    camSrcWidth = config["camsrcwidth"].as<int>();
-    camSrcHeight = config["camsrcheight"].as<int>();
-    distorWidth = config["distorWidth"].as<int>();
-    distorHeight = config["distorHeight"].as<int>();
-    undistorWidth = config["undistorWidth"].as<int>();
-    undistorHeight = config["undistorHeight"].as<int>();
-    stitcherinputWidth = config["stitcherinputWidth"].as<int>();
-    stitcherinputHeight = config["stitcherinputHeight"].as<int>();
-    int USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
-    std::string net = config["netpath"].as<string>();
-    std::string cfgpath = config["camcfgpath"].as<string>();
-    std::string canname = config["canname"].as<string>();
-    showall = config["showall"].as<bool>();
+//     YAML::Node config = YAML::LoadFile(defaultcfgpath);
+//     camSrcWidth = config["camsrcwidth"].as<int>();
+//     camSrcHeight = config["camsrcheight"].as<int>();
+//     distorWidth = config["distorWidth"].as<int>();
+//     distorHeight = config["distorHeight"].as<int>();
+//     undistorWidth = config["undistorWidth"].as<int>();
+//     undistorHeight = config["undistorHeight"].as<int>();
+//     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
+//     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+//     int USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
+//     std::string net = config["netpath"].as<string>();
+//     std::string cfgpath = config["camcfgpath"].as<string>();
+//     std::string canname = config["canname"].as<string>();
+//     showall = config["showall"].as<bool>();
 
-    if(RET_ERR == parse_cmdline(argc, argv))
-        return RET_ERR;
+//     if(RET_ERR == parse_cmdline(argc, argv))
+//         return RET_ERR;
 
-    imgs = std::vector<Mat>(CAMERA_NUM, Mat(stitcherinputHeight, stitcherinputWidth, CV_8UC4));
+//     imgs = std::vector<Mat>(CAMERA_NUM, Mat(stitcherinputHeight, stitcherinputWidth, CV_8UC4));
     
-    if (detect)
-        nvProcessor = new imageProcessor(net);  
+//     if (detect)
+//         nvProcessor = new imageProcessor(net);  
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+//     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
-    std::shared_ptr<nvCam> cameras[CAMERA_NUM];
-    if(showall)
-    {
-        for(int i=0;i<USED_CAMERA_NUM;i++)
-            cameras[i].reset(new nvCam(camcfgs[i]));
+//     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
+//     if(showall)
+//     {
+//         for(int i=0;i<USED_CAMERA_NUM;i++)
+//             cameras[i].reset(new nvCam(camcfgs[i]));
 
-        std::vector<std::thread> threads;
-        for(int i=0;i<USED_CAMERA_NUM;i++)
-            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-        for(auto& th:threads)
-            th.detach();
-    }
-    else
-    {
-        cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
-        // std::thread t(&nvCam::run, cameras[idx-1].get());
-        // t.detach();
-    }
+//         std::vector<std::thread> threads;
+//         for(int i=0;i<USED_CAMERA_NUM;i++)
+//             threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+//         for(auto& th:threads)
+//             th.detach();
+//     }
+//     else
+//     {
+//         cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
+//         // std::thread t(&nvCam::run, cameras[idx-1].get());
+//         // t.detach();
+//     }
 
-    // cameras[idx-1]->start_capture();
+//     // cameras[idx-1]->start_capture();
 
-    while(1)
-    {
-        cameras[idx-1]->read_frame();
-        // cameras[idx-1]->ctx.renderer->render(cameras[idx-1]->retNvbuf[cameras[idx-1]->distoredszIdx].dmabuff_fd);
-        // imshow("a", cameras[idx-1]->m_ret);
-        // waitKey(1);
-    }
-    return 0;
-}
+//     while(1)
+//     {
+//         cameras[idx-1]->read_frame();
+//         // cameras[idx-1]->ctx.renderer->render(cameras[idx-1]->retNvbuf[cameras[idx-1]->distoredszIdx].dmabuff_fd);
+//         // imshow("a", cameras[idx-1]->m_ret);
+//         // waitKey(1);
+//     }
+//     return 0;
+// }
 
 /********* test yuv 2 rgb *********/
 // #include <opencv2/opencv.hpp>
@@ -449,9 +449,24 @@ int main(int argc, char *argv[])
 //     cv::imshow("11", rgbi);
 //     cv::waitKey(0);
 
-
-
-
 //     return 0;
 
 // }
+
+/********* test nvrender *********/
+
+#include <opencv2/opencv.hpp>
+#include "nvrender.hpp"
+
+int main()
+{
+    spdlog::set_level(spdlog::level::debug);
+    nvrenderCfg rendercfg{1920,1080,1920,1080,0,0};
+    cv::Mat mat = cv::imread("../img1.png");
+    cv::cvtColor(mat, mat, cv::COLOR_RGB2RGBA);
+    nvrender *renderer = new nvrender(rendercfg);
+    while(1)
+        // renderer->render(mat);
+        renderer->render(mat.data);
+    return 0;
+}

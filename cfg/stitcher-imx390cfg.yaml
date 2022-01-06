@@ -8,9 +8,18 @@ distorHeight: 1080
 # undistor size can only be 960x540 or 1920x1080
 undistorWidth: 960
 undistorHeight: 540
-stitcherinputWidth: 960
-stitcherinputHeight: 540
-USED_CAMERA_NUM: 2
+stitcherinputWidth: 480
+stitcherinputHeight: 270
+
+# parameters for renderer
+renderWidth: 1920
+renderHeight: 1080
+renderX: 0
+renderY: 0
+renderBufWidth: 1920
+renderBufHeight: 1080
+
+USED_CAMERA_NUM: 8
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
 # netpath: "/home/nvidia/ssd/model/yolo4tiny_fp16.rt"
 camcfgpath: "/home/nvidia/ssd/code/1221/cfg/390camcfg/"

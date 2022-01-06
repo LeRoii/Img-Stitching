@@ -695,19 +695,19 @@ public:
         
 
         /***** cpu undistor *****/
-        cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
-        cv::Mat tmp;
-        cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
-        // cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
-        // m_distoredImg = tmp.clone();
-        // // /*undistored*********/
+        // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
+        // cv::Mat tmp;
+        // cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
+        // // cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
+        // // m_distoredImg = tmp.clone();
+        // // // /*undistored*********/
 
-        spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
-        cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+        // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+        // cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
 
-        spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
-        m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+        // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+        // m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        // cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
         
         /***** cpu undistor end*****/
 
@@ -733,7 +733,7 @@ public:
 
         spdlog::trace("undistor takes :{} ms", sdkGetTimerValue(&timer));
 
-        // cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
+        cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
         Raw2NvBuffer(m_ret.data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
         // Raw2NvBuffer(m_argb[distoredszIdx].data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
 

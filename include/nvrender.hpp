@@ -65,11 +65,18 @@ public:
 
     void render(cv::Mat &img)
     {
-        img.copyTo(canvas(cv::Rect(0, 270, 1920, 540)));
+        int w = img.size().width;
+        int h = img.size().height;
+        int offsetx = (nvbufferWidth - w)/2;
+        int offsety = (nvbufferHeight - h)/2;
+
+        img.copyTo(canvas(cv::Rect(offsetx, offsety, w, h)));
         // img.copyTo(canvas);
         if(0 != NvBufferMemSyncForDevice (nvbufferfd, 1, (void**)&canvas.data))
             spdlog::warn("NvBufferMemSyncForDevice failed");
         renderer->render(nvbufferfd);
+
+        
     }
 
 private:

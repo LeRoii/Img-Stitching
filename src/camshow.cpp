@@ -261,22 +261,6 @@ int main(int argc, char *argv[])
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
             
-
-            // cv::Mat up,down;
-            // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            // cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-            // cv::vconcat(up, down, ret);
-
-            // cv::Mat up,down;
-            // cv::hconcat(vector<cv::Mat>{upImgs[2], upImgs[1], upImgs[0]}, up);
-            // cv::hconcat(vector<cv::Mat>{upImgs[3], downImgs[1], downImgs[0]}, down);
-            // cv::vconcat(up, down, ret);
-
-            // cv::Mat up,down;
-            // cv::hconcat(vector<cv::Mat>{upImgs[1], upImgs[0]}, up);
-            // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2]}, down);
-            // cv::vconcat(up, down, ret);
-
             cv::Mat up,down;
             cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
             cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
@@ -308,6 +292,7 @@ int main(int argc, char *argv[])
             }
 #elif CAM_IMX390
             cameras[idx-1]->getFrame(ret);
+            renderer->render(ret);
             // cameras[idx-1]->read_frame();
             
             // ret = cameras[idx-1]->m_ret;
@@ -317,11 +302,8 @@ int main(int argc, char *argv[])
 
             // nvrender->render(cameras[idx-1]->ctx.render_dmabuf_fd);
             // nvrender->render(cameras[idx-1]->retNvbuf->dmabuff_fd);
-            cv::imshow("mmm", cameras[idx-1]->m_ret);
-            cv::waitKey(1);
-
-
-
+            // cv::imshow("mmm", cameras[idx-1]->m_ret);
+            // cv::waitKey(1);
             
 #endif
 
@@ -329,7 +311,7 @@ int main(int argc, char *argv[])
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
 
-        spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
+        // spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         
         // cv::Mat ori = ret.clone();
         cv::Mat yoloret = ret;

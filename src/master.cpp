@@ -5,9 +5,9 @@
 #include "imageProcess.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
-// #include "config.h"
 #include "ocvstitcher.hpp"
 #include "helper_timer.h"
+#include "nvrender.hpp"
 
 
 // #define CAMERA_NUM 8
@@ -26,6 +26,7 @@ vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
 
+#if CAM_IMX424
 void serverCap()
 {
     downImgs.clear();
@@ -69,6 +70,8 @@ void serverCap()
     free(longbuf);
 }
 
+#endif
+
 bool saveret = false;
 bool detect = false;
 bool initonline = false;
@@ -80,7 +83,7 @@ int videoFps = 10;
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
-std::string stitchercfgpath = "/home/nvidia/ssd/code/1221/cfg/stitcher-imx390cfg.yaml";
+std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
 
 void stitcherTh(int id, ocvStitcher *stitcher)
 {
@@ -191,10 +194,11 @@ static void OnMouseAction(int event, int x, int y, int flags, void *data)
     }
 }
 
+imageProcessor *nvProcessor = nullptr;
+
 int main(int argc, char *argv[])
 {
     spdlog::set_level(spdlog::level::debug);
-    parse_cmdline(argc, argv);
 
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
@@ -205,10 +209,24 @@ int main(int argc, char *argv[])
     undistorHeight = config["undistorHeight"].as<int>();
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+
+    renderWidth = config["renderWidth"].as<int>();
+    renderHeight = config["renderHeight"].as<int>();
+    renderX = config["renderX"].as<int>();
+    renderY = config["renderY"].as<int>();
+    renderBufWidth = config["renderBufWidth"].as<int>();
+    renderBufHeight = config["renderBufHeight"].as<int>();
+
     USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
     std::string net = config["netpath"].as<string>();
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
+
+    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
+    nvrender *renderer = new nvrender(rendercfg);
+
+    if(RET_ERR == parse_cmdline(argc, argv))
+        return RET_ERR;
 
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
@@ -223,6 +241,9 @@ int main(int argc, char *argv[])
     static std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
+
+    if (detect)
+        nvProcessor = new imageProcessor(net);  
 
     /************************************stitch all *****************************************/
     // vector<Mat> imgs(8);
@@ -350,7 +371,7 @@ int main(int argc, char *argv[])
     for(auto& th:threads)
         th.detach();
 
-    imageProcessor nvProcessor(net);     //图像处理类
+    // imageProcessor nvProcessor(net);     //图像处理类
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
@@ -492,19 +513,19 @@ int main(int argc, char *argv[])
         // }
 
         controlData ctl_command;
-        ctl_command = nvProcessor.getCtlCommand();
+        ctl_command = nvProcessor->getCtlCommand();
         spdlog::info("***********get command: ");
         spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
 
         // if(ctl_command.use_ssr || start_ssr) 
         if(start_ssr) 
-            ret = nvProcessor.SSR(ret);
+            ret = nvProcessor->SSR(ret);
 
         if(detect)
         {
             t = cv::getTickCount();
             // yoloRet = nvProcessor.Process(ret);
-            ret = nvProcessor.ProcessOnce(ret);
+            ret = nvProcessor->ProcessOnce(ret);
             spdlog::info("detect takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
         //    if(ctl_command.use_detect || detect){
         //         nvProcessor.publishImage(yoloRet);
@@ -546,14 +567,13 @@ int main(int argc, char *argv[])
         {
             spdlog::critical("detCamNum::{}", detCamNum);
             cv::Mat croped = cameras[detCamNum-1]->m_distoredImg(cv::Rect(640, 300, 640, 480)).clone();
-            croped = nvProcessor.ProcessOnce(croped);
+            croped = nvProcessor->ProcessOnce(croped);
             cv::imshow("det", croped);
         }
 
         if(displayori)
             cv::imshow("ori", ori);
 
-        
         if(saveret)
         {
             cv::imwrite("up.png", stitcherOut[0]);

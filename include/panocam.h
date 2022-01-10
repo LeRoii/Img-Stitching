@@ -22,6 +22,7 @@ public:
     int getPanoFrame(cv::Mat &ret);
     int detect(cv::Mat &img, std::vector<int> &ret);
     int imgEnhancement(cv::Mat &img);
+    int render(cv::Mat &img);
 
 private:
     class panocamimpl;

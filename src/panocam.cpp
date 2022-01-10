@@ -227,6 +227,11 @@ public:
 
     int detect(cv::Mat &img, std::vector<int> &ret)
     {
+        if(img.empty())
+        {
+            spdlog::critical("img is empty! exit");
+            return RET_ERR;
+        }
         img = pImgProc->ImageDetect(img, ret);
 
         return RET_OK;
@@ -234,7 +239,24 @@ public:
 
     int imgEnhancement(cv::Mat &img)
     {
+        if(img.empty())
+        {
+            spdlog::critical("img is empty! exit");
+            return RET_ERR;
+        }
         img = pImgProc->SSR(img);
+
+        return RET_OK;
+    }
+
+    int render(cv::Mat &img)
+    {
+        if(img.empty())
+        {
+            spdlog::critical("img is empty! exit");
+            return RET_ERR;
+        }
+        pRenderer->render(img);
 
         return RET_OK;
     }
@@ -278,4 +300,9 @@ int panocam::detect(cv::Mat &img, std::vector<int> &ret)
 int panocam::imgEnhancement(cv::Mat &img)
 {
     return pimpl->imgEnhancement(img);
+}
+
+int panocam::render(cv::Mat &img)
+{
+    return pimpl->render(img);
 }

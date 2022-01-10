@@ -6,15 +6,15 @@
 #include "PracticalSocket.h"
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
+#include "nvrender.hpp"
 
+std::vector<cv::Mat> upImgs(4);
+std::vector<cv::Mat> downImgs(4);
+#if CAM_IMX424
 
 static unsigned short servPort = 10001;
 static UDPSocket sock(servPort);
 static char buffer[SLAVE_PCIE_UDP_BUF_LEN];
-// static const int USED_CAMERA_NUM = 6;
-
-std::vector<cv::Mat> upImgs(4);
-std::vector<cv::Mat> downImgs(4);
 
 int  serverCap()
 {
@@ -60,6 +60,7 @@ int  serverCap()
 
     return RET_OK;
 }
+#endif
 
 class panocam::panocamimpl
 {
@@ -73,14 +74,19 @@ public:
         std::string camcfg = config["camcfgpath"].as<string>();
         std::string canname = config["canname"].as<string>();
 
-        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+        renderWidth = config["renderWidth"].as<int>();
+        renderHeight = config["renderHeight"].as<int>();
+        renderX = config["renderX"].as<int>();
+        renderY = config["renderY"].as<int>();
+
+        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
@@ -90,6 +96,10 @@ public:
         stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2, camcfg));
 
         pImgProc = new imageProcessor(net, canname);
+
+        nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
+        nvrender *renderer = new nvrender(rendercfg);
+
         spdlog::debug("panocam ctor complete");
     }
     
@@ -120,11 +130,20 @@ public:
 
         failnum = 0;
         do{
+#if CAM_IMX390
+            downImgs.clear();
+            for(int i=0;i<4;i++)
+            {
+                cameras[i+4]->read_frame();
+                downImgs.push_back(cameras[i]->m_ret);
+            }
+#elif CAM_IMX424
             serverCap();
             cameras[4]->read_frame();
             cameras[5]->read_frame();
             downImgs[0] = cameras[4]->m_ret;
             downImgs[1] = cameras[5]->m_ret;
+#endif
             failnum++;
             if(failnum > 5)
             {
@@ -152,6 +171,7 @@ public:
             spdlog::critical("invalid camera id");
             return RET_ERR;
         }
+#if CAM_IMX424
         if(id < 7)
         {
             return cameras[id-1]->getSrcFrame(frame);
@@ -162,11 +182,15 @@ public:
             frame = downImgs[id-5].clone();
         }
         return RET_OK;
+#elif CAM_IMX390
+        return cameras[id-1]->getSrcFrame(frame);
+#endif
+        
     }
 
     int getPanoFrame(cv::Mat &ret)
     {
-        auto all = cv::getTickCount();
+#if CAM_IMX424
         std::thread server(serverCap);
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
@@ -175,6 +199,17 @@ public:
         cameras[4]->getFrame(downImgs[0]);
         cameras[5]->getFrame(downImgs[1]);
         server.join();
+#elif CAM_IMX390
+        cameras[0]->getFrame(upImgs[0]);
+        cameras[1]->getFrame(upImgs[1]);
+        cameras[2]->getFrame(upImgs[2]);
+        cameras[3]->getFrame(upImgs[3]);
+        cameras[4]->getFrame(downImgs[0]);
+        cameras[5]->getFrame(downImgs[1]);
+        cameras[6]->getFrame(downImgs[2]);
+        cameras[7]->getFrame(downImgs[3]);
+#endif
+
         spdlog::debug("imgs cap fini");
         cv::Mat up, down, rett;
         stitchers[0]->process(upImgs, up);
@@ -187,7 +222,6 @@ public:
 
         cv::vconcat(up, down, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
-        spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
 
     }
 
@@ -210,6 +244,7 @@ private:
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     std::shared_ptr<ocvStitcher> stitchers[2];
     imageProcessor *pImgProc; 
+    nvrender *pRenderer;
 };
 
 panocam::panocam(std::string yamlpath):

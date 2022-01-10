@@ -20,8 +20,10 @@ int renderWidth = 1920;
 int renderHeight = 1080;
 int renderX = 0;
 int renderY = 0;
-int renderBufWidth = 960; 
-int renderBufHeight = 540;
+
+// in general it's fixed
+int renderBufWidth = 1920; 
+int renderBufHeight = 1080;
 
 const int CAMERA_NUM = 8;
 int USED_CAMERA_NUM = 6;

@@ -170,34 +170,38 @@ int main()
 // }
 
 /********* test opencv video capture *********/
-// #include <opencv2/opencv.hpp>
-// #include <iostream>
-// #include <opencv2/core/cuda.hpp>
-// #include <opencv2/cudaimgproc.hpp> 
-// using namespace std;
-// using namespace cv;
-// int main(int argc, char **argv)
-// {
-//     cv::cuda::GpuMat a;
-// 	VideoCapture cap;
-// 	cap.open(0);
-//     cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
-// 	while (1)
-// 	{
-// 		Mat frame;//定义一个变量把视频源一帧一帧显示
-// 		cap >> frame;
-// 		if (frame.empty())
-// 		{
-// 			cout << "Finish" << endl;
-// 			break;
-// 		}
-// 		imshow("Input video", frame);
-// 		waitKey(30);
-// 	}
-// 	cap.release();
-// 	return 0;
+#include <opencv2/opencv.hpp>
+#include <iostream>
+#include <opencv2/core/cuda.hpp>
+#include <opencv2/cudaimgproc.hpp> 
+#include "imageProcess.h"
+
+using namespace std;
+using namespace cv;
+int main(int argc, char **argv)
+{
+    imageProcessor *nvProcessor = new imageProcessor("/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt");  
+    cv::cuda::GpuMat a;
+	VideoCapture cap;
+	cap.open("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
+    cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
+	while (1)
+	{
+		Mat frame;//定义一个变量把视频源一帧一帧显示
+		cap >> frame;
+		if (frame.empty())
+		{
+			cout << "Finish" << endl;
+			break;
+		}
+        frame = nvProcessor->ProcessOnce(frame);
+		imshow("Input video", frame);
+		waitKey(30);
+	}
+	cap.release();
+	return 0;
  
-// }
+}
 
 /********* test nvcam *********/
 // #include <thread>
@@ -455,18 +459,18 @@ int main()
 
 /********* test nvrender *********/
 
-#include <opencv2/opencv.hpp>
-#include "nvrender.hpp"
+// #include <opencv2/opencv.hpp>
+// #include "nvrender.hpp"
 
-int main()
-{
-    spdlog::set_level(spdlog::level::debug);
-    nvrenderCfg rendercfg{1920,1080,1920,1080,0,0};
-    cv::Mat mat = cv::imread("../img1.png");
-    cv::cvtColor(mat, mat, cv::COLOR_RGB2RGBA);
-    nvrender *renderer = new nvrender(rendercfg);
-    while(1)
-        // renderer->render(mat);
-        renderer->render(mat.data);
-    return 0;
-}
+// int main()
+// {
+//     spdlog::set_level(spdlog::level::debug);
+//     nvrenderCfg rendercfg{1920,1080,1920,1080,0,0};
+//     cv::Mat mat = cv::imread("../img1.png");
+//     cv::cvtColor(mat, mat, cv::COLOR_RGB2RGBA);
+//     nvrender *renderer = new nvrender(rendercfg);
+//     while(1)
+//         // renderer->render(mat);
+//         renderer->render(mat.data);
+//     return 0;
+// }

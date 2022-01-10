@@ -224,6 +224,9 @@ int main(int argc, char *argv[])
     // NvBufferMemMap (cameras[idx-1]->retNvbuf->dmabuff_fd, 0, NvBufferMem_Read_Write, (void**)&mmat.data);
     // mmat.data = (uchar*)sBaseAddr[0];
 
+    cv::VideoCapture capture("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
+    spdlog::warn("is open:{}", capture.isOpened());
+
     while(1)
     {
         sdkResetTimer(&timer);
@@ -272,7 +275,7 @@ int main(int argc, char *argv[])
             // cv::waitKey(1);
             // nvrender->render(cameras[0]->ctx.render_dmabuf_fd);
             // renderer->render(ret.data);
-            renderer->render(ret);
+            // renderer->render(ret);
 
         }
         else
@@ -292,7 +295,7 @@ int main(int argc, char *argv[])
             }
 #elif CAM_IMX390
             cameras[idx-1]->getFrame(ret);
-            renderer->render(ret);
+            
             // cameras[idx-1]->read_frame();
             
             // ret = cameras[idx-1]->m_ret;
@@ -314,6 +317,11 @@ int main(int argc, char *argv[])
         // spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         
         // cv::Mat ori = ret.clone();
+
+        capture >> ret;
+        cv::cvtColor(ret,ret,cv::COLOR_RGB2RGBA);
+        renderer->render(ret);
+        
         cv::Mat yoloret = ret;
         if (detect)
         {

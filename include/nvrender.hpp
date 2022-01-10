@@ -72,7 +72,7 @@ public:
 
         img.copyTo(canvas(cv::Rect(offsetx, offsety, w, h)));
         // img.copyTo(canvas);
-        if(0 != NvBufferMemSyncForDevice (nvbufferfd, 1, (void**)&canvas.data))
+        if(0 != NvBufferMemSyncForDevice (nvbufferfd, 0, (void**)&canvas.data))
             spdlog::warn("NvBufferMemSyncForDevice failed");
         renderer->render(nvbufferfd);
 

@@ -8,12 +8,12 @@ distorHeight: 1080
 # undistor size can only be 960x540 or 1920x1080
 undistorWidth: 960
 undistorHeight: 540
-stitcherinputWidth: 480
-stitcherinputHeight: 270
+stitcherinputWidth: 960
+stitcherinputHeight: 540
 
 # parameters for renderer
-renderWidth: 1920
-renderHeight: 1080
+renderWidth: 960
+renderHeight: 540
 renderX: 0
 renderY: 0
 renderBufWidth: 1920

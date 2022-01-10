@@ -3,3 +3,9 @@ camheight: 2160
 netpath: "/home/nvidia/ssd/code/cameracap/cfg/yolo4_berkeley_fp16.rt"
 camcfgpath: "/home/nvidia/ssd/code/0929IS/cfg/"
 canname: "can0" 
+
+# parameters for display window
+renderWidth: 960
+renderHeight: 540
+renderX: 0
+renderY: 0

@@ -73,4 +73,6 @@ make
 - 延迟问题解决，效果与camera_v4l2_cuda相同，gpu去畸变有问题，多线程时同一个render会出现不同相机的画面，暂时用cpu去畸变
 - 增加nvrenderer  
 
+01.16.
+-api改用nvrenderer显示
 

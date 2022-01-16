@@ -74,5 +74,5 @@ make
 - 增加nvrenderer  
 
 01.16.
--api改用nvrenderer显示
+- api改用nvrenderer显示
 

@@ -161,7 +161,7 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
     //     lastret = detret;
     // }
 
-    // if(ii == 8)
+    // if(ii == 1)
     // {
         
     //     ii=0;

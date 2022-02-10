@@ -25,6 +25,7 @@ vector<Mat> upImgs(4);
 vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
+int framecnt = 0;
 
 #if CAM_IMX424
 void serverCap()
@@ -245,6 +246,7 @@ int main(int argc, char *argv[])
     if (detect)
         nvProcessor = new imageProcessor(net);  
 
+
     /************************************stitch all *****************************************/
     // vector<Mat> imgs(8);
 
@@ -337,6 +339,7 @@ int main(int argc, char *argv[])
         {
             cameras[i]->read_frame();
             upImgs.push_back(cameras[i]->m_ret);
+            
         }   
     }
     while(ostitcherUp.init(upImgs, initonline) != 0);
@@ -361,9 +364,7 @@ int main(int argc, char *argv[])
     }
     while(ostitcherDown.init(downImgs, initonline) != 0);
 
-
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
 
     std::vector<std::thread> threads;
     for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -380,12 +381,15 @@ int main(int argc, char *argv[])
 	VideoWriter *oriWriter = nullptr;
     bool writerInit = false;
 
+    StopWatchInterface *timer = NULL;
+    sdkCreateTimer(&timer);
+    sdkResetTimer(&timer);
+    sdkStartTimer(&timer);
     
     while(1)
     {
         spdlog::debug("start loop");
-        auto t = cv::getTickCount();
-        auto all = cv::getTickCount();
+        sdkResetTimer(&timer);
         // cameras[0]->read_frame();
         // cameras[1]->read_frame();
         // cameras[2]->read_frame();
@@ -415,8 +419,9 @@ int main(int argc, char *argv[])
         cameras[6]->getFrame(downImgs[2]);
         cameras[7]->getFrame(downImgs[3]);
 #endif
-        spdlog::debug("master cap fini");
+        
 #if CAM_IMX424
+        spdlog::debug("master cap fini");
         server.join();
         spdlog::debug("slave cap fini");
 #endif
@@ -427,8 +432,7 @@ int main(int argc, char *argv[])
         // for(int i=0;i<4;i++)
         //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
 
-        spdlog::info("read takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
-        t = cv::getTickCount();
+        spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
         // cv::imshow("ret", upImgs[2]);
         // cv::imshow("ret", cameras[2]->m_ret);
@@ -461,13 +465,14 @@ int main(int argc, char *argv[])
         ostitcherUp.inputOk = true;
         ostitcherDown.inputOk = true;
 
-        stitcherCon[0].notify_all();
+        
         stitcherCon[1].notify_all();
+        stitcherCon[0].notify_all();
         
         while(!(ostitcherUp.outputOk && ostitcherDown.outputOk))
         {
-            stitcherCon[0].wait(lock);
             stitcherCon[1].wait(lock1);
+            stitcherCon[0].wait(lock);
         }
 
         ostitcherUp.outputOk = false;
@@ -491,14 +496,7 @@ int main(int argc, char *argv[])
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
 
-        // cv::Mat up,down, ret;
-        // cv::hconcat(vector<cv::Mat>{cameras[0]->m_ret, cameras[1]->m_ret, cameras[2]->m_ret}, up);
-        // cv::hconcat(vector<cv::Mat>{cameras[3]->m_ret, cameras[4]->m_ret, cameras[5]->m_ret}, down);
-        // cv::vconcat(up, down, ret);
-        // cv::imshow("m_dev_name", ret);
-
-        // cv::imshow("1", cam0.m_ret);
-        // cv::imwrite("1.png", cam0.m_ret);
+        spdlog::info("stitching takes:{} ms", sdkGetTimerValue(&timer));
 
         // if(saveret)
         // {
@@ -523,10 +521,8 @@ int main(int argc, char *argv[])
 
         if(detect)
         {
-            t = cv::getTickCount();
             // yoloRet = nvProcessor.Process(ret);
             ret = nvProcessor->ProcessOnce(ret);
-            spdlog::info("detect takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
         //    if(ctl_command.use_detect || detect){
         //         nvProcessor.publishImage(yoloRet);
         //     } else{
@@ -560,8 +556,9 @@ int main(int argc, char *argv[])
             *oriWriter << ori;
         }
 
-        cv::imshow("ret", ret);
-        setMouseCallback("ret",OnMouseAction);
+        // cv::imshow("ret", ret);
+        renderer->render(ret);
+        // setMouseCallback("ret",OnMouseAction);
 
         if(detCamNum!=0)
         {
@@ -610,8 +607,7 @@ int main(int argc, char *argv[])
                 break;
         }
 
-        spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
-
+        spdlog::info("frame [{}], all takes:{} ms", framecnt++, sdkGetTimerValue(&timer));
     }
     return 0;
 }

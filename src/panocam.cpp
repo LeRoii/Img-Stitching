@@ -1,12 +1,14 @@
-#include "panocam.h"
-#include "yaml-cpp/yaml.h"
-#include "nvcam.hpp"
-#include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
+#include "yaml-cpp/yaml.h"
+#include "panocam.h"
+
+#include "nvcam.hpp"
+
+#include "ocvstitcher.hpp"
 #include "PracticalSocket.h"
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
-#include "nvrender.hpp"
+
 
 std::vector<cv::Mat> upImgs(4);
 std::vector<cv::Mat> downImgs(4);
@@ -78,6 +80,9 @@ public:
         renderHeight = config["renderHeight"].as<int>();
         renderX = config["renderX"].as<int>();
         renderY = config["renderY"].as<int>();
+#if CAM_IMX424
+        USED_CAMERA_NUM = 6;
+#endif
 
         stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
                                     stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
@@ -98,7 +103,13 @@ public:
         pImgProc = new imageProcessor(net, canname);
 
         nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
-        nvrender *renderer = new nvrender(rendercfg);
+        pRenderer = new nvrender(rendercfg);
+
+        std::vector<std::thread> threads;
+        for(int i=0;i<USED_CAMERA_NUM;i++)
+            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+        for(auto& th:threads)
+            th.detach();
 
         spdlog::debug("panocam ctor complete");
     }
@@ -152,12 +163,6 @@ public:
             }
         }
         while(stitchers[1]->init(downImgs, initonlie) != 0);
-
-        std::vector<std::thread> threads;
-        for(int i=0;i<USED_CAMERA_NUM;i++)
-            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-        for(auto& th:threads)
-            th.detach();
 
         spdlog::info("init completed!");
                 
@@ -272,6 +277,8 @@ private:
 panocam::panocam(std::string yamlpath):
     pimpl{std::make_unique<panocamimpl>(yamlpath)}
 {
+    // nvrenderCfg rendercfg{1920, 1080, 1920/2, 1080/2, 0, 0};
+    // pRenderer = new nvrender(rendercfg);
 
 }
 
@@ -305,4 +312,8 @@ int panocam::imgEnhancement(cv::Mat &img)
 int panocam::render(cv::Mat &img)
 {
     return pimpl->render(img);
+
+    // pRenderer->render1();
+
+    return 1;
 }

@@ -5,17 +5,7 @@
 #include "NvEglRenderer.h"
 #include "nvbuf_utils.h"
 #include "spdlog/spdlog.h"
-
-struct nvrenderCfg
-{
-    int bufferw;
-    int bufferh;
-    int renderw;
-    int renderh;
-    int renderx;
-    int rendery;
-};
-
+#include "stitcherconfig.h"
 class nvrender
 {
 public:
@@ -45,6 +35,9 @@ public:
         spdlog::debug("params num planes:{}", params.num_planes);
         if(0 != NvBufferMemMap (nvbufferfd, 0, NvBufferMem_Read_Write, (void**)&canvas.data))
             spdlog::critical("NvBufferMemMap Failed");
+        
+        spdlog::info("rendereer ctor cplt");
+        spdlog::info("rendereer ctor cplt,nvbufferWidth:{}", nvbufferWidth);
     }
     ~nvrender()
     {
@@ -69,8 +62,9 @@ public:
         int h = img.size().height;
         int offsetx = (nvbufferWidth - w)/2;
         int offsety = (nvbufferHeight - h)/2;
-
-        img.copyTo(canvas(cv::Rect(offsetx, offsety, w, h)));
+        cv::Mat tmp;
+        cv::cvtColor(img, tmp, cv::COLOR_RGB2RGBA);
+        tmp.copyTo(canvas(cv::Rect(offsetx, offsety, w, h)));
         // img.copyTo(canvas);
         if(0 != NvBufferMemSyncForDevice (nvbufferfd, 0, (void**)&canvas.data))
             spdlog::warn("NvBufferMemSyncForDevice failed");
@@ -78,6 +72,16 @@ public:
 
         
     }
+
+    // void render1()
+    // {
+    //     spdlog::info("in render1");
+    //     cv::Mat im = cv::imread("/home/nvidia/ssd/data/ori/3-ori7.png");
+    //     cv::cvtColor(im,im,cv::COLOR_RGB2RGBA);
+    //     spdlog::info("in render1, nvbufferfd:{}",nvbufferWidth);
+    //     Raw2NvBuffer(im.data, 0, nvbufferWidth, nvbufferHeight, nvbufferfd);
+    //     renderer->render(nvbufferfd);
+    // }
 
 private:
     NvEglRenderer *renderer;

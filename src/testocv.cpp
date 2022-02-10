@@ -1,4 +1,15 @@
 /********* test detector *********/
+/********* test binding mac address *********/
+/********* test yaml *********/
+/********* test nvidia timer *********/
+/********* test opencv video capture and imgprocessor *********/
+/********* test nvcam *********/
+/********* test yuv 2 rgb *********/
+/********* test nvrender *********/
+/********* test resize *********/
+/********* test stitcher *********/
+
+/********* test detector *********/
 // #include "imageProcess.h"
 // // #include <opencv2/opencv.hpp>
 // #include <iostream>
@@ -56,77 +67,77 @@ int main()
 }
 */
 
-// #include <string>
-// #include <string.h>
-// #include <net/if.h>
-// #include <sys/ioctl.h>
+#include <string>
+#include <string.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
-// using namespace std;
+using namespace std;
 
-// int _System(const char * cmd, char *pRetMsg, int msg_len)
-// {
-// 	FILE * fp;
-// 	char * p = NULL;
-// 	int res = -1;
-// 	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
-// 	{
-// 		printf("Param Error!\n");
-// 		return -1;
-// 	}
-// 	if ((fp = popen(cmd, "r") ) == NULL)
-// 	{
-// 		printf("Popen Error!\n");
-// 		return -2;
-// 	}
-// 	else
-// 	{
-// 		memset(pRetMsg, 0, msg_len);
-// 		//get lastest result
-// 		while(fgets(pRetMsg, msg_len, fp) != NULL)
-// 		{
-// 			printf("Msg:%s",pRetMsg); //print all info
-// 		}
+int _System(const char * cmd, char *pRetMsg, int msg_len)
+{
+	FILE * fp;
+	char * p = NULL;
+	int res = -1;
+	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
+	{
+		printf("Param Error!\n");
+		return -1;
+	}
+	if ((fp = popen(cmd, "r") ) == NULL)
+	{
+		printf("Popen Error!\n");
+		return -2;
+	}
+	else
+	{
+		memset(pRetMsg, 0, msg_len);
+		//get lastest result
+		while(fgets(pRetMsg, msg_len, fp) != NULL)
+		{
+			printf("Msg:%s",pRetMsg); //print all info
+		}
  
-// 		if ( (res = pclose(fp)) == -1)
-// 		{
-// 			printf("close popenerror!\n");
-// 			return -3;
-// 		}
-// 		pRetMsg[strlen(pRetMsg)-1] = '\0';
-// 		return 0;
-// 	}
-// }
+		if ( (res = pclose(fp)) == -1)
+		{
+			printf("close popenerror!\n");
+			return -3;
+		}
+		pRetMsg[strlen(pRetMsg)-1] = '\0';
+		return 0;
+	}
+}
 
-// void get_mac(char * mac_a)
-// {
-//     int                 sockfd;
-//     struct ifreq        ifr;
+void get_mac(char * mac_a)
+{
+    int                 sockfd;
+    struct ifreq        ifr;
 
-//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-//     if (sockfd == -1) {
-//         perror("socket error");
-//         exit(1);
-//     }
-//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-//         memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
-//     }
-// }
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
+    }
+}
 
-// int main()
-// {
-//     // string str1 = "cat /sys/class/net/eth0/address";
-//     // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
-//     // system(command1);
-//     char buf[100];
-//     int msg_len = 100;
-//     // _System("cat /sys/class/net/eth0/address", buf, msg_len);
-//     char * this_mac = new char[6];
-//     get_mac(this_mac);
-//     printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+int main()
+{
+    // string str1 = "cat /sys/class/net/eth0/address";
+    // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
+    // system(command1);
+    char buf[100];
+    int msg_len = 100;
+    // _System("cat /sys/class/net/eth0/address", buf, msg_len);
+    char * this_mac = new char[6];
+    get_mac(this_mac);
+    printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
 
-// }
+}
 
 /********* test yaml *********/
 // #include "yaml-cpp/yaml.h"
@@ -169,39 +180,81 @@ int main()
 //     return 0;
 // }
 
-/********* test opencv video capture *********/
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaimgproc.hpp> 
-#include "imageProcess.h"
+/********* test opencv video capture and imgprocessor *********/
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include <opencv2/core/cuda.hpp>
+// #include <opencv2/cudaimgproc.hpp> 
+// #include "imageProcess.h"
 
-using namespace std;
-using namespace cv;
-int main(int argc, char **argv)
-{
-    imageProcessor *nvProcessor = new imageProcessor("/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt");  
-    cv::cuda::GpuMat a;
-	VideoCapture cap;
-	cap.open("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
-    cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
-	while (1)
-	{
-		Mat frame;//定义一个变量把视频源一帧一帧显示
-		cap >> frame;
-		if (frame.empty())
-		{
-			cout << "Finish" << endl;
-			break;
-		}
-        frame = nvProcessor->ProcessOnce(frame);
-		imshow("Input video", frame);
-		waitKey(30);
-	}
-	cap.release();
-	return 0;
+// using namespace std;
+// using namespace cv;
+// int main(int argc, char **argv)
+// {
+//     imageProcessor *nvProcessor = new imageProcessor("/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt");  
+//     cv::cuda::GpuMat a;
+// 	VideoCapture cap;
+// 	cap.open("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
+//     cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
+//     // VideoWriter *panoWriter = new VideoWriter("-pano.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, cv::Size(1305,466));
+//     VideoWriter *panoWriter = new VideoWriter("-pano.mp4", CV_FOURCC('D', 'I', 'V', 'X'), 10, cv::Size(1305,466));
+//     int  ii = 0;
+//     std::vector<int> lret,rret;
+// 	while (1)
+// 	{
+//         ii++;
+// 		Mat frame;//定义一个变量把视频源一帧一帧显示
+// 		cap >> frame;
+// 		if (frame.empty())
+// 		{
+// 			cout << "Finish" << endl;
+// 			break;
+// 		}
+//         // frame = nvProcessor->ProcessOnce(frame);
+// 		// imshow("Input video", frame);
+//         // *panoWriter << frame;
+// 		// waitKey(30);
+//         if(ii==1)
+//         {
+//             cv::Mat left = frame(cv::Rect(0,0,1305/2, 466)).clone();
+//             cv::Mat right = frame(cv::Rect(1305/2,0,1305/2, 466)).clone();
+            
+//             printf("right=%d\n",right.empty());
+//             nvProcessor->ImageDetect(left, lret);
+//             nvProcessor->ImageDetect(right, rret);
+
+//             // imshow("Input video", left);
+//         }
+//         else if(ii == 4)
+//         {
+//             ii = 0;
+//         }
+
+//         for(int i=0;i<lret.size()/6;i++){
+//                 int x0 = lret[6*i];
+//                 int y0 = lret[6*i+1];
+//                 int x1 =x0+lret[6*i+2];
+//                 int y1 = y0 + lret[6*i+3];
+//                 cv::rectangle(frame, cv::Point(lret[6*i], lret[6*i+1]), cv::Point(x1, y1), cv::Scalar(0,255,0), 2); 
+//             }
+//         for(int i=0;i<rret.size()/6;i++){
+//             int x0 = rret[6*i]+1305/2;
+//             int y0 = rret[6*i+1];
+//             int x1 =x0+rret[6*i+2];
+//             int y1 = y0 + rret[6*i+3];
+//             cv::rectangle(frame, cv::Point(x0, y0), cv::Point(x1, y1), cv::Scalar(0,255,0), 2); 
+//         }
+        
+//         printf("ii=%d\n",ii);
+//         imshow("Input video", frame);
+//         *panoWriter << frame;
+//         waitKey(30);
+
+// 	}
+// 	cap.release();
+// 	return 0;
  
-}
+// }
 
 /********* test nvcam *********/
 // #include <thread>
@@ -473,4 +526,72 @@ int main(int argc, char **argv)
 //         // renderer->render(mat);
 //         renderer->render(mat.data);
 //     return 0;
+// }
+
+/********* test resize *********/
+// #include <opencv2/opencv.hpp>
+
+// void unsharpMask(cv::Mat& im) 
+// {
+//    cv::Mat tmp;
+//    cv::GaussianBlur(im, tmp, cv::Size(0, 0), 5); 
+//    cv::addWeighted(im, 1.5, tmp, -0.5, 0, im); 
+// }
+
+// int main()
+// {
+//     cv::Mat im = cv::imread("/home/nvidia/ssd/data/ori/3-ori7.png");
+//     cv::Mat ims = cv::imread("/home/nvidia/ssd/data/INTER_NEAREST.png");
+//     cv::Mat rs;
+//    //  cv::resize(im, rs, cv::Size(580, 270), cv::INTER_NEAREST);
+//    //  cv::imwrite("INTER_NEAREST.png", rs);
+//    //  cv::resize(im, rs, cv::Size(580, 270), cv::INTER_LINEAR);
+//    //  cv::imwrite("INTER_LINEAR.png", rs);
+//    //  cv::resize(im, rs, cv::Size(580, 270), cv::INTER_CUBIC);
+//    //  cv::imwrite("INTER_CUBIC.png", rs);
+//    //  cv::resize(im, rs, cv::Size(580, 270), cv::INTER_AREA);
+//    //  cv::imwrite("INTER_AREA.png", rs);
+
+//    unsharpMask(ims);
+//    cv::Mat ret;
+//    cv::resize(im, rs, cv::Size(640, 480));
+//    cv::imwrite("640.png", rs);
+//    // cv::Laplacian(ims, ret, cv::CV_8UC3);
+
+//    // cv::imwrite("/home/nvidia/ssd/data/unsharpmask.png", ims);
+//    // cv::imwrite("/home/nvidia/ssd/data/Laplacian.png", ret);
+   
+//     return 0;
+// }
+
+/********* test stitcher *********/
+// #include "ocvstitcher.hpp"
+
+// int main()
+// {
+//    int stitcherinputHeight = 270, stitcherinputWidth = 480;
+//    ocvStitcher *pStitcher = new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1, "./");
+//    vector<cv::Mat> imgs;
+//    cv::Mat ret;
+//    imgs.push_back(cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/1.png"));
+//    imgs.push_back(cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/2.png"));
+//    imgs.push_back(cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/3.png"));
+//    imgs.push_back(cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/4.png"));
+
+//    cv::resize(imgs[0], imgs[0], cv::Size(720, 405));
+//    cv::resize(imgs[1], imgs[1], cv::Size(720, 405));
+//    cv::resize(imgs[2], imgs[2], cv::Size(720, 405));
+//    cv::resize(imgs[3], imgs[3], cv::Size(720, 405));
+
+//    cv::imwrite("0.png", imgs[0]);
+//    cv::imwrite("1.png", imgs[1]);
+//    cv::imwrite("2.png", imgs[2]);
+//    cv::imwrite("3.png", imgs[3]);
+
+//    pStitcher->init(imgs, true);
+//    pStitcher->process(imgs, ret);
+
+//    cv::imwrite("640.png", ret);
+
+//    return 0;
 // }

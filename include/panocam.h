@@ -4,6 +4,8 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 
+#include "nvrender.hpp"
+
 enum enInitMode
 {
     INIT_ONLINE = 1,
@@ -27,6 +29,8 @@ public:
 private:
     class panocamimpl;
     std::unique_ptr<panocamimpl> pimpl;
+
+    nvrender *pRenderer;
 
 };
 

@@ -76,6 +76,9 @@ bool detect = false;
 bool showall = true;
 bool withnum = false;
 int idx = 1;
+int videoFps = 10;
+bool savevideo = false;
+
 static int parse_cmdline(int argc, char **argv)
 {
     int c;
@@ -85,7 +88,7 @@ static int parse_cmdline(int argc, char **argv)
         return true;
     }
 
-    while ((c = getopt(argc, argv, "c:dnp:")) != -1)
+    while ((c = getopt(argc, argv, "c:dnp:v")) != -1)
     {
         switch (c)
         {
@@ -100,6 +103,10 @@ static int parse_cmdline(int argc, char **argv)
                     {
                         showall = false;
                         idx = std::stoi(optarg);
+#ifdef CAM_IMX390
+                        stitcherinputWidth = undistorWidth = camSrcWidth;
+                        stitcherinputHeight = undistorHeight = camSrcHeight;
+#endif
                         if(0 < idx < 9)
                             break;
                     }
@@ -120,6 +127,11 @@ static int parse_cmdline(int argc, char **argv)
                 break;
             case 'n':
                 withnum = true;
+                break;
+            case 'v':
+                savevideo = true;
+                spdlog::warn("savevideo");
+                break;
             default:
                 break;
         }
@@ -165,7 +177,21 @@ int main(int argc, char *argv[])
     imgs = std::vector<Mat>(CAMERA_NUM, Mat(stitcherinputHeight, stitcherinputWidth, CV_8UC4));
     
     if (detect)
-        nvProcessor = new imageProcessor(net);  
+        nvProcessor = new imageProcessor(net);
+
+    VideoWriter *writer[8];
+    if(savevideo)
+    {
+        writer[0] = new VideoWriter("0-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[1] = new VideoWriter("1-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[2] = new VideoWriter("2-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[3] = new VideoWriter("3-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[4] = new VideoWriter("4-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[5] = new VideoWriter("5-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[6] = new VideoWriter("6-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[7] = new VideoWriter("7-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+    }
+
 
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
@@ -224,8 +250,8 @@ int main(int argc, char *argv[])
     // NvBufferMemMap (cameras[idx-1]->retNvbuf->dmabuff_fd, 0, NvBufferMem_Read_Write, (void**)&mmat.data);
     // mmat.data = (uchar*)sBaseAddr[0];
 
-    cv::VideoCapture capture("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
-    spdlog::warn("is open:{}", capture.isOpened());
+    // cv::VideoCapture capture("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
+    // spdlog::warn("is open:{}", capture.isOpened());
 
     while(1)
     {
@@ -263,19 +289,19 @@ int main(int argc, char *argv[])
                 if(withnum)
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
-            
-            cv::Mat up,down;
-            cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
-            cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
-            cv::vconcat(up, down, ret);
 
-            // // cv::imshow("mmm", cameras[0]->m_argb);
-            // // cv::imshow("mmm", cameras[0]->m_ret);
-            // cv::imshow("mmm", ret);
-            // cv::waitKey(1);
-            // nvrender->render(cameras[0]->ctx.render_dmabuf_fd);
-            // renderer->render(ret.data);
-            // renderer->render(ret);
+            if(savevideo)
+            {
+                for(int i=0;i<8;i++)
+                    *writer[i] << imgs[i];
+            }
+            else
+            {          
+                cv::Mat up,down;
+                cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
+                cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
+                cv::vconcat(up, down, ret);
+            }
 
         }
         else
@@ -314,13 +340,17 @@ int main(int argc, char *argv[])
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
 
-        // spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
+        spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         
         // cv::Mat ori = ret.clone();
 
-        capture >> ret;
-        cv::cvtColor(ret,ret,cv::COLOR_RGB2RGBA);
-        renderer->render(ret);
+        // capture >> ret;
+        // cv::cvtColor(ret,ret,cv::COLOR_RGB2RGBA);
+        if(!savevideo)
+        {
+            spdlog::info("render");
+            renderer->render(ret);
+        }
         
         cv::Mat yoloret = ret;
         if (detect)

@@ -13,8 +13,8 @@ int distorHeight = 1080/2;
 int undistorWidth =  1920/2;
 int undistorHeight = 1080/2;
 
-int stitcherinputWidth = 1920/4;
-int stitcherinputHeight = 1080/4;
+int stitcherinputWidth = 1920/2;
+int stitcherinputHeight = 1080/2;
 
 int renderWidth = 1920;
 int renderHeight = 1080;
@@ -26,7 +26,7 @@ int renderBufWidth = 1920;
 int renderBufHeight = 1080;
 
 const int CAMERA_NUM = 8;
-int USED_CAMERA_NUM = 6;
+int USED_CAMERA_NUM = 1;
 const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
 
 const int RET_OK = 0;
@@ -44,6 +44,17 @@ struct stCamCfg
 	int retHeight;
 	int id;
     char name[20];
+};
+
+
+struct nvrenderCfg
+{
+    int bufferw;
+    int bufferh;
+    int renderw;
+    int renderh;
+    int renderx;
+    int rendery;
 };
 
 

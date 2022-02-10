@@ -126,29 +126,6 @@ get_nvbuff_color_fmt(unsigned int v4l2_pixfmt)
 }
 
 static bool
-save_frame_to_file(camcontext_t * ctx, struct v4l2_buffer * buf)
-{
-    int file;
-
-    file = open(ctx->cam_file, O_CREAT | O_WRONLY | O_APPEND | O_TRUNC,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-
-    if (-1 == file)
-        ERROR_RETURN("Failed to open file for frame saving");
-
-    if (-1 == write(file, ctx->g_buff[buf->index].start,
-                ctx->g_buff[buf->index].size))
-    {
-        close(file);
-        ERROR_RETURN("Failed to write frame into file");
-    }
-
-    close(file);
-
-    return true;
-}
-
-static bool
 nvbuff_do_clearchroma (int dmabuf_fd)
 {
   NvBufferParams params = {0};
@@ -186,6 +163,31 @@ nvbuff_do_clearchroma (int dmabuf_fd)
 
   return true;
 }
+
+// static bool
+// display_initialize(camcontext_t * ctx)
+// {
+//     /* Create EGL renderer */
+//     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
+//             ctx->cam_w/2, ctx->cam_h/2, 0, 0);
+//     if (!ctx->renderer)
+//         ERROR_RETURN("Failed to create EGL renderer");
+//     ctx->renderer->setFPS(ctx->fps);
+
+//     if (ctx->enable_cuda)
+//     {
+//         /* Get defalut EGL display */
+//         ctx->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+//         if (ctx->egl_display == EGL_NO_DISPLAY)
+//             ERROR_RETURN("Failed to get EGL display connection");
+
+//         /* Init EGL display connection */
+//         if (!eglInitialize(ctx->egl_display, NULL, NULL))
+//             ERROR_RETURN("Failed to initialize EGL display connection");
+//     }
+
+//     return true;
+// }
 
 static bool
 camera_initialize(camcontext_t * ctx)
@@ -244,31 +246,6 @@ camera_initialize(camcontext_t * ctx)
 }
 
 static bool
-display_initialize(camcontext_t * ctx)
-{
-    /* Create EGL renderer */
-    ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
-            ctx->cam_w/3, ctx->cam_h/3, 0, 0);
-    if (!ctx->renderer)
-        ERROR_RETURN("Failed to create EGL renderer");
-    ctx->renderer->setFPS(ctx->fps);
-
-    if (ctx->enable_cuda)
-    {
-        /* Get defalut EGL display */
-        ctx->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        if (ctx->egl_display == EGL_NO_DISPLAY)
-            ERROR_RETURN("Failed to get EGL display connection");
-
-        /* Init EGL display connection */
-        if (!eglInitialize(ctx->egl_display, NULL, NULL))
-            ERROR_RETURN("Failed to initialize EGL display connection");
-    }
-
-    return true;
-}
-
-static bool
 init_components(camcontext_t * ctx)
 {
     if (!camera_initialize(ctx))
@@ -287,7 +264,7 @@ request_camera_buff(camcontext_t *ctx)
     /* Request camera v4l2 buffer */
     struct v4l2_requestbuffers rb;
     memset(&rb, 0, sizeof(rb));
-    rb.count = V4L2_BUFFERS_NUM;
+    rb.count = V4L2_BUFFERS_NUM;    //缓冲区内缓冲帧的数目，缓冲区中保留4帧
     rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     rb.memory = V4L2_MEMORY_DMABUF;
     if (ioctl(ctx->cam_fd, VIDIOC_REQBUFS, &rb) < 0)
@@ -415,10 +392,11 @@ prepare_buffers(camcontext_t * ctx)
     }
 
     input_params.colorFormat = get_nvbuff_color_fmt(V4L2_PIX_FMT_YUV420M);
+    input_params.colorFormat = NvBufferColorFormat_ABGR32 ;
     input_params.nvbuf_tag = NvBufferTag_NONE;
-    // /* Create Render buffer */
-    if (-1 == NvBufferCreateEx(&ctx->render_dmabuf_fd, &input_params))
-        ERROR_RETURN("Failed to create NvBuffer");
+    /* Create Render buffer */
+    // if (-1 == NvBufferCreateEx(&ctx->render_dmabuf_fd, &input_params))
+    //     ERROR_RETURN("Failed to create NvBuffer");
 
     if (ctx->capture_dmabuf) {
         if (!request_camera_buff(ctx))
@@ -476,7 +454,9 @@ class nvCam
 public:
     nvCam(stCamCfg &camcfg):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
 	m_retWidth(camcfg.retWidth),m_retHeight(camcfg.retHeight),
-	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), m_id(camcfg.id)
+	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), 
+	m_undistoredWidth(camcfg.undistoredWidth),m_undistoredHeight(camcfg.undistoredHeight), 
+    m_id(camcfg.id)
     
     {
         // if(m_distoredWidth == 960)
@@ -545,32 +525,53 @@ public:
             // printf("ERROR: %s(): (line:%d)\n", __FUNCTION__, __LINE__);
             spdlog::critical("ERROR: {}(): (line:{})", __FUNCTION__, __LINE__);
 
+        // NvBufferCreateParams bufparams = {0};
+        // retNvbuf = (nv_buffer *)malloc(2*sizeof(nv_buffer));
+        // // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+        // bufparams.payloadType = NvBufferPayload_SurfArray;
+        // bufparams.width = 1920;
+        // bufparams.height = 1080;
+        // bufparams.layout = NvBufferLayout_Pitch;
+        // bufparams.colorFormat = NvBufferColorFormat_ARGB32;
+        // bufparams.nvbuf_tag = NvBufferTag_NONE;
+        // if (-1 == NvBufferCreateEx(&retNvbuf[0].dmabuff_fd, &bufparams))
+        //         spdlog::critical("Failed to create NvBuffer 1920");
+
+        // bufparams.width = 960;
+        // bufparams.height = 540;
+        // if (-1 == NvBufferCreateEx(&retNvbuf[1].dmabuff_fd, &bufparams))
+        //         spdlog::critical("Failed to create NvBuffer 960");
+
         NvBufferCreateParams bufparams = {0};
-        retNvbuf = (nv_buffer *)malloc(2*sizeof(nv_buffer));
+        retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
         // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
         bufparams.payloadType = NvBufferPayload_SurfArray;
-        bufparams.width = 1920;
-        bufparams.height = 1080;
+        bufparams.width = m_distoredWidth;
+        bufparams.height = m_distoredHeight;
         bufparams.layout = NvBufferLayout_Pitch;
         bufparams.colorFormat = NvBufferColorFormat_ARGB32;
-        bufparams.nvbuf_tag = NvBufferTag_CAMERA;
-        if (-1 == NvBufferCreateEx(&retNvbuf[0].dmabuff_fd, &bufparams))
+        bufparams.nvbuf_tag = NvBufferTag_NONE;
+        if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
                 spdlog::critical("Failed to create NvBuffer 1920");
 
-        bufparams.width = 960;
-        bufparams.height = 540;
-        if (-1 == NvBufferCreateEx(&retNvbuf[1].dmabuff_fd, &bufparams))
-                spdlog::critical("Failed to create NvBuffer 960");
+        m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+
+        bufparams.width = m_retWidth;
+        bufparams.height = m_retHeight;
+        if (-1 == NvBufferCreateEx(&ctx.render_dmabuf_fd, &bufparams))
+                spdlog::critical("Failed to create NvBuffer ctx->render_dmabuf_fd");
 
         // m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
-        m_argb[0] = cv::Mat(1080, 1920, CV_8UC4);
-        m_argb[1] = cv::Mat(540, 960, CV_8UC4);
+        // m_argb[0] = cv::Mat(1080, 1920, CV_8UC4);
+        // m_argb[1] = cv::Mat(540, 960, CV_8UC4);
 
-        m_gpuargb[0] = cv::cuda::GpuMat(1080, 1920, CV_8UC4);
-        m_gpuargb[1] = cv::cuda::GpuMat(540, 960, CV_8UC4);
+        // m_gpuargb[0] = cv::cuda::GpuMat(1080, 1920, CV_8UC4);
+        // m_gpuargb[1] = cv::cuda::GpuMat(540, 960, CV_8UC4);
 
-        m_gpuDistoredImg = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
-        m_gpuUndistoredImg = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+        m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+        m_gpuret = cv::cuda::GpuMat(m_retHeight, m_retWidth, CV_8UC4);
 
         /* Init the NvBufferTransformParams */
         memset(&transParams, 0, sizeof(transParams));
@@ -600,12 +601,14 @@ public:
         gpuMapx[1] = cv::cuda::GpuMat(mapx[1]);
         gpuMapy[1] = cv::cuda::GpuMat(mapy[1]);
 
-        setDistoredSize(m_distoredWidth);
+        setDistoredSize(m_undistoredWidth);
         spdlog::info("!!!!!![{}] cam init ok!!!!!!!!!\n", m_id);
 
         sdkCreateTimer(&timer);
         sdkResetTimer(&timer);
         sdkStartTimer(&timer);
+
+        printf("m_gpuDistoredImg:%p, m_gpuUndistoredImg:%p, m_gpuargb:%p\n", m_gpuDistoredImg.data, m_gpuUndistoredImg.data, m_gpuargb.data);
     }
 
     ~nvCam()
@@ -629,8 +632,8 @@ public:
             free(ctx.g_buff);
         }
 
-        NvBufferDestroy(retNvbuf[0].dmabuff_fd);
-        NvBufferDestroy(retNvbuf[1].dmabuff_fd);
+        NvBufferDestroy(retNvbuf->dmabuff_fd);
+        // NvBufferDestroy(retNvbuf[1].dmabuff_fd);
     }
 
     void setDistoredSize(int width)
@@ -640,14 +643,14 @@ public:
             m_queue.pop();
         if(width == 1920)
         {
-            m_distoredWidth = 1920;
-            m_distoredHeight = 1080;
+            m_undistoredWidth = 1920;
+            m_undistoredHeight = 1080;
             distoredszIdx = 0;
         }
         else if(width == 960)
         {
-            m_distoredWidth = 960;
-            m_distoredHeight = 540;
+            m_undistoredWidth = 960;
+            m_undistoredHeight = 540;
             distoredszIdx = 1;
         }
         else
@@ -658,131 +661,205 @@ public:
 
     bool read_frame()
     {
-        sdkResetTimer(&timer);
-        struct pollfd fds[1];
-        fds[0].fd = ctx.cam_fd;
-        fds[0].events = POLLIN;
-
         struct v4l2_buffer v4l2_buf;
-
+        sdkResetTimer(&timer);
         /* Dequeue a camera buff */
         memset(&v4l2_buf, 0, sizeof(v4l2_buf));
         v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        // if (ctx.capture_dmabuf)
-        //     v4l2_buf.memory = V4L2_MEMORY_DMABUF;
-        // else
-        //     v4l2_buf.memory = V4L2_MEMORY_MMAP;
-        
-        // if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
-        //     ERROR_RETURN("Failed to dequeue camera buff: %s (%d)",
-        //             strerror(errno), errno);
-
-        // ctx.frame++;
-
-        // if (ctx.capture_dmabuf) {
-        //     /* Cache sync for VIC operation since the data is from CPU */
-        //     NvBufferMemSyncForDevice(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0,
-        //             (void**)&ctx.g_buff[v4l2_buf.index].start);
-        // } else {
-        //     /* Copies raw buffer plane contents to an NvBuffer plane */
-        //     Raw2NvBuffer(ctx.g_buff[v4l2_buf.index].start, 0,
-        //                 ctx.cam_w, ctx.cam_h, ctx.g_buff[v4l2_buf.index].dmabuff_fd);
-        // }
         v4l2_buf.memory = V4L2_MEMORY_DMABUF;
-
-        spdlog::trace("read frame before ioctl takes :{} ms", sdkGetTimerValue(&timer));
-        
         if (ioctl(ctx.cam_fd, VIDIOC_DQBUF, &v4l2_buf) < 0)
-        {
             ERROR_RETURN("Failed to dequeue camera buff: %s (%d)",
                     strerror(errno), errno);
-        }
+
         ctx.frame++;
-
-        spdlog::trace("read frame before NvBufferMemSyncForDevice takes :{} ms", sdkGetTimerValue(&timer));
-
-        /* Cache sync for VIC operation since the data is from CPU */
         NvBufferMemSyncForDevice(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0,
                 (void**)&ctx.g_buff[v4l2_buf.index].start);
 
-        spdlog::trace("read frame before NvBufferTransform takes :{} ms", sdkGetTimerValue(&timer));
+        /************* latency test *************/
+        // if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, ctx.render_dmabuf_fd,
+        //                     &transParams))
+        //         ERROR_RETURN("Failed to convert the buffer");
+        // ctx.renderer->render(ctx.render_dmabuf_fd);
 
-        if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf[distoredszIdx].dmabuff_fd,
-                    &transParams))
-            ERROR_RETURN("Failed to convert the yuvvvv buffer");
+        /*  Convert the camera buffer from YUV422 to ARGB */
+        if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd, &transParams))
+            ERROR_RETURN("Failed to convert the buffer");
 
-        spdlog::trace("read frame before NvBuffer2Raw takes :{} ms", sdkGetTimerValue(&timer));
-
-        if(-1 == NvBuffer2Raw(retNvbuf[distoredszIdx].dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb[distoredszIdx].data))
-            ERROR_RETURN("Failed to NvBuffer2Raw");
-
-        spdlog::trace("read frame before undistor takes :{} ms", sdkGetTimerValue(&timer));
-
-        cv::Mat tmp;
-        /***** gpu undistor *****/
-        m_gpuargb[distoredszIdx].upload(m_argb[distoredszIdx]);
-        cv::cuda::resize(m_gpuargb[distoredszIdx], m_gpuDistoredImg, cv::Size(m_distoredWidth, m_distoredHeight));
+        // if(-1 == NvBuffer2Raw(retNvbuf[distoredszIdx].dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb[distoredszIdx].data))
+        //         ERROR_RETURN("Failed to NvBuffer2Raw");
+        if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_argb.size().width, m_argb.size().height, m_argb.data))
+                ERROR_RETURN("Failed to NvBuffer2Raw");
         
-        spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
-        cv::cuda::remap(m_gpuDistoredImg, m_gpuUndistoredImg, gpuMapx[distoredszIdx], gpuMapy[distoredszIdx], cv::INTER_CUBIC);
+        spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
+
         
-        spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
-        m_gpuUndistoredImg = m_gpuUndistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        cv::cuda::resize(m_gpuUndistoredImg, m_gpuUndistoredImg, cv::Size(m_retWidth, m_retHeight));
-        m_gpuUndistoredImg.download(m_ret);
-        /***** gpu undistor end *****/
 
         /***** cpu undistor *****/
         // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
-        // cv::Mat tmp;
-        // cv::resize(m_argb[distoredszIdx], m_ret, cv::Size(m_distoredWidth, m_distoredHeight));
-        // cv::resize(m_argb[distoredszIdx], tmp, cv::Size(m_distoredWidth, m_distoredHeight));
-        // // cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
-        // // m_distoredImg = tmp.clone();
-        // // // /*undistored*********/
+        cv::Mat tmp;
+        cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
+        cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
+        // m_distoredImg = tmp.clone();
+        // // /*undistored*********/
 
-        // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
-        // cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+        spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+        cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
 
-        // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
-        // m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        // cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+        spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+        m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
         
         /***** cpu undistor end*****/
 
-        spdlog::trace("read frame before VIDIOC_QBUF takes :{} ms", sdkGetTimerValue(&timer));
-        /* Enqueue camera buffer back to driver */
-        if (ioctl(ctx.cam_fd, VIDIOC_QBUF, &v4l2_buf))
-            ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
-                    strerror(errno), errno);
         
-        // printf("read_frame ctx.cam_fd:%d ok!!!\n", ctx.cam_fd);
+        /***** gpu undistor *****/
+        // m_gpuargb.upload(m_argb);
+        // cv::cuda::resize(m_gpuargb, m_gpuDistoredImg, cv::Size(m_undistoredWidth, m_undistoredHeight));
+        // // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+        // cv::cuda::remap(m_gpuDistoredImg, m_gpuUndistoredImg, gpuMapx[distoredszIdx], gpuMapy[distoredszIdx], cv::INTER_CUBIC);
+        // m_gpuUndistoredImg = m_gpuDistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+        // cv::cuda::resize(m_gpuUndistoredImg, m_gpuret, cv::Size(m_retWidth, m_retHeight));
+        // m_gpuret.download(m_ret);
 
-        spdlog::trace("read frame takes :{} ms\n", sdkGetTimerValue(&timer));
+        // cv::imshow("img"+std::to_string(m_id), m_argb);
+        // cv::waitKey(1);
+        // // m_ret = m_ret(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
 
-        return true;
+        // /***** gpu undistor end *****/
+
+        // // cv::cuda::resize(m_gpuargb, m_gpuret, cv::Size(m_retWidth, m_retHeight));
+        // // m_gpuret.download(m_ret);
+        /***** gpu undistor end*****/
+
+        spdlog::trace("undistor takes :{} ms", sdkGetTimerValue(&timer));
+
+        // cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
+        // Raw2NvBuffer(m_ret.data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
+        // Raw2NvBuffer(m_argb[distoredszIdx].data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
+
+        /******* render_dmabuf_fd to argb ok *******/
+        // cv::Mat mtargb(1080,1920,CV_8UC4);
+        // if(-1 == NvBuffer2Raw(ctx.render_dmabuf_fd, 0, 1920, 1080, mtargb.data))
+        //         ERROR_RETURN("Failed to NvBuffer2Raw");
+        // cv::imshow("argb", mtargb);
+        // cv::waitKey(0);
+        /******* render_dmabuf_fd to argb end *******/
+
+        /******* g_buff to argb ok *******/
+        // cv::Mat mt422(1080,1920,CV_8UC2);
+        // memcpy(mt422.data, ctx.g_buff[v4l2_buf.index].start, 1920 * 1080 * 2 * sizeof(unsigned char));
+        // cv::cvtColor(mt422, rgbii, cv::COLOR_YUV2BGR_YUYV);
+        /******* g_buff to argb end *******/
+
+        // cv::Mat mt420(1080*3/2,1920,CV_8UC1);
+        
+        // unsigned char *buf = (unsigned char*)malloc(1920*1080*3/2);
+
+        // if(-1 == NvBuffer2Raw(ctx.render_dmabuf_fd, 0, 1920, 1080*3/2, mt420.data))
+        //         ERROR_RETURN("Failed to NvBuffer2Raw");
+        
+        // // if(-1 == NvBuffer2Raw(ctx.render_dmabuf_fd, 0, 1920, 1080*3/2, buf))
+        // //         ERROR_RETURN("Failed to NvBuffer2Raw");
+        // // memcpy(mt422.data, ctx.g_buff[v4l2_buf.index].start, 1920 * 1080 * 2 * sizeof(unsigned char));
+        // // memcpy(mt420.data, buf, 1920*1080*3/2 * sizeof(unsigned char));
+
+        // cv::Mat rgbi, rgbii;
+        // cv::cvtColor(mt420, rgbi, cv::COLOR_YUV2BGR_I420);
+        // cv::imshow("420", rgbi);
+        // cv::waitKey(0);
+
+
+
+
+        /* Preview */
+        // ctx.renderer->render(ctx.render_dmabuf_fd);
+
+            // /* Enqueue camera buffer back to driver */
+            // if (ioctl(ctx.cam_fd, VIDIOC_QBUF, &v4l2_buf))
+            //     ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
+            //             strerror(errno), errno);
+
+            // ctx.renderer->render(retNvbuf[distoredszIdx].dmabuff_fd);
+
+            // if(-1 == NvBuffer2Raw(retNvbuf[distoredszIdx].dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb[distoredszIdx].data))
+            //     ERROR_RETURN("Failed to NvBuffer2Raw");
+
+            // spdlog::trace("read frame before undistor takes :{} ms", sdkGetTimerValue(&timer));
+
+            // cv::resize(m_argb[distoredszIdx], m_ret, cv::Size(m_distoredWidth, m_distoredHeight));
+            /***** gpu undistor *****/
+            // m_gpuargb[distoredszIdx].upload(m_argb[distoredszIdx]);
+            // cv::cuda::resize(m_gpuargb[distoredszIdx], m_gpuDistoredImg, cv::Size(m_distoredWidth, m_distoredHeight));
+            
+            // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+            // cv::cuda::remap(m_gpuDistoredImg, m_gpuUndistoredImg, gpuMapx[distoredszIdx], gpuMapy[distoredszIdx], cv::INTER_CUBIC);
+            
+            // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+            // m_gpuUndistoredImg = m_gpuUndistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+            // cv::cuda::resize(m_gpuUndistoredImg, m_gpuUndistoredImg, cv::Size(m_retWidth, m_retHeight));
+            // m_gpuUndistoredImg.download(m_ret);
+            /***** gpu undistor end *****/
+
+            /***** cpu undistor *****/
+            // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
+            // cv::Mat tmp;
+            // cv::resize(m_argb[distoredszIdx], m_ret, cv::Size(m_distoredWidth, m_distoredHeight));
+            // cv::resize(m_argb[distoredszIdx], tmp, cv::Size(m_distoredWidth, m_distoredHeight));
+            // // cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
+            // // m_distoredImg = tmp.clone();
+            // // // /*undistored*********/
+
+            // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+            // cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+
+            // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+            // m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+            // cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+            
+            /***** cpu undistor end*****/
+
+            // spdlog::trace("read frame before VIDIOC_QBUF takes :{} ms", sdkGetTimerValue(&timer));
+            /* Enqueue camera buffer back to driver */
+            if (ioctl(ctx.cam_fd, VIDIOC_QBUF, &v4l2_buf))
+                ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
+                        strerror(errno), errno);
+            
+            // printf("read_frame ctx.cam_fd:%d ok!!!\n", ctx.cam_fd);
+
+            spdlog::trace("read frame takes :{} ms\n", sdkGetTimerValue(&timer));
+
+            return true;
+        
     }
     
     int getSrcFrame(cv::Mat &frame)
     {
-        if(read_frame())
-        {
-            frame = m_distoredImg.clone();
-            return RET_OK;
-        }
-        else
-            return RET_ERR;
+        // if(getFrame())
+        // {
+        //     frame = m_distoredImg.clone();
+        //     return RET_OK;
+        // }
+        // else
+        //     return RET_ERR;
+    
+        return getFrame(frame);
     }
 
     void run()
 	{
+        // struct pollfd fds[1];
+        // fds[0].fd = ctx->cam_fd;
+        // fds[0].events = POLLIN;
 		while(1)
 		{
             // usleep(10);
 			// printf("start run\n");
-			read_frame();
+			if(!read_frame())
+            {
+                spdlog::critical("run fct read frame fail");
+                continue;
+            }
 			std::unique_lock<std::mutex> lock(m_mtx[m_id]);
-			// m_mtx[m_id].lock();
 			while(m_queue.size() >= 10)
             {
                 spdlog::warn("cam:[{}] wait for consumer", m_id);
@@ -793,7 +870,6 @@ public:
             {
 			    m_queue.push(m_ret);
             }
-			// m_mtx[m_id].unlock();
             con[m_id].notify_all();
 			// printf("run ok!!!!!!!!!!!!1\n");
 		}
@@ -821,9 +897,10 @@ public:
     int m_camSrcWidth, m_camSrcHeight;
 	int m_retWidth, m_retHeight;
 	int m_distoredWidth, m_distoredHeight;
+	int m_undistoredWidth, m_undistoredHeight;
     int m_fd_video;
     char m_dev_name[30];
-    cv::Mat m_argb[2], m_distoredImg, m_undistoredImg, m_ret, m_tmp;
+    cv::Mat m_argb, m_distoredImg, m_undistoredImg, m_ret, m_tmp;
 	int m_id;
     bool m_withid;
 
@@ -838,5 +915,6 @@ public:
     StopWatchInterface *timer;
 
     cv::cuda::GpuMat gpuMapx[2], gpuMapy[2];
-    cv::cuda::GpuMat m_gpuargb[2], m_gpuDistoredImg, m_gpuUndistoredImg;
+    cv::cuda::GpuMat m_gpuargb, m_gpuDistoredImg, m_gpuUndistoredImg;
+    cv::cuda::GpuMat m_gpuret;
 };

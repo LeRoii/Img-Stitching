@@ -43,6 +43,7 @@
 #include "nvbuf_utils.h"
 
 #include "camera_v4l2-cuda.h"
+#include "helper_timer.h"
 
 
 
@@ -51,6 +52,8 @@
 static bool quit = false;
 
 using namespace std;
+
+StopWatchInterface *timer;
 
 static void
 print_usage(void)
@@ -69,6 +72,9 @@ print_usage(void)
            "\t-h\t\tPrint this usage\n\n"
            "\tNOTE: It runs infinitely until you terminate it with <ctrl+c>\n");
 }
+
+nv_buffer *retNvbuf;
+cv::Mat m_argb;
 
 static bool
 parse_cmdline(camcontext_t * ctx, int argc, char **argv)
@@ -314,7 +320,7 @@ display_initialize(camcontext_t * ctx)
 {
     /* Create EGL renderer */
     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
-            ctx->cam_w/4, ctx->cam_h/4, 0, 0);
+            ctx->cam_w/2, ctx->cam_h/2, 0, 0);
     if (!ctx->renderer)
         ERROR_RETURN("Failed to create EGL renderer");
     ctx->renderer->setFPS(ctx->fps);
@@ -497,6 +503,20 @@ prepare_buffers(camcontext_t * ctx)
             ERROR_RETURN("Failed to set up camera buff");
     }
 
+    NvBufferCreateParams bufparams = {0};
+    // retNvbuf = (nv_buffer *)malloc(2*sizeof(nv_buffer));
+    retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+    bufparams.payloadType = NvBufferPayload_SurfArray;
+    bufparams.width = 960;
+    bufparams.height = 540;
+    bufparams.layout = NvBufferLayout_Pitch;
+    bufparams.colorFormat = NvBufferColorFormat_ARGB32;
+    bufparams.nvbuf_tag = NvBufferTag_CAMERA;
+    if (-1 == NvBufferCreateEx(&retNvbuf[0].dmabuff_fd, &bufparams))
+            INFO("Failed to create NvBuffer 1920");
+
+    m_argb = cv::Mat(540, 960, CV_8UC4);
+
     INFO("Succeed in preparing stream buffers");
     return true;
 }
@@ -577,40 +597,40 @@ start_capture(camcontext_t * ctx)
     fds[0].events = POLLIN;
 
     /* read a raw YUYV data from disk and display*/
-    int img = open("../camera.YUYV", O_RDONLY);
-    if (-1 == img)
-        ERROR_RETURN("Failed to open file for rendering");
-    int bufsize = 3840*2160*2;
-    unsigned char *buf = (unsigned char*)malloc(bufsize);
-    int cnt = read(img, buf, bufsize);
-        printf("read %d bytes\n", cnt);
+    // int img = open("../camera.YUYV", O_RDONLY);
+    // if (-1 == img)
+    //     ERROR_RETURN("Failed to open file for rendering");
+    // int bufsize = 3840*2160*2;
+    // unsigned char *buf = (unsigned char*)malloc(bufsize);
+    // int cnt = read(img, buf, bufsize);
+    //     printf("read %d bytes\n", cnt);
 
-    NvBufferCreateParams bufparams = {0};
-    nv_buffer *nvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
-    bufparams.payloadType = NvBufferPayload_SurfArray;
-    bufparams.width = ctx->cam_w;
-    bufparams.height = ctx->cam_h;
-    bufparams.layout = NvBufferLayout_Pitch;
-    bufparams.colorFormat = get_nvbuff_color_fmt(V4L2_PIX_FMT_YUYV);
-    bufparams.nvbuf_tag = NvBufferTag_CAMERA;
-    if (-1 == NvBufferCreateEx(&nvbuf->dmabuff_fd, &bufparams))
-            ERROR_RETURN("Failed to create NvBuffer");
+    // NvBufferCreateParams bufparams = {0};
+    // nv_buffer *nvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+    // bufparams.payloadType = NvBufferPayload_SurfArray;
+    // bufparams.width = ctx->cam_w;
+    // bufparams.height = ctx->cam_h;
+    // bufparams.layout = NvBufferLayout_Pitch;
+    // bufparams.colorFormat = get_nvbuff_color_fmt(V4L2_PIX_FMT_YUYV);
+    // bufparams.nvbuf_tag = NvBufferTag_CAMERA;
+    // if (-1 == NvBufferCreateEx(&nvbuf->dmabuff_fd, &bufparams))
+    //         ERROR_RETURN("Failed to create NvBuffer");
     
-    if(-1 == Raw2NvBuffer(buf, 0, 3840, 2160, nvbuf->dmabuff_fd))
-            ERROR_RETURN("Failed to Raw2NvBuffer");
+    // if(-1 == Raw2NvBuffer(buf, 0, 3840, 2160, nvbuf->dmabuff_fd))
+    //         ERROR_RETURN("Failed to Raw2NvBuffer");
     
-    // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
-    //                     &transParams))
-    //             ERROR_RETURN("Failed to convert the yuvvvv buffer");
+    // // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
+    // //                     &transParams))
+    // //             ERROR_RETURN("Failed to convert the yuvvvv buffer");
     
-    // ctx->renderer->render(ctx->render_dmabuf_fd);
+    // // ctx->renderer->render(ctx->render_dmabuf_fd);
 
-    int rgbRender;
-    bufparams.colorFormat = NvBufferColorFormat_ARGB32;
-    bufparams.width = 960;
-    bufparams.height = 540;
-    if (-1 == NvBufferCreateEx(&rgbRender, &bufparams))
-            ERROR_RETURN("Failed to create NvBuffer");
+    // int rgbRender;
+    // bufparams.colorFormat = NvBufferColorFormat_ARGB32;
+    // bufparams.width = 960;
+    // bufparams.height = 540;
+    // if (-1 == NvBufferCreateEx(&rgbRender, &bufparams))
+    //         ERROR_RETURN("Failed to create NvBuffer");
     
     // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, rgbRender,
     //                     &transParams))
@@ -621,9 +641,9 @@ start_capture(camcontext_t * ctx)
     //     ctx->renderer->render(rgbRender);
     // }
 
-    unsigned char *rgbbuf = (unsigned char*)malloc(bufparams.width*bufparams.height*4);
-    if(-1 == NvBuffer2Raw(rgbRender, 0, bufparams.width, bufparams.height, rgbbuf))
-        ERROR_RETURN("Failed to NvBuffer2Raw");
+    // unsigned char *rgbbuf = (unsigned char*)malloc(bufparams.width*bufparams.height*4);
+    // if(-1 == NvBuffer2Raw(rgbRender, 0, bufparams.width, bufparams.height, rgbbuf))
+    //     ERROR_RETURN("Failed to NvBuffer2Raw");
     
     // cv::Mat mtt(bufparams.height, bufparams.width, CV_8UC4, rgbbuf);
 
@@ -649,7 +669,7 @@ start_capture(camcontext_t * ctx)
     {
         if (fds[0].revents & POLLIN) {
             struct v4l2_buffer v4l2_buf;
-
+            sdkResetTimer(&timer);
             /* Dequeue a camera buff */
             memset(&v4l2_buf, 0, sizeof(v4l2_buf));
             v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -673,10 +693,23 @@ start_capture(camcontext_t * ctx)
                             ctx->cam_w, ctx->cam_h, ctx->g_buff[v4l2_buf.index].dmabuff_fd);
             }
 
+            /***** use opencv to display，slow！！ *****/
+
+            // if (-1 == NvBufferTransform(ctx->g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd,
+            //             &transParams))
+            //     ERROR_RETURN("Failed to convert the buffer");
+            // if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, 960, 540, m_argb.data))
+            // ERROR_RETURN("Failed to NvBuffer2Raw");
+            // cv::imshow("1", m_argb);
+            // cv::waitKey(1);
+
             /*  Convert the camera buffer from YUV422 to YUV420P */
             if (-1 == NvBufferTransform(ctx->g_buff[v4l2_buf.index].dmabuff_fd, ctx->render_dmabuf_fd,
                         &transParams))
                 ERROR_RETURN("Failed to convert the buffer");
+
+            
+
 
             // if (-1 == NvBufferTransform(nvbuf->dmabuff_fd, ctx->render_dmabuf_fd,
             //             &transParams))
@@ -694,6 +727,8 @@ start_capture(camcontext_t * ctx)
             if (ioctl(ctx->cam_fd, VIDIOC_QBUF, &v4l2_buf))
                 ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
                         strerror(errno), errno);
+
+            printf("takes:::%f\n", sdkGetTimerValue(&timer));
         }
     }
 
@@ -721,6 +756,8 @@ stop_stream(camcontext_t * ctx)
     return true;
 }
 
+
+
 int
 main(int argc, char *argv[])
 {
@@ -729,15 +766,17 @@ main(int argc, char *argv[])
 
     set_defaults(&ctx);
 
-    // CHECK_ERROR(parse_cmdline(&ctx, argc, argv), cleanup,
-    //         "Invalid options specified");
+    CHECK_ERROR(parse_cmdline(&ctx, argc, argv), cleanup,
+            "Invalid options specified");
 
-    ctx.cam_devname = "/dev/video5";
-    ctx.cam_w = 384;
-    ctx.cam_h = 2160;
+    // ctx.cam_devname = "/dev/video5";
+    ctx.cam_w = 1920;
+    ctx.cam_h = 1080;
     ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;
     ctx.enable_cuda = true;
     ctx.enable_verbose = true;
+
+
 
     /* Initialize camera and EGL display, EGL Display will be used to map
        the buffer to CUDA buffer for CUDA processing */
@@ -749,6 +788,10 @@ main(int argc, char *argv[])
 
     CHECK_ERROR(start_stream(&ctx), cleanup,
             "Failed to start streaming");
+
+    sdkCreateTimer(&timer);
+    sdkResetTimer(&timer);
+    sdkStartTimer(&timer);
 
     CHECK_ERROR(start_capture(&ctx), cleanup,
             "Failed to start capturing")

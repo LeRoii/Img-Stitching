@@ -26,12 +26,11 @@ set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS} --maxrregcount=32; -G;-g;-std=c++11) # n
 set(CUDIR /usr/src/jetson_multimedia_api/samples/common/algorithm/cuda)
 set(COMMONCLS /usr/src/jetson_multimedia_api/samples/common/classes)
 
-
 # add_subdirectory(cudasrc)
 # include_directories(cudasrc)
 
 set(OpenCV_DIR "/usr/local/share/OpenCV/OpenCVConfig.cmake")
-find_package( OpenCV 3 REQUIRED )
+find_package(OpenCV  REQUIRED )
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 if(NOT TARGET spdlog)
@@ -51,7 +50,7 @@ message(STATUS "CUDA_LIBRARIES:::${CUDA_LIBRARIES}")
 message(STATUS "CUDA_CUBLAS_LIBRARIES:::${CUDA_CUBLAS_LIBRARIES}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_compile_options(-std=c++14 -g)
+add_compile_options(-std=c++14 -g )
 # add_definitions(-DDEBUG)
 add_definitions(-DSPDLOG_DEBUG_ON )
 add_definitions(-DCAM_IMX390)
@@ -92,8 +91,8 @@ add_executable(camshow src/camshow.cpp src/imageProcess.cpp src/PracticalSocket.
 add_executable(sti src/sti.cpp )
 add_executable(sd src/stitching_detailed.cpp )
 add_executable(mo src/stithermo.cpp )
-# add_executable(testocv src/testocv.cpp src/imageProcess.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
-add_executable(testocv src/testocv.cpp)# src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+# add_executable(testocv src/testocv.cpp  ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
@@ -146,9 +145,6 @@ add_executable(demo src/demo.cpp)
 # target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libv4l2.so")
 # target_link_libraries(${PROJECT_NAME}  "/usr/lib/aarch64-linux-gnu/libpthread.so")
 
-# add_executable(calib calib.cpp )
-# target_link_libraries(cvtest yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
-# target_link_libraries(main yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
 target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
 -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
@@ -164,12 +160,12 @@ target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} )
 # -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
 # spdlog::spdlog)
 
-# target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
-# -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
-#  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
-#   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
-#   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
-target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} )
+target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
+-L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
+# target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} )
 
 target_link_libraries(cameracuda  
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  

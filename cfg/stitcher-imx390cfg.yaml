@@ -1,12 +1,27 @@
+# camsrc is the origin size of camera, can only be 3840x2160(for imx424b) or 1920x1080(for imx390)
 camsrcwidth: 1920
 camsrcheight: 1080
-undistorWidth: 960
-undistorHeight: 540
-stitcherinputWidth: 480
-stitcherinputHeight: 270
-USED_CAMERA_NUM: 4
+# in general the distor img size should be the same with camera img origin size, otherwise there will be a high latency,
+# this parameter is kept only 4k camera
+distorWidth: 1920
+distorHeight: 1080
+# undistor size can only be 960x540 or 1920x1080
+undistorWidth: 1920
+undistorHeight: 1080
+stitcherinputWidth: 1920
+stitcherinputHeight: 1080
+
+# parameters for renderer
+renderWidth: 960
+renderHeight: 540
+renderX: 0
+renderY: 0
+renderBufWidth: 1920
+renderBufHeight: 1080
+
+USED_CAMERA_NUM: 8
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
 # netpath: "/home/nvidia/ssd/model/yolo4tiny_fp16.rt"
-camcfgpath: "/home/nvidia/ssd/code/1221/cfg/390camcfg/"
+camcfgpath: "/home/nvidia/ssd/code/Img-Stitching/cfg/390camcfg/"
 canname: "can0" 
-showall: false
+showall: true

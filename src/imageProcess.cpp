@@ -135,6 +135,9 @@ cv::Mat imageProcessor::getROIimage(cv::Mat srcImg)
 
 cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
 {
+    static int ii = 0;
+    cv::Mat tmp = img.clone();
+    static vector<int> lastret;
     std::vector<cv::Mat> batch_frame;
     std::vector<cv::Mat> batch_dnn_input;
     std::vector<std::string> classnames;
@@ -153,6 +156,27 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
     printf("detNN draw_boxes okkkkk\n");
     printf("detret size:%d\n",  detret.size());   //x,y,w,h,class,probality
 
+    // if(ii==0)
+    // {
+    //     lastret = detret;
+    // }
+
+    // if(ii == 1)
+    // {
+        
+    //     ii=0;
+    // }
+    // else  ii++;
+
+    // for(int i=0;i<lastret.size()/6;i++){
+    //         int x0 = lastret[6*i];
+    //         int y0 = lastret[6*i+1];
+    //         int x1 =x0+lastret[6*i+2];
+    //         int y1 = y0 + lastret[6*i+3];
+    //         cv::rectangle(tmp, cv::Point(lastret[6*i], lastret[6*i+1]), cv::Point(x1, y1), cv::Scalar(0,255,0), 2); 
+    //     }
+
+    // return tmp;
     return batch_frame.back();
 }
 

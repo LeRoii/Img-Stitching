@@ -4,17 +4,10 @@
 #include "yaml-cpp/yaml.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
-#include "ocvstitcher.hpp"
 #include "stitcherconfig.h"
 #include "imageProcess.h"
 #include "helper_timer.h"
-
-// #define CAMERA_NUM 8
-// #define USED_CAMERA_NUM 6
-// #define BUF_LEN 65540 
-
-#define LOG(msg) std::cout << msg
-#define LOGLN(msg) std::cout << msg << std::endl
+#include "nvrender.hpp"
 
 using namespace cv;
 
@@ -83,6 +76,9 @@ bool detect = false;
 bool showall = true;
 bool withnum = false;
 int idx = 1;
+int videoFps = 10;
+bool savevideo = false;
+
 static int parse_cmdline(int argc, char **argv)
 {
     int c;
@@ -92,7 +88,7 @@ static int parse_cmdline(int argc, char **argv)
         return true;
     }
 
-    while ((c = getopt(argc, argv, "c:dnp:")) != -1)
+    while ((c = getopt(argc, argv, "c:dnp:v")) != -1)
     {
         switch (c)
         {
@@ -105,7 +101,12 @@ static int parse_cmdline(int argc, char **argv)
                 {
                     if(strlen(optarg) == 1 && std::isdigit(optarg[0]))
                     {
+                        showall = false;
                         idx = std::stoi(optarg);
+#ifdef CAM_IMX390
+                        stitcherinputWidth = undistorWidth = camSrcWidth;
+                        stitcherinputHeight = undistorHeight = camSrcHeight;
+#endif
                         if(0 < idx < 9)
                             break;
                     }
@@ -126,69 +127,108 @@ static int parse_cmdline(int argc, char **argv)
                 break;
             case 'n':
                 withnum = true;
+                break;
+            case 'v':
+                savevideo = true;
+                spdlog::warn("savevideo");
+                break;
             default:
                 break;
         }
     }
 }
 
+imageProcessor *nvProcessor = nullptr;
+
 int main(int argc, char *argv[])
 {
-    // if(argc > 1)
-    // {
-    //     if(argv[1][0] <'1' || argv[1][0] > '8')
-    //     {
-    //         spdlog::critical("invalid argument!!!\n");
-    //         return 0;
-    //     }
-    // }
-
-    
     spdlog::set_level(spdlog::level::debug);
-    if(RET_ERR == parse_cmdline(argc, argv))
-        return RET_ERR;
+    
 
     YAML::Node config = YAML::LoadFile(defaultcfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
+    distorWidth = config["distorWidth"].as<int>();
+    distorHeight = config["distorHeight"].as<int>();
     undistorWidth = config["undistorWidth"].as<int>();
     undistorHeight = config["undistorHeight"].as<int>();
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+
+    renderWidth = config["renderWidth"].as<int>();
+    renderHeight = config["renderHeight"].as<int>();
+    renderX = config["renderX"].as<int>();
+    renderY = config["renderY"].as<int>();
+    renderBufWidth = config["renderBufWidth"].as<int>();
+    renderBufHeight = config["renderBufHeight"].as<int>();
+
     int USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
     std::string net = config["netpath"].as<string>();
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
     showall = config["showall"].as<bool>();
 
+    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
+    nvrender *renderer = new nvrender(rendercfg);
+
+    if(RET_ERR == parse_cmdline(argc, argv))
+        return RET_ERR;
+
     imgs = std::vector<Mat>(CAMERA_NUM, Mat(stitcherinputHeight, stitcherinputWidth, CV_8UC4));
     
+    if (detect)
+        nvProcessor = new imageProcessor(net);
 
-    imageProcessor nvProcessor(net);  
+    VideoWriter *writer[8];
+    if(savevideo)
+    {
+        writer[0] = new VideoWriter("0-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[1] = new VideoWriter("1-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[2] = new VideoWriter("2-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[3] = new VideoWriter("3-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[4] = new VideoWriter("4-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[5] = new VideoWriter("5-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[6] = new VideoWriter("6-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+        writer[7] = new VideoWriter("7-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
+    }
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
 
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
-    if(showall)
-    {
-        for(int i=0;i<USED_CAMERA_NUM;i++)
+    // if(showall)
+    // {
+    //     for(int i=0;i<USED_CAMERA_NUM;i++)
+    //         cameras[i].reset(new nvCam(camcfgs[i]));
+
+    //     std::vector<std::thread> threads;
+    //     for(int i=0;i<USED_CAMERA_NUM;i++)
+    //         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    //     for(auto& th:threads)
+    //         th.detach();
+    // }
+    // else
+    // {
+    //     cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
+    //     // std::thread t(&nvCam::run, cameras[idx-1].get());
+    //     // t.detach();
+    // }
+
+    for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
 
-        std::vector<std::thread> threads;
-        for(int i=0;i<USED_CAMERA_NUM;i++)
-            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-        for(auto& th:threads)
-            th.detach();
-    }
-    else
-        cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
+    std::vector<std::thread> threads;
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    for(auto& th:threads)
+        th.detach();
 
 
 
@@ -199,10 +239,23 @@ int main(int argc, char *argv[])
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
 
+    // NvEglRenderer *nvrender  =  NvEglRenderer::createEglRenderer("renderer0", stitcherinputWidth/2, stitcherinputHeight/2, 0, 0);
+    // if(!nvrender)
+    //     spdlog::critical("Failed to create EGL renderer");
+    // nvrender->setFPS(30);
+
+    // Mat mmat(1080, 1920, CV_8UC4);
+    // Mat mmat = cv::Mat(1080, 1920, cv::CV_8UC4);
+    // NvBufferMemMap (cameras[idx-1]->ctx.render_dmabuf_fd, 0, NvBufferMem_Read_Write, &sBaseAddr[0]);
+    // NvBufferMemMap (cameras[idx-1]->retNvbuf->dmabuff_fd, 0, NvBufferMem_Read_Write, (void**)&mmat.data);
+    // mmat.data = (uchar*)sBaseAddr[0];
+
+    // cv::VideoCapture capture("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
+    // spdlog::warn("is open:{}", capture.isOpened());
+
     while(1)
     {
         sdkResetTimer(&timer);
-        auto t = cv::getTickCount();
         // cameras[0]->read_frame();
         // cameras[1]->read_frame();
         // cameras[2]->read_frame();
@@ -223,23 +276,6 @@ int main(int argc, char *argv[])
 
         if(showall)
         {
-// #if CAM_IMX424
-//             spdlog::info("wait for slave");
-//             std::thread server(serverCap);
-//             server.join();
-// #endif
-//             cameras[0]->getFrame(upImgs[0]);
-//             cameras[1]->getFrame(upImgs[1]);
-//             cameras[2]->getFrame(upImgs[2]);
-//             cameras[3]->getFrame(upImgs[3]);
-//             cameras[4]->getFrame(downImgs[0]);
-//             cameras[5]->getFrame(downImgs[1]);
-            
-// #if CAM_IMX390     
-//             // cameras[6]->getFrame(downImgs[2]);
-//             // cameras[7]->getFrame(downImgs[3]);
-// #endif
-
 #if CAM_IMX424
             spdlog::info("wait for slave");
             std::thread server(serverCap);
@@ -248,44 +284,24 @@ int main(int argc, char *argv[])
 
             for(int i=0;i<USED_CAMERA_NUM;i++)
             {
+                // cameras[i]->read_frame();
                 cameras[i]->getFrame(imgs[i]);
                 if(withnum)
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
             }
 
-
-            // if(withnum)
-            // {
-            //     cv::putText(upImgs[0], "1", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(upImgs[1], "2", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(upImgs[2], "3", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(upImgs[3], "4", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[0], "5", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[1], "6", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[2], "7", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            //     cv::putText(downImgs[3], "8", cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-            // }
-
-            // cv::Mat up,down;
-            // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            // cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-            // cv::vconcat(up, down, ret);
-
-            // cv::Mat up,down;
-            // cv::hconcat(vector<cv::Mat>{upImgs[2], upImgs[1], upImgs[0]}, up);
-            // cv::hconcat(vector<cv::Mat>{upImgs[3], downImgs[1], downImgs[0]}, down);
-            // cv::vconcat(up, down, ret);
-
-            // cv::Mat up,down;
-            // cv::hconcat(vector<cv::Mat>{upImgs[1], upImgs[0]}, up);
-            // cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2]}, down);
-            // cv::vconcat(up, down, ret);
-
-            cv::Mat up,down;
-            cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
-            cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
-            cout<<"up type:"<<up.type()<<"down type:"<<down.type()<<endl;
-            cv::vconcat(up, down, ret);
+            if(savevideo)
+            {
+                for(int i=0;i<8;i++)
+                    *writer[i] << imgs[i];
+            }
+            else
+            {          
+                cv::Mat up,down;
+                cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
+                cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
+                cv::vconcat(up, down, ret);
+            }
 
         }
         else
@@ -304,26 +320,45 @@ int main(int argc, char *argv[])
                 ret = downImgs[idx-5];
             }
 #elif CAM_IMX390
-            // cameras[idx-1]->getFrame(ret);
-            cameras[idx-1]->read_frame();
-            ret = cameras[idx-1]->m_ret;
+            cameras[idx-1]->getFrame(ret);
+            
+            // cameras[idx-1]->read_frame();
+            
+            // ret = cameras[idx-1]->m_ret;
+
+            // NvBufferMemSyncForCpu (cameras[idx-1]->ctx.render_dmabuf_fd, 0,&sBaseAddr[0]);
+            // cv::putText(mmat, std::to_string(100), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
+
+            // nvrender->render(cameras[idx-1]->ctx.render_dmabuf_fd);
+            // nvrender->render(cameras[idx-1]->retNvbuf->dmabuff_fd);
+            // cv::imshow("mmm", cameras[idx-1]->m_ret);
+            // cv::waitKey(1);
+            
 #endif
 
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
 
-        spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
+        spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         
-        t = cv::getTickCount();
-        cv::Mat ori = ret.clone();
+        // cv::Mat ori = ret.clone();
+
+        // capture >> ret;
+        // cv::cvtColor(ret,ret,cv::COLOR_RGB2RGBA);
+        if(!savevideo)
+        {
+            spdlog::info("render");
+            renderer->render(ret);
+        }
+        
         cv::Mat yoloret = ret;
         if (detect)
         {
-            yoloret = nvProcessor.ProcessOnce(ret);
+            yoloret = nvProcessor->ProcessOnce(ret);
         }
 
-        cv::imshow("m_dev_name", ret);
+        // cv::imshow("m_dev_name", ret);
         char c = (char)cv::waitKey(1);
         switch(c)
         {
@@ -341,15 +376,15 @@ int main(int argc, char *argv[])
                 }
                 if (detect)
                 {
-                    cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt++)+".png", yoloret);
+                    cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt)+".png", yoloret);
                 }
-                cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ori);
+                // cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ori);
                 break;
             default:
                 break;
         }
 
-        spdlog::info("all takes:{} ms", sdkGetTimerValue(&timer));
+        spdlog::info("frame [{}], all takes:{} ms", framecnt++, sdkGetTimerValue(&timer));
 
     }
     return 0;

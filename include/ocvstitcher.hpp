@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <iomanip>
+
 #include "opencv2/opencv_modules.hpp"
 #include <opencv2/core/utility.hpp>
 #include "opencv2/imgcodecs.hpp"
@@ -647,7 +649,7 @@ class ocvStitcher
 
     void process(vector<Mat> &imgs, Mat &ret)
     {
-        
+        spdlog::debug("stitcher {} process start", m_id);
         auto app_start_time = getTickCount();
 
         Ptr<Blender> blender;

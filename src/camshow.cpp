@@ -76,7 +76,7 @@ bool detect = false;
 bool showall = true;
 bool withnum = false;
 int idx = 1;
-int videoFps = 10;
+int videoFps = 5;
 bool savevideo = false;
 
 static int parse_cmdline(int argc, char **argv)
@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
     showall = config["showall"].as<bool>();
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
-    nvrender *renderer = new nvrender(rendercfg);
+    // nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
@@ -349,7 +349,7 @@ int main(int argc, char *argv[])
         if(!savevideo)
         {
             spdlog::info("render");
-            renderer->render(ret);
+            // renderer->render(ret);
         }
         
         cv::Mat yoloret = ret;
@@ -365,14 +365,14 @@ int main(int argc, char *argv[])
             case 's':
                 if(showall)
                 {
-                    cv::imwrite("1.png", upImgs[0]);
-                    cv::imwrite("2.png", upImgs[1]);
-                    cv::imwrite("3.png", upImgs[2]);
-                    cv::imwrite("4.png", upImgs[3]);
-                    cv::imwrite("5.png", downImgs[0]);
-                    cv::imwrite("6.png", downImgs[1]);
-                    cv::imwrite("7.png", downImgs[2]);
-                    cv::imwrite("8.png", downImgs[3]);
+                    cv::imwrite("1.png", imgs[0]);
+                    cv::imwrite("2.png", imgs[1]);
+                    cv::imwrite("3.png", imgs[2]);
+                    cv::imwrite("4.png", imgs[3]);
+                    cv::imwrite("5.png", imgs[0]);
+                    cv::imwrite("6.png", imgs[1]);
+                    cv::imwrite("7.png", imgs[2]);
+                    cv::imwrite("8.png", imgs[3]);
                 }
                 if (detect)
                 {

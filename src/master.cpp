@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
     std::string canname = config["canname"].as<string>();
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
-    nvrender *renderer = new nvrender(rendercfg);
+    // nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
@@ -556,8 +556,8 @@ int main(int argc, char *argv[])
             *oriWriter << ori;
         }
 
-        // cv::imshow("ret", ret);
-        renderer->render(ret);
+        cv::imshow("ret", ret);
+        // renderer->render(ret);
         // setMouseCallback("ret",OnMouseAction);
 
         if(detCamNum!=0)

@@ -658,7 +658,7 @@ class ocvStitcher
 
         static int cnt = 0;
 
-        if(cnt++ == 100)
+        if(cnt++ == 500)
         {
             updateMask(imgs);
             cnt = 0;

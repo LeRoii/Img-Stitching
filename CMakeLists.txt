@@ -30,7 +30,7 @@ set(COMMONCLS /usr/src/jetson_multimedia_api/samples/common/classes)
 # include_directories(cudasrc)
 
 set(OpenCV_DIR "/usr/local/share/OpenCV/OpenCVConfig.cmake")
-find_package(OpenCV  REQUIRED )
+find_package(OpenCV 3 REQUIRED )
 find_package(OpenGL REQUIRED)
 find_package(GLUT REQUIRED)
 if(NOT TARGET spdlog)
@@ -95,6 +95,7 @@ add_executable(mo src/stithermo.cpp )
 add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
 add_executable(slave src/slave.cpp  src/PracticalSocket.cpp)
 
@@ -121,29 +122,12 @@ add_executable(demo src/demo.cpp)
   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
   )
 
-# target_link_libraries(cvtest yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
-# target_link_libraries(main yuyv2rgb ${OpenCV_LIBS} ${CUDA_LIBRARIES})
-# target_link_libraries(xavier  yuyv2rgb ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} ${GLUT_LIBRARY})
-# target_link_libraries(sti   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} ${GLUT_LIBRARY})
-# target_link_libraries(sd   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} ${GLUT_LIBRARY})
-# target_link_libraries(mo   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} ${GLUT_LIBRARY})
-# target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} ${GLUT_LIBRARY})
-
-# target_link_libraries(${PROJECT_NAME} "${CMAKE_CURRENT_SOURCE_DIR}/cfg/libtkDNN.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/local/cuda/lib64/libcudart.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/local/cuda/lib64/libnvrtc.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libcuda.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvbuf_utils.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvjpeg.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libnvosd.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/tegra/libdrm.so.2")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libnvparsers.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libnvinfer.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libX11.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libEGL.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libGLESv2.so")
-# target_link_libraries(${PROJECT_NAME} "/usr/lib/aarch64-linux-gnu/libv4l2.so")
-# target_link_libraries(${PROJECT_NAME}  "/usr/lib/aarch64-linux-gnu/libpthread.so")
+ target_link_libraries(replay  -lyaml-cpp
+ -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+  )
 
 target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
 -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  

@@ -19,13 +19,14 @@ int jpegqual =  80;
 
 int main(int argc, char *argv[])
 {
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1920/4,1080/4,1,"/dev/video0"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1920/4,1080/4,2,"/dev/video1"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1920/4,1080/4,3,"/dev/video2"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1920/4,1080/4,4,"/dev/video3"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1920/4,1080/4,5,"/dev/video4"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1920/4,1080/4,5,"/dev/video5"},
-                                    stCamCfg{3840,2160,1920/2,1080/2,1920/2,1080/2,1920/4,1080/4,6,"/dev/video6"}};
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7"}};
     // gmslCamera cameras[CAMERA_NUM] = {gmslCamera{camcfgs[0]},
     //                                 gmslCamera{camcfgs[1]},
     //                                 gmslCamera{camcfgs[2]},

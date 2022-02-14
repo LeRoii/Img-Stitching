@@ -90,7 +90,7 @@ class ocvStitcher
         std::ifstream fin(filename, std::ios::in);
         if(!fin.is_open())
         {
-            spdlog::warn("no. {} no preset parameters found, init all!", m_id);
+            spdlog::warn("no. {} can not open camerapara file, no preset parameters found, init all!", m_id);
             return RET_ERR;
         }
         std::string str;
@@ -111,6 +111,11 @@ class ocvStitcher
 
         spdlog::debug("linenum:{}, paranum:{}", linenum, paranum);
         // cout<<"linenum:"<<linenum<<",paranum:"<<paranum<<endl;
+        if(linenum == 0)
+        {
+            spdlog::info("no. {} no preset parameters found, init all!", m_id);
+            return RET_ERR;
+        }
 
         for(int i=0;i<7*(paranum-1);i++)
             getline(fin,str);
@@ -160,6 +165,12 @@ class ocvStitcher
         string filename = m_cfgpath + "cameraparaout_" + to_string(m_id) + ".txt";
         ofstream fout(filename, std::ofstream::out | std::ofstream::app);
 
+        if(!fout.is_open())
+        {
+            spdlog::warn("no. {} can not open camerapara file, save camera para failed!", m_id);
+            return RET_ERR;
+        }
+
         fout << std::put_time(ptm,"%F-%H-%M-%S:\n");
         for(int mi=0;mi<3;mi++)
         {
@@ -184,7 +195,7 @@ class ocvStitcher
         fout << "\n";
         fout << warped_image_scale << "\n";
 
-        return 0;
+        return RET_OK;
     }
 
     int init(vector<Mat> &imgs, bool initMode)
@@ -239,7 +250,7 @@ class ocvStitcher
             Mat R;
             cameras[i].R.convertTo(R, CV_32F);
             cameras[i].R = R;
-            LOGLN("Initial camera intrinsics #" << i << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
+            // LOGLN("Initial camera intrinsics #" << i << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
         }
 
         adjuster = makePtr<detail::BundleAdjusterRay>();
@@ -297,10 +308,10 @@ class ocvStitcher
         
         for (size_t i = 0; i < cameras.size(); ++i)
         {
-            LOGLN("Initial camera intrinsics #" << i << ":\nK:\n" << cameras[i].K());
+            // LOGLN("Initial camera intrinsics #" << i << ":\nK:\n" << cameras[i].K());
             cameras[i] = cameras[0];
             cameras[i].R = rmats[i];
-            LOGLN("camera R:" << i << "\n" << cameras[i].R);
+            // LOGLN("camera R:" << i << "\n" << cameras[i].R);
             // LOGLN("after set Initial camera intrinsics #" << i+1 << ":\nK:\n" << cameras[i].K());
             // fout << "camera " << i << ":\n";
         }
@@ -658,7 +669,7 @@ class ocvStitcher
 
         static int cnt = 0;
 
-        if(cnt++ == 100)
+        if(cnt++ == 500)
         {
             updateMask(imgs);
             cnt = 0;

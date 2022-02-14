@@ -145,9 +145,9 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
     batch_dnn_input.clear();
     batch_frame.clear();
 
-    batch_frame.push_back(img);
+    batch_frame.push_back(tmp);
     // this will be resized to the net format
-    batch_dnn_input.push_back(img.clone());
+    batch_dnn_input.push_back(tmp);
 
     detNN.update(batch_dnn_input, n_batch);
     detret.clear();

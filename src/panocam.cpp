@@ -102,7 +102,7 @@ public:
 
         pImgProc = new imageProcessor(net, canname);
 
-        nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
+        nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
         pRenderer = new nvrender(rendercfg);
 
         std::vector<std::thread> threads;
@@ -261,7 +261,7 @@ public:
             spdlog::critical("img is empty! exit");
             return RET_ERR;
         }
-        pRenderer->render(img);
+        // pRenderer->render(img);
 
         return RET_OK;
     }

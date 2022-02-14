@@ -16,10 +16,14 @@ int undistorHeight = 1080/2;
 int stitcherinputWidth = 1920/2;
 int stitcherinputHeight = 1080/2;
 
+const int RENDER_EGL = 0;
+const int RENDER_OCV = 1;
+
 int renderWidth = 1920;
 int renderHeight = 1080;
 int renderX = 0;
 int renderY = 0;
+int renderMode = 0;
 
 // in general it's fixed
 int renderBufWidth = 1920; 
@@ -58,6 +62,7 @@ struct nvrenderCfg
     int renderh;
     int renderx;
     int rendery;
+    int mode;//0 for egl, 1 for opencv
 };
 
 

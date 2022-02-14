@@ -168,9 +168,10 @@ int main(int argc, char *argv[])
     std::string canname = config["canname"].as<string>();
     showall = config["showall"].as<bool>();
     undistor = config["undistor"].as<bool>();
+    renderMode = config["renderMode"].as<int>();
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
-    // nvrender *renderer = new nvrender(rendercfg);
+    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
@@ -362,11 +363,11 @@ int main(int argc, char *argv[])
         if(!savevideo)
         {
             spdlog::info("render");
-            // renderer->render(ret);
-            if(stitcherinputWidth==1920 && showall)
-                cv::imshow("m_dev_name", imgs[1]);
-            else
-                cv::imshow("m_dev_name", ret);
+            renderer->rendercv(ret);
+            // if(stitcherinputWidth==1920 && showall)
+            //     cv::imshow("m_dev_name", imgs[1]);
+            // else
+            //     cv::imshow("m_dev_name", ret);
             //*writer[0] << ret;
         }
 

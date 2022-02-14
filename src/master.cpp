@@ -81,6 +81,7 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
+
 std::mutex g_stitcherMtx[2];
 std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
@@ -197,18 +198,24 @@ static void OnMouseAction(int event, int x, int y, int flags, void *data)
 
 void fit2final(Mat &input, Mat &output)
 {
-    int offsetX, offsetY, h, w; 
-    cv::Mat tmp = output;
-
-    if(input.cols > 1920)
+    // int offsetX, offsetY, h, w; 
+    static bool fitsizeok = false;
+    cv::Mat tmp;
+    if(!fitsizeok)
     {
-        double scale = 1920 / w;
-        cv::resize(input, tmp, cv::Size(), scale, scale);
+        if(input.cols > 1920)
+        {
+            fitscale = 1920 * 1.0 / input.cols;
+            cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
+        }
+        w = tmp.cols;
+        h = tmp.rows;
+        offsetX = (1920 - w)/2;
+        offsetY = (1080 - h)/2;
+
+        fitsizeok = true;
     }
-    w = tmp.cols;
-    h = tmp.rows;
-    offsetX = (1920 - w)/2;
-    offsetY = (1080 - h)/2;
+    cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
     tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
 }
 
@@ -218,7 +225,7 @@ int main(int argc, char *argv[])
 {
     spdlog::set_level(spdlog::level::debug);
 
-    cv::Mat final = cv::Mat(cv::Size(1080,1920), CV_8UC3);
+    cv::Mat final = cv::Mat(cv::Size(1920,1080), CV_8UC3);
 
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
@@ -241,8 +248,10 @@ int main(int argc, char *argv[])
     std::string net = config["netpath"].as<string>();
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
+    undistor = config["undistor"].as<bool>();
+    renderMode = config["renderMode"].as<int>();
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
+    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     // nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
@@ -264,7 +273,6 @@ int main(int argc, char *argv[])
 
     if (detect)
         nvProcessor = new imageProcessor(net);  
-
 
     /************************************stitch all *****************************************/
     // vector<Mat> imgs(8);
@@ -363,7 +371,6 @@ int main(int argc, char *argv[])
     }
     while(ostitcherUp.init(upImgs, initonline) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
 
     do{
 #if CAM_IMX390
@@ -623,6 +630,9 @@ int main(int argc, char *argv[])
                 break;
             case 'x':
                 detCamNum = 0;
+                break;
+            case 's':
+                cv::imwrite("final.png", final);
                 break;
             default:
                 break;

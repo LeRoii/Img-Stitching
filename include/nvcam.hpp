@@ -459,14 +459,6 @@ public:
     m_id(camcfg.id),m_undistor(camcfg.undistor)
     
     {
-        // if(m_distoredWidth == 960)
-        // {
-            
-        // }
-        // else if(m_distoredWidth == 1920)
-        // {
-           
-        // }
         if(m_camSrcWidth == 3840)
         {
             //4k camera 1080 undistored

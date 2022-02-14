@@ -86,6 +86,29 @@ std::condition_variable stitcherCon[2];
 vector<vector<Mat>> stitcherInput{upImgs, downImgs};
 std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
 
+void fit2final(Mat &input, Mat &output)
+{
+    // int offsetX, offsetY, h, w; 
+    static bool fitsizeok = false;
+    cv::Mat tmp;
+    if(!fitsizeok)
+    {
+        if(input.cols > 1920)
+        {
+            fitscale = 1920 * 1.0 / input.cols;
+            cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
+        }
+        w = tmp.cols;
+        h = tmp.rows;
+        offsetX = (1920 - w)/2;
+        offsetY = (1080 - h)/2;
+
+        fitsizeok = true;
+    }
+    cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
+    tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
+}
+
 void stitcherTh(int id, ocvStitcher *stitcher)
 {
     while(1)
@@ -201,6 +224,7 @@ int main(int argc, char *argv[])
 {
     spdlog::set_level(spdlog::level::debug);
 
+    cv::Mat final = cv::Mat(cv::Size(1920,1080), CV_8UC3);
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
@@ -222,6 +246,7 @@ int main(int argc, char *argv[])
     std::string net = config["netpath"].as<string>();
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
+    renderMode = config["renderMode"].as<int>();
 
     int finalcut = 15;
     if(stitcherinputWidth == 480)
@@ -229,12 +254,11 @@ int main(int argc, char *argv[])
     else if(stitcherinputWidth == 640)
         finalcut = 30;
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
-    // nvrender *renderer = new nvrender(rendercfg);
+    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
-
 
     if (detect)
         nvProcessor = new imageProcessor(net);  
@@ -394,8 +418,10 @@ int main(int argc, char *argv[])
             *oriWriter << ori;
         }
 
-        cv::imshow("ret", ret);
-        // renderer->render(ret);
+        fit2final(ret, final);
+        // cv::imshow("ret", ret);
+        // cv::imshow("ret", final);
+        renderer->render(ret);
         // setMouseCallback("ret",OnMouseAction);
 
         if(detCamNum!=0)
@@ -440,6 +466,9 @@ int main(int argc, char *argv[])
                 break;
             case 'x':
                 detCamNum = 0;
+                break;
+            case 's':
+                cv::imwrite("final.png", final);
                 break;
             default:
                 break;

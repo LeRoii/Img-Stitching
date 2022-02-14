@@ -5,7 +5,7 @@ camcfgpath: "/home/nvidia/ssd/code/0929IS/cfg/"
 canname: "can0" 
 
 # parameters for display window, should be fixed
-renderWidth: 960
-renderHeight: 540
+renderWidth: 1920
+renderHeight: 1080
 renderX: 0
 renderY: 0

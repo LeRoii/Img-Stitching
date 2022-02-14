@@ -48,6 +48,7 @@ public:
             canvas.setTo(0);
         }
         
+        spdlog::debug("cfg.bufferh:{}, cfg.bufferw:{}",cfg.bufferh, cfg.bufferw);
         spdlog::info("render ctor cplt");
     }
     ~nvrender()
@@ -74,11 +75,12 @@ public:
         cv::Mat tmp;
         if(!fitsizeok)
         {
+            fitscale = 1;
             if(input.cols > 1920)
             {
                 fitscale = 1920 * 1.0 / input.cols;
-                cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
             }
+            cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
             w = tmp.cols;
             h = tmp.rows;
             offsetX = (1920 - w)/2;
@@ -104,7 +106,8 @@ public:
     void renderocv(cv::Mat &img)
     {
         fit2final(img, canvas);
-        cv::imshow("final", img);
+        cv::imshow("final", canvas);
+        cv::waitKey(1);
     }
 
     void render(cv::Mat &img)

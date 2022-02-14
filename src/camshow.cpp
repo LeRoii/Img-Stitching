@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
         if(!savevideo)
         {
             spdlog::info("render");
-            renderer->rendercv(ret);
+            renderer->render(ret);
             // if(stitcherinputWidth==1920 && showall)
             //     cv::imshow("m_dev_name", imgs[1]);
             // else

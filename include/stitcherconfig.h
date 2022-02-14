@@ -32,6 +32,8 @@ const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
 const int RET_OK = 0;
 const int RET_ERR = -1;
 
+bool undistor = true;
+
 struct stCamCfg
 {
     int camSrcWidth;
@@ -42,6 +44,7 @@ struct stCamCfg
 	int undistoredHeight;
 	int retWidth;
 	int retHeight;
+    bool undistor;
 	int id;
     char name[20];
 };

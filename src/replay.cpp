@@ -195,30 +195,11 @@ static void OnMouseAction(int event, int x, int y, int flags, void *data)
     }
 }
 
-void fit2final(Mat &input, Mat &output)
-{
-    int offsetX, offsetY, h, w; 
-    cv::Mat tmp = output;
-
-    if(input.cols > 1920)
-    {
-        double scale = 1920 / w;
-        cv::resize(input, tmp, cv::Size(), scale, scale);
-    }
-    w = tmp.cols;
-    h = tmp.rows;
-    offsetX = (1920 - w)/2;
-    offsetY = (1080 - h)/2;
-    tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
-}
-
 imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
     spdlog::set_level(spdlog::level::debug);
-
-    cv::Mat final = cv::Mat(cv::Size(1080,1920), CV_8UC3);
 
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
@@ -242,156 +223,49 @@ int main(int argc, char *argv[])
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
 
+    int finalcut = 15;
+    if(stitcherinputWidth == 480)
+        finalcut = 15;
+    else if(stitcherinputWidth == 640)
+        finalcut = 30;
+
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
     // nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7"}};
-
-
-    static std::shared_ptr<nvCam> cameras[CAMERA_NUM];
-    for(int i=0;i<USED_CAMERA_NUM;i++)
-        cameras[i].reset(new nvCam(camcfgs[i]));
 
     if (detect)
         nvProcessor = new imageProcessor(net);  
 
-
-    /************************************stitch all *****************************************/
-    // vector<Mat> imgs(8);
-
-    // ocvStitcher stitcherall(stitcherinputWidth, stitcherinputHeight, 3);
-
-    // vector<Mat> imgss;
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/5.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/6.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/7.png"));
-    // // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/8.png"));
-
-    // do{
-    //     imgs.clear();
-    //     for(int i=0;i<USED_CAMERA_NUM;i++)
-    //     {
-    //         cameras[i]->read_frame();
-    //         imgs.push_back(cameras[i]->m_ret);
-    //     }
-    //     serverCap();
-    //     imgs.push_back(downImgs[2]);
-    //     imgs.push_back(downImgs[3]);
-
-        
-    // }
-    // while(stitcherall.init(imgs, initonline) != 0);
-
-    // // ocvStitcher ostitcherUp(960/2, 540/2, 1);
-    // // ocvStitcher ostitcherDown(960/2, 540/2, 2);
-    // // ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1);
-    // // ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2);
-
-    // std::vector<std::thread> threads;
-    // for(int i=0;i<USED_CAMERA_NUM;i++)
-    //     threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    // for(auto& th:threads)
-    //     th.detach();
-
-    // while(1)
-    // {
-    //     Mat ret;
-    //     imgs.clear();
-    //     spdlog::debug("start loop");
-    //     auto t = cv::getTickCount();
-    //     auto all = cv::getTickCount();
-
-    //     std::thread server(serverCap);
-    //     cameras[0]->getFrame(imgs[0]);
-    //     cameras[1]->getFrame(imgs[1]);
-    //     cameras[2]->getFrame(imgs[2]);
-    //     cameras[3]->getFrame(imgs[3]);
-    //     cameras[4]->getFrame(imgs[4]);
-    //     cameras[5]->getFrame(imgs[5]);
-    //     imgs[6] = downImgs[2];
-    //     imgs[7] = downImgs[3];
-
-    //     // imgss.clear();
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/5.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/6.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/7.png"));
-
-    //     spdlog::debug("master cap fini");
-    //     server.join();
-    //     spdlog::debug("slave cap fini");
-
-    //     spdlog::info("read takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
-    //     t = cv::getTickCount();
-
-    //     stitcherall.process(imgs, ret);
-
-    //     imshow("ret", ret);
-    //     waitKey(1);
-    //     spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
-    // }
-    /************************************stitch all end*****************************************/
-
     ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1, cfgpath);
     ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2, cfgpath);
 
-    do{
-        upImgs.clear();
-        for(int i=0;i<4;i++)
-        {
-            cameras[i]->read_frame();
-            upImgs.push_back(cameras[i]->m_ret);
-            
-        }   
+    upImgs.clear();
+    upImgs.push_back(imread("/home/nvidia/ssd/img/1.png"));
+    upImgs.push_back(imread("/home/nvidia/ssd/img/2.png"));
+    upImgs.push_back(imread("/home/nvidia/ssd/img/3.png"));
+    upImgs.push_back(imread("/home/nvidia/ssd/img/4.png"));
+
+    downImgs.clear();
+    downImgs.push_back(imread("/home/nvidia/ssd/img/5.png"));
+    downImgs.push_back(imread("/home/nvidia/ssd/img/6.png"));
+    downImgs.push_back(imread("/home/nvidia/ssd/img/7.png"));
+    downImgs.push_back(imread("/home/nvidia/ssd/img/8.png"));
+
+    for(int i=0;i<4;i++)
+    {
+        cv::resize(upImgs[i], upImgs[i], cv::Size(stitcherinputWidth, stitcherinputHeight));
+        cv::resize(downImgs[i], downImgs[i], cv::Size(stitcherinputWidth, stitcherinputHeight));
     }
+
+
     while(ostitcherUp.init(upImgs, initonline) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-
-    do{
-#if CAM_IMX390
-        downImgs.clear();
-        for(int i=0;i<4;i++)
-        {
-            cameras[i+4]->read_frame();
-            downImgs.push_back(cameras[i]->m_ret);
-        }
-#elif CAM_IMX424
-        serverCap();
-        cameras[4]->read_frame();
-        cameras[5]->read_frame();
-        downImgs[0] = cameras[4]->m_ret;
-        downImgs[1] = cameras[5]->m_ret;
-#endif
-    }
     while(ostitcherDown.init(downImgs, initonline) != 0);
-
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
-    std::vector<std::thread> threads;
-    for(int i=0;i<USED_CAMERA_NUM;i++)
-        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    for(auto& th:threads)
-        th.detach();
-
-    // imageProcessor nvProcessor(net);     //图像处理类
 
     std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
     std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
@@ -409,63 +283,9 @@ int main(int argc, char *argv[])
     {
         spdlog::debug("start loop");
         sdkResetTimer(&timer);
-        // cameras[0]->read_frame();
-        // cameras[1]->read_frame();
-        // cameras[2]->read_frame();
-        // cameras[3]->read_frame();
-        // cameras[4]->read_frame();
-        // cameras[5]->read_frame();
-
-        /*slow */
-        // std::vector<std::thread> threads;
-        // for(int i=0;i<USED_CAMERA_NUM;i++)
-        //     threads.push_back(std::thread(&nvCam::read_frame, cameras[i].get()));
-        // for(auto& th:threads)
-        //     th.join();
         
-#if CAM_IMX424
-        spdlog::debug("capture slave start");
-        std::thread server(serverCap);
-#endif
-        
-        cameras[0]->getFrame(upImgs[0]);
-        cameras[1]->getFrame(upImgs[1]);
-        cameras[2]->getFrame(upImgs[2]);
-        cameras[3]->getFrame(upImgs[3]);
-        cameras[4]->getFrame(downImgs[0]);
-        cameras[5]->getFrame(downImgs[1]);
-#if CAM_IMX390
-        cameras[6]->getFrame(downImgs[2]);
-        cameras[7]->getFrame(downImgs[3]);
-#endif
-        
-#if CAM_IMX424
-        spdlog::debug("master cap fini");
-        server.join();
-        spdlog::debug("slave cap fini");
-#endif
-        
-
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+1)+".png", upImgs[i]);
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
-
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
-        // cv::imshow("ret", upImgs[2]);
-        // cv::imshow("ret", cameras[2]->m_ret);
-        // cv::waitKey(1);
-        // continue;
-
-        /* serial execute*/
-        // LOGLN("up process %%%%%%%%%%%%%%%%%%%");
-        // ostitcherUp.process(upImgs, upRet);
-        // LOGLN("down process %%%%%%%%%%%%%%%%%%%");
-        // ostitcherDown.process(downImgs, downRet);
-        
-        // upRet = upRet(Rect(0,20,1185,200));
-        // downRet = downRet(Rect(0,25,1185,200));
         
         /* parallel*/
         stitcherInput[0][0] = upImgs[0];
@@ -483,7 +303,6 @@ int main(int argc, char *argv[])
 
         ostitcherUp.inputOk = true;
         ostitcherDown.inputOk = true;
-
         
         stitcherCon[1].notify_all();
         stitcherCon[0].notify_all();
@@ -498,9 +317,9 @@ int main(int argc, char *argv[])
         ostitcherDown.outputOk = false;
 
         int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - 30;
-        upRet = stitcherOut[0](Rect(0,15,width,height));
-        downRet = stitcherOut[1](Rect(0,15,width,height));
+        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
+        upRet = stitcherOut[0](Rect(0,finalcut,width,height));
+        downRet = stitcherOut[1](Rect(0,finalcut,width,height));
 
         cv::Mat up,down,ori;
         if(displayori)
@@ -511,8 +330,6 @@ int main(int argc, char *argv[])
         }
 
         cv::vconcat(upRet, downRet, ret);
-
-
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
@@ -583,10 +400,10 @@ int main(int argc, char *argv[])
 
         if(detCamNum!=0)
         {
-            spdlog::critical("detCamNum::{}", detCamNum);
-            cv::Mat croped = cameras[detCamNum-1]->m_distoredImg(cv::Rect(640, 300, 640, 480)).clone();
-            croped = nvProcessor->ProcessOnce(croped);
-            cv::imshow("det", croped);
+            // spdlog::critical("detCamNum::{}", detCamNum);
+            // cv::Mat croped = cameras[detCamNum-1]->m_distoredImg(cv::Rect(640, 300, 640, 480)).clone();
+            // croped = nvProcessor->ProcessOnce(croped);
+            // cv::imshow("det", croped);
         }
 
         if(displayori)

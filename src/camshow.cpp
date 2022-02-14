@@ -76,7 +76,7 @@ bool detect = false;
 bool showall = true;
 bool withnum = false;
 int idx = 1;
-int videoFps = 5;
+int videoFps = 20;
 bool savevideo = false;
 
 static int parse_cmdline(int argc, char **argv)
@@ -167,6 +167,7 @@ int main(int argc, char *argv[])
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
     showall = config["showall"].as<bool>();
+    undistor = config["undistor"].as<bool>();
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY};
     // nvrender *renderer = new nvrender(rendercfg);
@@ -192,15 +193,18 @@ int main(int argc, char *argv[])
         writer[7] = new VideoWriter("7-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
     }
 
+    // writer[0] = new VideoWriter("0-ori.mp4", CV_FOURCC('m', 'p', '4', 'v'), videoFps, Size(1920,1080));
+    //writer[0] = new VideoWriter("0-ori.avi", CV_FOURCC('I', '4', '2', '0'), videoFps, Size(1920,1080));
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,8,"/dev/video7"}};
+
+    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6"},
+                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7"}};
 
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     // if(showall)
@@ -346,19 +350,27 @@ int main(int argc, char *argv[])
 
         // capture >> ret;
         // cv::cvtColor(ret,ret,cv::COLOR_RGB2RGBA);
-        if(!savevideo)
-        {
-            spdlog::info("render");
-            // renderer->render(ret);
-        }
         
-        cv::Mat yoloret = ret;
+        
+        cv::Mat yoloret;// = ret.clone();
+        // cv::Mat yoloret = ret(cv::Rect(640, 300, 640, 480)).clone();
         if (detect)
         {
             yoloret = nvProcessor->ProcessOnce(ret);
         }
 
-        // cv::imshow("m_dev_name", ret);
+        if(!savevideo)
+        {
+            spdlog::info("render");
+            // renderer->render(ret);
+            if(stitcherinputWidth==1920 && showall)
+                cv::imshow("m_dev_name", imgs[1]);
+            else
+                cv::imshow("m_dev_name", ret);
+            //*writer[0] << ret;
+        }
+
+        
         char c = (char)cv::waitKey(1);
         switch(c)
         {
@@ -369,16 +381,16 @@ int main(int argc, char *argv[])
                     cv::imwrite("2.png", imgs[1]);
                     cv::imwrite("3.png", imgs[2]);
                     cv::imwrite("4.png", imgs[3]);
-                    cv::imwrite("5.png", imgs[0]);
-                    cv::imwrite("6.png", imgs[1]);
-                    cv::imwrite("7.png", imgs[2]);
-                    cv::imwrite("8.png", imgs[3]);
+                    cv::imwrite("5.png", imgs[4]);
+                    cv::imwrite("6.png", imgs[5]);
+                    cv::imwrite("7.png", imgs[6]);
+                    cv::imwrite("8.png", imgs[7]);
                 }
                 if (detect)
                 {
                     cv::imwrite(std::to_string(idx) + "-" + std::to_string(framecnt)+".png", yoloret);
                 }
-                // cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ori);
+                cv::imwrite(std::to_string(idx) + "-ori" + std::to_string(framecnt++)+".png", ret);
                 break;
             default:
                 break;

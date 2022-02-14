@@ -456,7 +456,7 @@ public:
 	m_retWidth(camcfg.retWidth),m_retHeight(camcfg.retHeight),
 	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), 
 	m_undistoredWidth(camcfg.undistoredWidth),m_undistoredHeight(camcfg.undistoredHeight), 
-    m_id(camcfg.id)
+    m_id(camcfg.id),m_undistor(camcfg.undistor)
     
     {
         // if(m_distoredWidth == 960)
@@ -693,23 +693,30 @@ public:
         spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
 
         
+        if(m_undistor)
+        {
+            /***** cpu undistor *****/
+            // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
+            cv::Mat tmp;
+            cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
+            cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
+            // m_distoredImg = tmp.clone();
+            // // /*undistored*********/
 
-        /***** cpu undistor *****/
-        // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
-        cv::Mat tmp;
-        cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
-        cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
-        // m_distoredImg = tmp.clone();
-        // // /*undistored*********/
+            spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+            cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
 
-        spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
-        cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+            spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+            m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
+            cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+            
+            /***** cpu undistor end*****/
+        }
+        else
+        {
+            cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
+        }
 
-        spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
-        m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
-        
-        /***** cpu undistor end*****/
 
         
         /***** gpu undistor *****/
@@ -917,4 +924,6 @@ public:
     cv::cuda::GpuMat gpuMapx[2], gpuMapy[2];
     cv::cuda::GpuMat m_gpuargb, m_gpuDistoredImg, m_gpuUndistoredImg;
     cv::cuda::GpuMat m_gpuret;
+
+    bool m_undistor;
 };

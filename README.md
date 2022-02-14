@@ -78,3 +78,7 @@ make
 01.16.
 - api改用nvrenderer显示
 
+02.14.
+- 增加replay功能，只支持图片replay   
+- nvrender增加egl模式与opencv模式，显示接口还是改用nvrender，一般使用egl，opencv用于开发和debug
+

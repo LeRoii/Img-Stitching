@@ -83,3 +83,6 @@ make
 - nvrender增加egl模式与opencv模式，显示接口还是改用nvrender，一般使用egl，opencv用于开发和debug   
 - 增加nvcam去畸变开关，不做畸变矫正可以显著提高速度
 
+02.16.
+- 修改了多线程拼接的方式   
+

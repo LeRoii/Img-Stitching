@@ -259,8 +259,6 @@ int main(int argc, char *argv[])
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
 
-    ret = cv::imread("/home/nvidia/ssd/img/3.png");
-    
     while(1)
     {
         spdlog::debug("start loop");
@@ -269,27 +267,27 @@ int main(int argc, char *argv[])
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
         /* parallel*/
-        // std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
-        // std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
+        std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
+        std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
-        // t1.join();
-        // t2.join();
+        t1.join();
+        t2.join();
 
-        // int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        // int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
-        // upRet = stitcherOut[0](Rect(0,finalcut,width,height));
-        // downRet = stitcherOut[1](Rect(0,finalcut,width,height));
+        int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
+        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
+        upRet = stitcherOut[0](Rect(0,finalcut,width,height));
+        downRet = stitcherOut[1](Rect(0,finalcut,width,height));
 
         cv::Mat up,down,ori;
-        // if(displayori)
-        // {
-        //     cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-        //     cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-        //     cv::vconcat(up, down, ori);
-        // }
+        if(displayori)
+        {
+            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+            cv::vconcat(up, down, ori);
+        }
 
-        // cv::vconcat(upRet, downRet, ret);
-        // cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
+        cv::vconcat(upRet, downRet, ret);
+        cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
 
@@ -313,8 +311,11 @@ int main(int argc, char *argv[])
         spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
 
         // if(ctl_command.use_ssr || start_ssr) 
-        if(start_ssr) 
+        if(start_ssr)
+        {
             ret = nvProcessor->SSR(ret);
+            spdlog::debug("SSR takes:{} ms", sdkGetTimerValue(&timer));
+        }
 
         if(detect)
         {

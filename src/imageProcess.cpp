@@ -198,7 +198,7 @@ void imageProcessor::cut_img(cv::Mat &src_img, std::vector<cv::Mat> &ceil_img)
 
 cv::Mat imageProcessor::channel_process(cv::Mat R) {
     cv::Mat ret;
-    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(1.5, cv::Size(20, 20)); //0.01s
+    cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE(1.5, cv::Size(5,5)); //0.01s
     clahe->apply(R, ret);
     return ret;
 }

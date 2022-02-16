@@ -114,7 +114,7 @@ public:
         fit2final(img, canvas);
         
         cv::imshow("final", canvas);
-        cv::waitKey(1);
+        // cv::waitKey(1);
         spdlog::warn("after renderocv imshow");
     }
 

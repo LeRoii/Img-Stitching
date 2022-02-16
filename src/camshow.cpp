@@ -235,8 +235,6 @@ int main(int argc, char *argv[])
     for(auto& th:threads)
         th.detach();
 
-
-
     Mat rets[USED_CAMERA_NUM];
 
     StopWatchInterface *timer = NULL;

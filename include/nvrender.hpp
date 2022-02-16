@@ -72,6 +72,7 @@ public:
     {
         // int offsetX, offsetY, h, w; 
         static bool fitsizeok = false;
+        spdlog::warn("fit2final start");
         cv::Mat tmp;
         if(!fitsizeok)
         {
@@ -89,7 +90,9 @@ public:
             fitsizeok = true;
         }
         cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
+        spdlog::warn("after fit2final resize");
         tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
+        spdlog::warn("after fit2final copyTo");
     }
 
 
@@ -97,17 +100,22 @@ public:
     {
         cv::Mat tmp;
         cv::cvtColor(img, tmp, cv::COLOR_RGB2RGBA);
+        spdlog::warn("after cvtColor");
         fit2final(tmp, canvas);
+        spdlog::warn("after fit2final");
         if(0 != NvBufferMemSyncForDevice (nvbufferfd, 0, (void**)&canvas.data))
             spdlog::warn("NvBufferMemSyncForDevice failed");
         renderer->render(nvbufferfd);
+        spdlog::warn("after render");
     }
 
     void renderocv(cv::Mat &img)
     {
         fit2final(img, canvas);
+        
         cv::imshow("final", canvas);
         cv::waitKey(1);
+        spdlog::warn("after renderocv imshow");
     }
 
     void render(cv::Mat &img)

@@ -81,26 +81,7 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
-
-std::mutex g_stitcherMtx[2];
-std::condition_variable stitcherCon[2];
-vector<vector<Mat>> stitcherInput{upImgs, downImgs};
 std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
-
-void stitcherTh(int id, ocvStitcher *stitcher)
-{
-    while(1)
-    {
-        std::unique_lock<std::mutex> lock(g_stitcherMtx[id]);
-        while(!stitcher->inputOk)
-            stitcherCon[id].wait(lock);
-        stitcher->process(stitcherInput[id], stitcherOut[id]);
-        // stitcher->simpprocess(stitcherInput[id], stitcherOut[id]);
-        stitcher->inputOk = false;
-        stitcher->outputOk = true;
-        stitcherCon[id].notify_all();
-    }
-}
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -196,37 +177,10 @@ static void OnMouseAction(int event, int x, int y, int flags, void *data)
     }
 }
 
-void fit2final(Mat &input, Mat &output)
-{
-    // int offsetX, offsetY, h, w; 
-    static bool fitsizeok = false;
-    cv::Mat tmp;
-    if(!fitsizeok)
-    {
-        if(input.cols > 1920)
-        {
-            fitscale = 1920 * 1.0 / input.cols;
-            cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
-        }
-        w = tmp.cols;
-        h = tmp.rows;
-        offsetX = (1920 - w)/2;
-        offsetY = (1080 - h)/2;
-
-        fitsizeok = true;
-    }
-    cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
-    tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
-}
-
 imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::debug);
-
-    cv::Mat final = cv::Mat(cv::Size(1920,1080), CV_8UC3);
-
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
@@ -250,6 +204,18 @@ int main(int argc, char *argv[])
     std::string canname = config["canname"].as<string>();
     undistor = config["undistor"].as<bool>();
     renderMode = config["renderMode"].as<int>();
+    std::string loglvl = config["loglvl"].as<string>();
+
+    if(loglvl == "critical")
+        spdlog::set_level(spdlog::level::critical);
+    else if(loglvl == "trace")
+        spdlog::set_level(spdlog::level::trace);
+    else if(loglvl == "warn")
+        spdlog::set_level(spdlog::level::warn);
+    else if(loglvl == "info")
+        spdlog::set_level(spdlog::level::info);
+    else
+        spdlog::set_level(spdlog::level::debug);
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
@@ -400,9 +366,6 @@ int main(int argc, char *argv[])
 
     // imageProcessor nvProcessor(net);     //图像处理类
 
-    std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
-    std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
-
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;
     bool writerInit = false;
@@ -451,19 +414,7 @@ int main(int argc, char *argv[])
         server.join();
         spdlog::debug("slave cap fini");
 #endif
-        
-
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+1)+".png", upImgs[i]);
-        // for(int i=0;i<4;i++)
-        //     imwrite(std::to_string(i+5)+".png", downImgs[i]);
-
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
-
-        // cv::imshow("ret", upImgs[2]);
-        // cv::imshow("ret", cameras[2]->m_ret);
-        // cv::waitKey(1);
-        // continue;
 
         /* serial execute*/
         // LOGLN("up process %%%%%%%%%%%%%%%%%%%");
@@ -475,34 +426,12 @@ int main(int argc, char *argv[])
         // downRet = downRet(Rect(0,25,1185,200));
         
         /* parallel*/
-        stitcherInput[0][0] = upImgs[0];
-        stitcherInput[0][1] = upImgs[1];
-        stitcherInput[0][2] = upImgs[2];
-        stitcherInput[0][3] = upImgs[3];
 
-        stitcherInput[1][0] = downImgs[0];
-        stitcherInput[1][1] = downImgs[1];
-        stitcherInput[1][2] = downImgs[2];
-        stitcherInput[1][3] = downImgs[3];
+        std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
+        std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
-        std::unique_lock<std::mutex> lock(g_stitcherMtx[0]);
-        std::unique_lock<std::mutex> lock1(g_stitcherMtx[1]);
-
-        ostitcherUp.inputOk = true;
-        ostitcherDown.inputOk = true;
-
-        
-        stitcherCon[1].notify_all();
-        stitcherCon[0].notify_all();
-        
-        while(!(ostitcherUp.outputOk && ostitcherDown.outputOk))
-        {
-            stitcherCon[1].wait(lock1);
-            stitcherCon[0].wait(lock);
-        }
-
-        ostitcherUp.outputOk = false;
-        ostitcherDown.outputOk = false;
+        t1.join();
+        t2.join();
 
         int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
         int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - 30;
@@ -518,8 +447,6 @@ int main(int argc, char *argv[])
         }
 
         cv::vconcat(upRet, downRet, ret);
-
-
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
@@ -583,9 +510,11 @@ int main(int argc, char *argv[])
             *panoWriter << ret;
             *oriWriter << ori;
         }
+        spdlog::info("frame [{}], before render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
 
-        // cv::imshow("ret", ret);
-        renderer->render(ret);
+        cv::imshow("ret", ret);
+        // renderer->render(ret);
+        spdlog::info("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         // setMouseCallback("ret",OnMouseAction);
 
         if(detCamNum!=0)
@@ -632,7 +561,7 @@ int main(int argc, char *argv[])
                 detCamNum = 0;
                 break;
             case 's':
-                cv::imwrite("final.png", final);
+                cv::imwrite("final.png", ret);
                 break;
             default:
                 break;

@@ -37,6 +37,8 @@ float blend_strength = 0;
 
 static int num_images = 4;
 
+std::mutex stmtx;
+
 static void Stringsplit(string str, const char split, vector<string>& res)
 {
     istringstream iss(str);	// 输入流
@@ -545,6 +547,7 @@ class ocvStitcher
             // imwrite(std::to_string(i)+"-masks_warped.png", masks_warped[i]);
 
             // LOGLN("****first warp:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
+            // spdlog::warn("images_warped channels::{}", images_warped[i].channels());
         }
 
         t = getTickCount();
@@ -663,6 +666,8 @@ class ocvStitcher
         spdlog::debug("stitcher {} process start", m_id);
         auto app_start_time = getTickCount();
 
+        
+
         Ptr<Blender> blender;
         float blend_width;
         Mat img, img_warped, img_warped_s;
@@ -685,8 +690,12 @@ class ocvStitcher
             Size img_size = img.size();
 
             // Warp the current image
+            stmtx.lock();
             warper->warp(img, cameraK, cameraR[img_idx], INTER_LINEAR, BORDER_REFLECT, img_warped);
+            stmtx.unlock();
             // imwrite(std::to_string(img_idx)+"-img_warped.png", img_warped);
+
+            // LOGLN("process:::"<<"id:"<<m_id<< "  index::"<< img_idx<<"  K:"<<cameraK<<"cameraR[img_idx]:  "<< cameraR[img_idx]);
 
             // Compensate exposure
             // compensator->apply(img_idx, corners[img_idx], img_warped, compensatorMaskWarped[img_idx]);
@@ -713,6 +722,7 @@ class ocvStitcher
             // LOGLN("before feed takes : " << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
             // Blend the current image
             blender->feed(img_warped_s, blenderMask[img_idx], corners[img_idx]);
+            // LOGLN("****:" << "id:"<<m_id<<"  idx:"<< img_idx << ":\n corners  " << corners[img_idx] << "\n size:" << sizes[img_idx]);
         }
 
         Mat result, result_mask;
@@ -721,6 +731,8 @@ class ocvStitcher
 
         spdlog::debug("stitcher process takes : {:03.3f} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
         // imwrite("ocvprocess.png", ret);
+
+        
     }
 
     void updateMask(vector<Mat> &imgs)
@@ -789,6 +801,8 @@ class ocvStitcher
 
     bool presetParaOk;
     std::string m_cfgpath;
+
+    // Ptr<Blender> blender;
 
 };
 

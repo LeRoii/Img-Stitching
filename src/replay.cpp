@@ -81,48 +81,7 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
-std::mutex g_stitcherMtx[2];
-std::condition_variable stitcherCon[2];
-vector<vector<Mat>> stitcherInput{upImgs, downImgs};
 std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
-
-void fit2final(Mat &input, Mat &output)
-{
-    // int offsetX, offsetY, h, w; 
-    static bool fitsizeok = false;
-    cv::Mat tmp;
-    if(!fitsizeok)
-    {
-        if(input.cols > 1920)
-        {
-            fitscale = 1920 * 1.0 / input.cols;
-            cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
-        }
-        w = tmp.cols;
-        h = tmp.rows;
-        offsetX = (1920 - w)/2;
-        offsetY = (1080 - h)/2;
-
-        fitsizeok = true;
-    }
-    cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
-    tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
-}
-
-void stitcherTh(int id, ocvStitcher *stitcher)
-{
-    while(1)
-    {
-        std::unique_lock<std::mutex> lock(g_stitcherMtx[id]);
-        while(!stitcher->inputOk)
-            stitcherCon[id].wait(lock);
-        stitcher->process(stitcherInput[id], stitcherOut[id]);
-        // stitcher->simpprocess(stitcherInput[id], stitcherOut[id]);
-        stitcher->inputOk = false;
-        stitcher->outputOk = true;
-        stitcherCon[id].notify_all();
-    }
-}
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -291,9 +250,6 @@ int main(int argc, char *argv[])
     while(ostitcherDown.init(downImgs, initonline) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
-    std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
-
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;
     bool writerInit = false;
@@ -302,6 +258,8 @@ int main(int argc, char *argv[])
     sdkCreateTimer(&timer);
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
+
+    ret = cv::imread("/home/nvidia/ssd/img/3.png");
     
     while(1)
     {
@@ -310,51 +268,28 @@ int main(int argc, char *argv[])
         
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
-        
         /* parallel*/
-        stitcherInput[0][0] = upImgs[0];
-        stitcherInput[0][1] = upImgs[1];
-        stitcherInput[0][2] = upImgs[2];
-        stitcherInput[0][3] = upImgs[3];
+        // std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
+        // std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
-        stitcherInput[1][0] = downImgs[0];
-        stitcherInput[1][1] = downImgs[1];
-        stitcherInput[1][2] = downImgs[2];
-        stitcherInput[1][3] = downImgs[3];
+        // t1.join();
+        // t2.join();
 
-        std::unique_lock<std::mutex> lock(g_stitcherMtx[0]);
-        std::unique_lock<std::mutex> lock1(g_stitcherMtx[1]);
-
-        ostitcherUp.inputOk = true;
-        ostitcherDown.inputOk = true;
-        
-        stitcherCon[1].notify_all();
-        stitcherCon[0].notify_all();
-        
-        while(!(ostitcherUp.outputOk && ostitcherDown.outputOk))
-        {
-            stitcherCon[1].wait(lock1);
-            stitcherCon[0].wait(lock);
-        }
-
-        ostitcherUp.outputOk = false;
-        ostitcherDown.outputOk = false;
-
-        int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
-        upRet = stitcherOut[0](Rect(0,finalcut,width,height));
-        downRet = stitcherOut[1](Rect(0,finalcut,width,height));
+        // int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
+        // int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
+        // upRet = stitcherOut[0](Rect(0,finalcut,width,height));
+        // downRet = stitcherOut[1](Rect(0,finalcut,width,height));
 
         cv::Mat up,down,ori;
-        if(displayori)
-        {
-            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-            cv::vconcat(up, down, ori);
-        }
+        // if(displayori)
+        // {
+        //     cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
+        //     cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
+        //     cv::vconcat(up, down, ori);
+        // }
 
-        cv::vconcat(upRet, downRet, ret);
-        cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
+        // cv::vconcat(upRet, downRet, ret);
+        // cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
 
@@ -418,9 +353,10 @@ int main(int argc, char *argv[])
             *oriWriter << ori;
         }
 
-        fit2final(ret, final);
         // cv::imshow("ret", ret);
         // cv::imshow("ret", final);
+        
+        spdlog::debug("render");
         renderer->render(ret);
         // setMouseCallback("ret",OnMouseAction);
 
@@ -468,7 +404,7 @@ int main(int argc, char *argv[])
                 detCamNum = 0;
                 break;
             case 's':
-                cv::imwrite("final.png", final);
+                cv::imwrite("final.png", ret);
                 break;
             default:
                 break;

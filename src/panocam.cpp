@@ -8,6 +8,7 @@
 #include "PracticalSocket.h"
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
+#include "nvrender.hpp"
 
 
 std::vector<cv::Mat> upImgs(4);
@@ -104,12 +105,6 @@ public:
         nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
         pRenderer = new nvrender(rendercfg);
 
-        std::vector<std::thread> threads;
-        for(int i=0;i<USED_CAMERA_NUM;i++)
-            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-        for(auto& th:threads)
-            th.detach();
-
         spdlog::debug("panocam ctor complete");
     }
     
@@ -164,6 +159,12 @@ public:
         while(stitchers[1]->init(downImgs, initonlie) != 0);
 
         spdlog::info("init completed!");
+
+        std::vector<std::thread> threads;
+        for(int i=0;i<USED_CAMERA_NUM;i++)
+            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+        for(auto& th:threads)
+            th.detach();
                 
         return RET_OK;
     }
@@ -216,13 +217,19 @@ public:
 
         spdlog::debug("imgs cap fini");
         cv::Mat up, down, rett;
-        stitchers[0]->process(upImgs, up);
-        stitchers[1]->process(downImgs, down);
+        // stitchers[0]->process(upImgs, up);
+        // stitchers[1]->process(downImgs, down);
+
+        std::thread t1 = std::thread(&ocvStitcher::process, stitchers[0], std::ref(upImgs), std::ref(up));
+        std::thread t2 = std::thread(&ocvStitcher::process, stitchers[1], std::ref(downImgs), std::ref(down));
+
+        t1.join();
+        t2.join();
 
         int width = min(up.size().width, down.size().width);
-        int height = min(up.size().height, down.size().height) - 30;
-        up = up(Rect(0,15,width,height));
-        down = down(Rect(0,15,width,height));
+        int height = min(up.size().height, down.size().height) - 60;
+        up = up(Rect(0,30,width,height));
+        down = down(Rect(0,30,width,height));
 
         cv::vconcat(up, down, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);

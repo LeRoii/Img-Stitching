@@ -1,11 +1,11 @@
 camwidth: 1920
 camheight: 1080
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
-camcfgpath: "/home/nvidia/ssd/code/0929IS/cfg/"
+camcfgpath: "/home/nvidia/ssd/code/0209is/cfg/390camcfg/"
 canname: "can0" 
 
 # parameters for display window, should be fixed
-renderWidth: 1920
-renderHeight: 1080
+renderWidth: 960
+renderHeight: 540
 renderX: 0
 renderY: 0

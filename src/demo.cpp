@@ -4,25 +4,19 @@
 
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::info);
     std::string yamlpath = "/home/nvidia/ssd/code/0209is/cfg/pamocfg.yaml";
     if(argc > 1)
         yamlpath = argv[1];
 
     panocam *pcam = new panocam(yamlpath);
     cv::Mat frame;
-    // cv::Mat im = cv::imread("/home/nvidia/ssd/data/11.png");
-    // pcam->init(INIT_OFFLINE);
-    
-
-    
-    // spdlog::info("im channel:{}", im.channels());
-    // cv::cvtColor(im,im,cv::COLOR_RGB2RGBA);
+    pcam->init(INIT_OFFLINE);
     while(1)
     {
-        pcam->getCamFrame(1, frame);
+        // pcam->getCamFrame(1, frame);
         std::vector<int> ret;
-        // pcam->getPanoFrame(frame);
+        pcam->getPanoFrame(frame);
 
         // pcam->detect(frame, ret);
         spdlog::info("get frame");
@@ -30,17 +24,5 @@ int main(int argc, char *argv[])
         // cv::imshow("1", frame);
         // cv::waitKey(1);
     }
-
-    // nvrenderCfg rendercfg{1920, 1080, 960, 540, 0, 0};
-    // nvrender *renderer = new nvrender(rendercfg);
-
-    // cv::Mat im = cv::imread("/home/nvidia/ssd/data/11.png");
-    // spdlog::info("im channel:{}", im.channels());
-    // cv::cvtColor(im,im,cv::COLOR_RGB2RGBA);
-    // while(1)
-    // {
-    //     renderer->render1();
-    // }
-
     return 0;
 }

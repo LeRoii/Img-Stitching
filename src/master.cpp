@@ -204,8 +204,12 @@ int main(int argc, char *argv[])
     std::string canname = config["canname"].as<string>();
     undistor = config["undistor"].as<bool>();
     renderMode = config["renderMode"].as<int>();
-    std::string loglvl = config["loglvl"].as<string>();
 
+    stitcherMatchConf = config["stitcherMatchConf"].as<float>();
+    stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
+    stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+
+    std::string loglvl = config["loglvl"].as<string>();
     if(loglvl == "critical")
         spdlog::set_level(spdlog::level::critical);
     else if(loglvl == "trace")
@@ -323,8 +327,11 @@ int main(int argc, char *argv[])
     // }
     /************************************stitch all end*****************************************/
 
-    ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1, cfgpath);
-    ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2, cfgpath);
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath}};
+
+    ocvStitcher ostitcherUp(stitchercfg[0]);
+    ocvStitcher ostitcherDown(stitchercfg[1]);
 
     do{
         upImgs.clear();
@@ -344,7 +351,7 @@ int main(int argc, char *argv[])
         for(int i=0;i<4;i++)
         {
             cameras[i+4]->read_frame();
-            downImgs.push_back(cameras[i]->m_ret);
+            downImgs.push_back(cameras[i+4]->m_ret);
         }
 #elif CAM_IMX424
         serverCap();
@@ -418,9 +425,9 @@ int main(int argc, char *argv[])
 
         /* serial execute*/
         // LOGLN("up process %%%%%%%%%%%%%%%%%%%");
-        // ostitcherUp.process(upImgs, upRet);
+        // ostitcherUp.process(upImgs, stitcherOut[0]);
         // LOGLN("down process %%%%%%%%%%%%%%%%%%%");
-        // ostitcherDown.process(downImgs, downRet);
+        // ostitcherDown.process(downImgs, stitcherOut[1]);
         
         // upRet = upRet(Rect(0,20,1185,200));
         // downRet = downRet(Rect(0,25,1185,200));
@@ -434,9 +441,9 @@ int main(int argc, char *argv[])
         t2.join();
 
         int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - 30;
-        upRet = stitcherOut[0](Rect(0,15,width,height));
-        downRet = stitcherOut[1](Rect(0,15,width,height));
+        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - 40;
+        upRet = stitcherOut[0](Rect(0,20,width,height));
+        downRet = stitcherOut[1](Rect(0,20,width,height));
 
         cv::Mat up,down,ori;
         if(displayori)
@@ -493,11 +500,17 @@ int main(int argc, char *argv[])
             sstr << std::put_time(ptm,"%F-%H-%M-%S");
             Size panoSize(ret.size().width, ret.size().height);
             Size oriSize(ori.size().width, ori.size().height);
-            panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, panoSize);
-            oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
+            // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
+            panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
+            // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
 
             //检查是否成功创建
-            if (!panoWriter->isOpened() || !oriWriter->isOpened())
+            // if (!panoWriter->isOpened() || !oriWriter->isOpened())
+            // {
+            //     spdlog::critical("Can not create video file.");
+            //     return -1;
+            // }
+            if (!panoWriter->isOpened())
             {
                 spdlog::critical("Can not create video file.");
                 return -1;
@@ -505,15 +518,17 @@ int main(int argc, char *argv[])
 
             writerInit = true;
         }
+        cv::Mat final;
+        renderer->render(ret, final);
         if(savevideo)
         {
-            *panoWriter << ret;
-            *oriWriter << ori;
+            *panoWriter << final;
+            // *oriWriter << ori;
         }
         spdlog::info("frame [{}], before render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
 
-        cv::imshow("ret", ret);
-        // renderer->render(ret);
+        // cv::imshow("ret", ret);
+        
         spdlog::info("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         // setMouseCallback("ret",OnMouseAction);
 

@@ -31,3 +31,8 @@ canname: "can0"
 showall: true
 
 loglvl: "debug"
+
+# parameters for stitcher
+stitcherMatchConf: 0.3
+stitcherAdjusterConf: 0.7
+stitcherBlenderStrength: 0

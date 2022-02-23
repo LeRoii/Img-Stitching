@@ -4,7 +4,6 @@
 
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::info);
     std::string yamlpath = "/home/nvidia/ssd/code/0209is/cfg/pamocfg.yaml";
     if(argc > 1)
         yamlpath = argv[1];

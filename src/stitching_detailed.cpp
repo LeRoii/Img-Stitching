@@ -140,7 +140,7 @@ bool try_cuda = false;
 double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
-float conf_thresh = .7f;
+float conf_thresh = 1.f;
 string features_type = "surf";
 string matcher_type = "homography";
 string estimator_type = "homography";
@@ -149,11 +149,11 @@ string ba_refine_mask = "xxxxx";
 bool do_wave_correct = true;
 WaveCorrectKind wave_correct = detail::WAVE_CORRECT_HORIZ;
 bool save_graph = true;
-std::string save_graph_to = "matchedgraph";
-string warp_type = "cylindrical";
+std::string save_graph_to = "match.txt";
+string warp_type = "spherical";
 int expos_comp_type = ExposureCompensator::GAIN_BLOCKS;
 float match_conf = 0.3f;
-string seam_find_type = "no";
+string seam_find_type = "gc_color";
 int blend_type = Blender::MULTI_BAND;
 int timelapse_type = Timelapser::AS_IS;
 float blend_strength = 5;
@@ -161,14 +161,17 @@ string result_name = "result.jpg";
 bool timelapse = false;
 int range_width = -1;
 
+int inputw = 640;
+int inputh = 360;
+
 
 static int parseCmdArgs(int argc, char** argv)
 {
-    // if (argc == 1)
-    // {
-    //     printUsage();
-    //     return -1;
-    // }
+    if (argc == 1)
+    {
+        printUsage();
+        return -1;
+    }
     for (int i = 1; i < argc; ++i)
     {
         if (string(argv[i]) == "--help" || string(argv[i]) == "/?")
@@ -396,31 +399,12 @@ int main(int argc, char* argv[])
     cv::setBreakOnError(true);
 #endif
 
-    int retval = parseCmdArgs(argc, argv);
-    if (retval)
-        return retval;
+    // int retval = parseCmdArgs(argc, argv);
+    // if (retval)
+    //     return retval;
 
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/2.png");
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/3.png");
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/4.png");
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/5.png");
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/6.png");
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/7.png");
-    // img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/8.png");
-
-    img_names.push_back("1.png");
-    img_names.push_back("2.png");
-    img_names.push_back("3.png");
-    img_names.push_back("4.png");
-    img_names.push_back("5.png");
-    img_names.push_back("6.png");
-    img_names.push_back("7.png");
-    // img_names.push_back("8.png");
-    // img_names.push_back("3-dist.png");
-    // img_names.push_back("4-dist.png");
     // Check if have enough images
-    int num_images = static_cast<int>(img_names.size());
+    int num_images = 4;//static_cast<int>(img_names.size());
     if (num_images < 2)
     {
         LOGLN("Need more images");
@@ -461,9 +445,20 @@ int main(int argc, char* argv[])
     vector<Size> full_img_sizes(num_images);
     double seam_work_aspect = 1;
 
+    // img_names.push_back("1.png");
+    // img_names.push_back("2.png");
+    // img_names.push_back("3.png");
+    // img_names.push_back("4.png");
+
+    img_names.push_back("5.png");
+    img_names.push_back("6.png");
+    img_names.push_back("7.png");
+    img_names.push_back("8.png");
+
     for (int i = 0; i < num_images; ++i)
     {
         full_img = imread(img_names[i]);
+        cv::resize(full_img, full_img, cv::Size(inputw, inputh));
         full_img_sizes[i] = full_img.size();
 
         if (full_img.empty())
@@ -493,12 +488,7 @@ int main(int argc, char* argv[])
             is_seam_scale_set = true;
         }
 
-        std::vector<cv::Rect> rois = {cv::Rect(img.size().width/2, 0, img.size().width/2, img.size().height)};
-        if(i == num_images - 1)
-            (*finder)(img, features[i], rois);
-        else
-            (*finder)(img, features[i]);
-        // (*finder)(img, features[i]);
+        (*finder)(img, features[i]);
         features[i].img_idx = i;
         LOGLN("Features in image #" << i+1 << ": " << features[i].keypoints.size());
 
@@ -791,6 +781,7 @@ int main(int argc, char* argv[])
 
         // Read image and resize it if necessary
         full_img = imread(img_names[img_idx]);
+        cv::resize(full_img, full_img, cv::Size(inputw, inputh));
         if (!is_compose_scale_set)
         {
             if (compose_megapix > 0)
@@ -828,7 +819,10 @@ int main(int argc, char* argv[])
                 sizes[i] = roi.size();
             }
         }
-        img = full_img;
+        if (abs(compose_scale - 1) > 1e-1)
+            resize(full_img, img, Size(), compose_scale, compose_scale, INTER_LINEAR_EXACT);
+        else
+            img = full_img;
         full_img.release();
         Size img_size = img.size();
 

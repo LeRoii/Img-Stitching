@@ -9,3 +9,5 @@ renderWidth: 960
 renderHeight: 540
 renderX: 0
 renderY: 0
+
+loglvl: "info"

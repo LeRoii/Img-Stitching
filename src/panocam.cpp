@@ -65,6 +65,35 @@ int  serverCap()
 }
 #endif
 
+static int verify()
+{
+    int                 sockfd;
+    struct ifreq        ifr;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+
+    char * buf = new char[6];
+
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
+    }
+    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+
+    
+    char gt[] = "00:54:5a:19:03:5f";
+    
+    char p[50];
+    sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+    // printf("p::%s\n", p);
+
+    return strcmp(gt, p);
+}
+
 class panocam::panocamimpl
 {
 public:
@@ -81,6 +110,20 @@ public:
         renderHeight = config["renderHeight"].as<int>();
         renderX = config["renderX"].as<int>();
         renderY = config["renderY"].as<int>();
+
+        stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+
+        std::string loglvl = config["loglvl"].as<string>();
+        if(loglvl == "critical")
+            spdlog::set_level(spdlog::level::critical);
+        else if(loglvl == "trace")
+            spdlog::set_level(spdlog::level::trace);
+        else if(loglvl == "warn")
+            spdlog::set_level(spdlog::level::warn);
+        else if(loglvl == "info")
+            spdlog::set_level(spdlog::level::info);
+        else
+            spdlog::set_level(spdlog::level::debug);
 #if CAM_IMX424
         USED_CAMERA_NUM = 6;
 #endif
@@ -97,8 +140,11 @@ public:
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
 
-        stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1, camcfg));
-        stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2, camcfg));
+        stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg}};
+
+        stitchers[0].reset(new ocvStitcher(stitchercfg[0]));
+        stitchers[1].reset(new ocvStitcher(stitchercfg[1]));
 
         pImgProc = new imageProcessor(net, canname);
 
@@ -113,6 +159,11 @@ public:
     int init(enInitMode mode)
     {
         spdlog::info("init");
+        if(verify())
+        {
+            spdlog::critical("verification failed, exit");
+            return RET_ERR;
+        }
         bool initonlie = ((mode == INIT_ONLINE) ? true : false);
         upImgs.clear();
         int failnum = 0;

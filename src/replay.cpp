@@ -181,8 +181,6 @@ imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::debug);
-
     cv::Mat final = cv::Mat(cv::Size(1920,1080), CV_8UC3);
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
@@ -207,6 +205,24 @@ int main(int argc, char *argv[])
     std::string canname = config["canname"].as<string>();
     renderMode = config["renderMode"].as<int>();
 
+    stitcherMatchConf = config["stitcherMatchConf"].as<float>();
+    stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
+    stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+
+    std::string loglvl = config["loglvl"].as<string>();
+    if(loglvl == "critical")
+        spdlog::set_level(spdlog::level::critical);
+    else if(loglvl == "trace")
+        spdlog::set_level(spdlog::level::trace);
+    else if(loglvl == "warn")
+        spdlog::set_level(spdlog::level::warn);
+    else if(loglvl == "info")
+        spdlog::set_level(spdlog::level::info);
+    else
+        spdlog::set_level(spdlog::level::debug);
+
+
+
     int finalcut = 15;
     if(stitcherinputWidth == 480)
         finalcut = 15;
@@ -222,20 +238,47 @@ int main(int argc, char *argv[])
     if (detect)
         nvProcessor = new imageProcessor(net);  
 
-    ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1, cfgpath);
-    ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2, cfgpath);
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath}};
 
-    upImgs.clear();
-    upImgs.push_back(imread("/home/nvidia/ssd/img/1.png"));
-    upImgs.push_back(imread("/home/nvidia/ssd/img/2.png"));
-    upImgs.push_back(imread("/home/nvidia/ssd/img/3.png"));
-    upImgs.push_back(imread("/home/nvidia/ssd/img/4.png"));
+    ocvStitcher ostitcherUp(stitchercfg[0]);
+    ocvStitcher ostitcherDown(stitchercfg[1]);
+
+    // upImgs.clear();
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/1.png"));
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/2.png"));
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/3.png"));
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/4.png"));
+
+    // downImgs.clear();
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/5.png"));
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/6.png"));
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/7.png"));
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/8.png"));
+
+    upImgs.clear(); 
+    upImgs.push_back(imread("./1.png"));
+    upImgs.push_back(imread("./2.png"));
+    upImgs.push_back(imread("./3.png"));
+    upImgs.push_back(imread("./4.png"));
 
     downImgs.clear();
-    downImgs.push_back(imread("/home/nvidia/ssd/img/5.png"));
-    downImgs.push_back(imread("/home/nvidia/ssd/img/6.png"));
-    downImgs.push_back(imread("/home/nvidia/ssd/img/7.png"));
-    downImgs.push_back(imread("/home/nvidia/ssd/img/8.png"));
+    downImgs.push_back(imread("./5.png"));
+    downImgs.push_back(imread("./6.png"));
+    downImgs.push_back(imread("./7.png"));
+    downImgs.push_back(imread("./8.png"));
+
+    // upImgs.clear(); 
+    // upImgs.push_back(imread("./5.png"));
+    // upImgs.push_back(imread("./6.png"));
+    // upImgs.push_back(imread("./7.png"));
+    // upImgs.push_back(imread("./8.png"));
+
+    // downImgs.clear();
+    // downImgs.push_back(imread("./1.png"));
+    // downImgs.push_back(imread("./2.png"));
+    // downImgs.push_back(imread("./3.png"));
+    // downImgs.push_back(imread("./4.png"));
 
     for(int i=0;i<4;i++)
     {
@@ -249,6 +292,8 @@ int main(int argc, char *argv[])
 
     while(ostitcherDown.init(downImgs, initonline) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
+
+    // return 0; 
 
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;

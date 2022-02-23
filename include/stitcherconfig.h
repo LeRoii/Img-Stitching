@@ -1,6 +1,8 @@
 #ifndef _STITCHERCONFIG_H_
 #define _STITCHERCONFIG_H_
 
+#include <string>
+
 const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 // const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
 
@@ -38,6 +40,10 @@ const int RET_ERR = -1;
 
 bool undistor = false;
 
+float stitcherMatchConf = 0.3;
+float stitcherAdjusterConf = 0.7f;
+float stitcherBlenderStrength = 3;
+
 struct stCamCfg
 {
     int camSrcWidth;
@@ -63,6 +69,17 @@ struct nvrenderCfg
     int renderx;
     int rendery;
     int mode;//0 for egl, 1 for opencv
+};
+
+struct stStitcherCfg
+{
+    int width;
+    int height;
+    int id;
+    float matchConf;
+    float adjusterConf;
+    float blendStrength;
+    std::string cfgPath;
 };
 
 

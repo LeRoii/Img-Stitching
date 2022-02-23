@@ -111,18 +111,18 @@ public:
         renderX = config["renderX"].as<int>();
         renderY = config["renderY"].as<int>();
 
-        stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+        stitcherBlenderStrength = config["quality"].as<float>();
 
         std::string loglvl = config["loglvl"].as<string>();
-        if(loglvl == "critical")
+        if(loglvl == "criticall")
             spdlog::set_level(spdlog::level::critical);
-        else if(loglvl == "trace")
+        else if(loglvl == "tracee")
             spdlog::set_level(spdlog::level::trace);
-        else if(loglvl == "warn")
+        else if(loglvl == "warnn")
             spdlog::set_level(spdlog::level::warn);
         else if(loglvl == "info")
             spdlog::set_level(spdlog::level::info);
-        else
+        else if(loglvl == "debugg")
             spdlog::set_level(spdlog::level::debug);
 #if CAM_IMX424
         USED_CAMERA_NUM = 6;

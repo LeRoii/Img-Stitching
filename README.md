@@ -86,3 +86,7 @@ make
 02.16.
 - 修改了多线程拼接的方式   
 
+02.23.
+- 更新stitcher，保留每个相机各自BA的结果   
+- yaml中增加stitcher相关的配置   
+- cameracfg文件增加每个相机的内参   

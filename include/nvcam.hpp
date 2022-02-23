@@ -548,6 +548,7 @@ public:
 
         m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
         m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        m_ret = cv::Mat(m_retHeight, m_retWidth, CV_8UC3);
 
         bufparams.width = m_retWidth;
         bufparams.height = m_retHeight;
@@ -682,7 +683,7 @@ public:
         if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_argb.size().width, m_argb.size().height, m_argb.data))
                 ERROR_RETURN("Failed to NvBuffer2Raw");
         
-        spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
+        // spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
 
         
         if(m_undistor)
@@ -695,10 +696,10 @@ public:
             // m_distoredImg = tmp.clone();
             // // /*undistored*********/
 
-            spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
+            // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
             cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
 
-            spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
+            // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
             m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
             cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
             
@@ -706,7 +707,9 @@ public:
         }
         else
         {
-            cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
+            cv::Mat tmp;
+            cv::cvtColor(m_argb, tmp, cv::COLOR_RGBA2RGB);
+            cv::resize(tmp, m_ret, cv::Size(m_retWidth, m_retHeight));
         }
 
 
@@ -730,7 +733,7 @@ public:
         // // m_gpuret.download(m_ret);
         /***** gpu undistor end*****/
 
-        spdlog::trace("undistor takes :{} ms", sdkGetTimerValue(&timer));
+        // spdlog::trace("undistor takes :{} ms", sdkGetTimerValue(&timer));
 
         // cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
         // Raw2NvBuffer(m_ret.data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
@@ -859,7 +862,7 @@ public:
                 continue;
             }
 			std::unique_lock<std::mutex> lock(m_mtx[m_id]);
-			while(m_queue.size() >= 10)
+			while(m_queue.size() >= 50)
             {
                 spdlog::warn("cam:[{}] wait for consumer", m_id);
 				// m_queue.pop_front();

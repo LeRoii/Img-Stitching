@@ -142,9 +142,6 @@ imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::debug);
-    
-
     YAML::Node config = YAML::LoadFile(defaultcfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
@@ -169,6 +166,18 @@ int main(int argc, char *argv[])
     showall = config["showall"].as<bool>();
     undistor = config["undistor"].as<bool>();
     renderMode = config["renderMode"].as<int>();
+
+    std::string loglvl = config["loglvl"].as<string>();
+    if(loglvl == "critical")
+        spdlog::set_level(spdlog::level::critical);
+    else if(loglvl == "trace")
+        spdlog::set_level(spdlog::level::trace);
+    else if(loglvl == "warn")
+        spdlog::set_level(spdlog::level::warn);
+    else if(loglvl == "info")
+        spdlog::set_level(spdlog::level::info);
+    else
+        spdlog::set_level(spdlog::level::debug);
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
@@ -234,8 +243,6 @@ int main(int argc, char *argv[])
         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
     for(auto& th:threads)
         th.detach();
-
-
 
     Mat rets[USED_CAMERA_NUM];
 
@@ -363,8 +370,11 @@ int main(int argc, char *argv[])
         if(!savevideo)
         {
             spdlog::info("render");
-            renderer->rendercv(ret);
-            // if(stitcherinputWidth==1920 && showall)
+            // renderer->render(ret);
+            if(stitcherinputWidth==1920 && showall)
+                renderer->render(imgs[1]);
+            else
+                renderer->render(ret);
             //     cv::imshow("m_dev_name", imgs[1]);
             // else
             //     cv::imshow("m_dev_name", ret);

@@ -8,6 +8,7 @@
 #include "PracticalSocket.h"
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
+#include "nvrender.hpp"
 
 
 std::vector<cv::Mat> upImgs(4);
@@ -64,6 +65,35 @@ int  serverCap()
 }
 #endif
 
+static int verify()
+{
+    int                 sockfd;
+    struct ifreq        ifr;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+
+    char * buf = new char[6];
+
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
+    }
+    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+
+    
+    char gt[] = "00:54:5a:19:03:5f";
+    
+    char p[50];
+    sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+    // printf("p::%s\n", p);
+
+    return strcmp(gt, p);
+}
+
 class panocam::panocamimpl
 {
 public:
@@ -80,36 +110,46 @@ public:
         renderHeight = config["renderHeight"].as<int>();
         renderX = config["renderX"].as<int>();
         renderY = config["renderY"].as<int>();
+
+        stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+
+        std::string loglvl = config["loglvl"].as<string>();
+        if(loglvl == "critical")
+            spdlog::set_level(spdlog::level::critical);
+        else if(loglvl == "trace")
+            spdlog::set_level(spdlog::level::trace);
+        else if(loglvl == "warn")
+            spdlog::set_level(spdlog::level::warn);
+        else if(loglvl == "info")
+            spdlog::set_level(spdlog::level::info);
+        else
+            spdlog::set_level(spdlog::level::debug);
 #if CAM_IMX424
         USED_CAMERA_NUM = 6;
 #endif
 
-        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6"},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7"}};
+        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6"},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7"}};
 
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
 
+        stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg}};
 
-        stitchers[0].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 1, camcfg));
-        stitchers[1].reset(new ocvStitcher(stitcherinputWidth, stitcherinputHeight, 2, camcfg));
+        stitchers[0].reset(new ocvStitcher(stitchercfg[0]));
+        stitchers[1].reset(new ocvStitcher(stitchercfg[1]));
 
         pImgProc = new imageProcessor(net, canname);
 
         nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
         pRenderer = new nvrender(rendercfg);
-
-        std::vector<std::thread> threads;
-        for(int i=0;i<USED_CAMERA_NUM;i++)
-            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-        for(auto& th:threads)
-            th.detach();
 
         spdlog::debug("panocam ctor complete");
     }
@@ -119,6 +159,11 @@ public:
     int init(enInitMode mode)
     {
         spdlog::info("init");
+        if(verify())
+        {
+            spdlog::critical("verification failed, exit");
+            return RET_ERR;
+        }
         bool initonlie = ((mode == INIT_ONLINE) ? true : false);
         upImgs.clear();
         int failnum = 0;
@@ -165,6 +210,12 @@ public:
         while(stitchers[1]->init(downImgs, initonlie) != 0);
 
         spdlog::info("init completed!");
+
+        std::vector<std::thread> threads;
+        for(int i=0;i<USED_CAMERA_NUM;i++)
+            threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+        for(auto& th:threads)
+            th.detach();
                 
         return RET_OK;
     }
@@ -217,13 +268,19 @@ public:
 
         spdlog::debug("imgs cap fini");
         cv::Mat up, down, rett;
-        stitchers[0]->process(upImgs, up);
-        stitchers[1]->process(downImgs, down);
+        // stitchers[0]->process(upImgs, up);
+        // stitchers[1]->process(downImgs, down);
+
+        std::thread t1 = std::thread(&ocvStitcher::process, stitchers[0], std::ref(upImgs), std::ref(up));
+        std::thread t2 = std::thread(&ocvStitcher::process, stitchers[1], std::ref(downImgs), std::ref(down));
+
+        t1.join();
+        t2.join();
 
         int width = min(up.size().width, down.size().width);
-        int height = min(up.size().height, down.size().height) - 30;
-        up = up(Rect(0,15,width,height));
-        down = down(Rect(0,15,width,height));
+        int height = min(up.size().height, down.size().height) - 60;
+        up = up(Rect(0,30,width,height));
+        down = down(Rect(0,30,width,height));
 
         cv::vconcat(up, down, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
@@ -238,6 +295,18 @@ public:
             return RET_ERR;
         }
         img = pImgProc->ImageDetect(img, ret);
+
+        return RET_OK;
+    }
+
+    int detect(cv::Mat &img)
+    {
+        if(img.empty())
+        {
+            spdlog::critical("img is empty! exit");
+            return RET_ERR;
+        }
+        img = pImgProc->ProcessOnce(img);
 
         return RET_OK;
     }
@@ -261,7 +330,7 @@ public:
             spdlog::critical("img is empty! exit");
             return RET_ERR;
         }
-        // pRenderer->render(img);
+        pRenderer->render(img);
 
         return RET_OK;
     }
@@ -302,6 +371,11 @@ int panocam::getPanoFrame(cv::Mat &ret)
 int panocam::detect(cv::Mat &img, std::vector<int> &ret)
 {
     return pimpl->detect(img, ret);
+}
+
+int panocam::detect(cv::Mat &img)
+{
+    return pimpl->detect(img);
 }
 
 int panocam::imgEnhancement(cv::Mat &img)

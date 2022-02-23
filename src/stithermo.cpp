@@ -166,6 +166,9 @@ vector<CameraParams> cameras;
 vector<Mat_<float>> camK(num_images);
 vector<Mat> blenderMask(num_images);
 
+int inputw = 640;
+int inputh = 360;
+
 int main(int argc, char* argv[])
 {
 #if ENABLE_LOG
@@ -181,10 +184,10 @@ int main(int argc, char* argv[])
     // img_names.push_back("../tmp/3-dist.png");
     // img_names.push_back("../tmp/4-dist.png");
 
-img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
-    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/2.png");
-    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/3.png");
-    img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/4.png");
+    img_names.push_back("./5.png");
+    img_names.push_back("./6.png");
+    img_names.push_back("./7.png");
+    img_names.push_back("./8.png");
     // Check if have enough images
     // int num_images = static_cast<int>(img_names.size());
     if (num_images < 2)
@@ -230,6 +233,7 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
     for (int i = 0; i < num_images; ++i)
     {
         full_img = imread(img_names[i]);
+        cv::resize(full_img, full_img, cv::Size(inputw, inputh));
         full_img_sizes[i] = full_img.size();
 
         if (full_img.empty())
@@ -403,7 +407,7 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
     }
 
     // Warp images and their masks
-
+    LOGLN("warped_image_scale:"<< warped_image_scale<<"  seam_work_aspect:"<<seam_work_aspect);
     Ptr<WarperCreator> warper_creator;
     warper_creator = makePtr<cv::SphericalWarperGpu>();
     Ptr<RotationWarper> warper = warper_creator->create(static_cast<float>(warped_image_scale * seam_work_aspect));
@@ -413,7 +417,8 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
         // Mat_<float> K;
         cameras[i].K().convertTo(camK[i], CV_32F);
 
-        LOGLN("camK[i #" << i << ":\nK:\n" << camK[i]);
+        LOGLN("cam K for sephere warp #" << i << "\n" << camK[i]);
+        LOGLN("cam R for sephere warp #" << i << "\n" << cameras[i].R);
 
         auto K = camK[i].clone();
 
@@ -425,6 +430,9 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
         sizes[i] = images_warped[i].size();
 
         warper->warp(masks[i], K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
+
+        LOGLN("****first warp:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
+
     }
 
     vector<UMat> images_warped_f(num_images);
@@ -471,11 +479,14 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
          
         // cameras[i].K().convertTo(K, CV_32F);
         // LOGLN("ki #" << i << ":\nK:\n" << K);
-        LOGLN("camK[1111i #" << i << ":\nK:\n" << camK[i]);
+        LOGLN("Update corners and sizes camK i #" << i << ":\nK:\n" << camK[i]);
+        LOGLN("Update corners and sizes----sz:"<<sz);
         Rect roi = warper->warpRoi(sz, camK[i], cameras[i].R);
         // Rect roi = warper->warpRoi(sz, K, cameras[i].R);
         corners[i] = roi.tl();
         sizes[i] = roi.size();
+
+        LOGLN("****:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
     }
 
 
@@ -487,6 +498,7 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
 
         // Read image and resize it if necessary
         full_img = imread(img_names[img_idx]);
+        cv::resize(full_img, full_img, cv::Size(inputw, inputh));
         img = full_img;
         full_img.release();
         Size img_size = img.size();
@@ -520,6 +532,7 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
             blender = Blender::createDefault(blend_type, true);
             Size dst_sz = resultRoi(corners, sizes).size();
             blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
+            LOGLN("dst_sz::"<<dst_sz);
             if (blend_width < 1.f)
                 blender = Blender::createDefault(Blender::NO, try_cuda);
             else if (blend_type == Blender::MULTI_BAND)
@@ -553,6 +566,8 @@ img_names.push_back("/home/nvidia/ssd/code/0929IS/2222/1.png");
     imwrite(result_name, result);
 
     LOGLN("Finished, total time: " << ((getTickCount() - app_start_time) / getTickFrequency()) << " sec");
+
+    return 0;
 
     vector<Mat> imgs;
     img = imread("1-dist.png");	

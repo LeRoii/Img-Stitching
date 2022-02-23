@@ -1,20 +1,22 @@
 #ifndef _STITCHERCONFIG_H_
 #define _STITCHERCONFIG_H_
 
+#include <string>
+
 const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 // const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
 
 int camSrcWidth = 3840;
 int camSrcHeight = 2160;
 
-int distorWidth =  1920/2;
-int distorHeight = 1080/2;
+int distorWidth =  1920;
+int distorHeight = 1080;
 
-int undistorWidth =  1920/2;
-int undistorHeight = 1080/2;
+int undistorWidth =  960;
+int undistorHeight = 540;
 
-int stitcherinputWidth = 1920/2;
-int stitcherinputHeight = 1080/2;
+int stitcherinputWidth = 640;
+int stitcherinputHeight = 360;
 
 const int RENDER_EGL = 0;
 const int RENDER_OCV = 1;
@@ -25,18 +27,22 @@ int renderX = 0;
 int renderY = 0;
 int renderMode = 0;
 
-// in general it's fixed
+// output render buffer, in general it's fixed
 int renderBufWidth = 1920; 
 int renderBufHeight = 1080;
 
 const int CAMERA_NUM = 8;
-int USED_CAMERA_NUM = 1;
+int USED_CAMERA_NUM = 8;
 const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
 
 const int RET_OK = 0;
 const int RET_ERR = -1;
 
-bool undistor = true;
+bool undistor = false;
+
+float stitcherMatchConf = 0.3;
+float stitcherAdjusterConf = 0.7f;
+float stitcherBlenderStrength = 3;
 
 struct stCamCfg
 {
@@ -63,6 +69,17 @@ struct nvrenderCfg
     int renderx;
     int rendery;
     int mode;//0 for egl, 1 for opencv
+};
+
+struct stStitcherCfg
+{
+    int width;
+    int height;
+    int id;
+    float matchConf;
+    float adjusterConf;
+    float blendStrength;
+    std::string cfgPath;
 };
 
 

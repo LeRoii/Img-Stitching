@@ -8,6 +8,7 @@
 /********* test nvrender *********/
 /********* test resize *********/
 /********* test stitcher *********/
+/********* test opencv video capture *********/
 
 /********* test detector *********/
 // #include "imageProcess.h"
@@ -45,99 +46,142 @@
 
 
 /********* test binding mac address *********/
-/*
-#include<stdio.h>
-#include<stdlib.h>
-#include<errno.h>
-#include<sys/utsname.h>
-int main()
-{
-   struct utsname buf1;
-   errno =0;
-   if(uname(&buf1)!=0)
-   {
-      perror("uname doesn't return 0, so there is an error");
-      exit(EXIT_FAILURE);
-   }
-   printf("System Name = %s\n", buf1.sysname);
-   printf("Node Name = %s\n", buf1.nodename);
-   printf("Version = %s\n", buf1.version);
-   printf("Release = %s\n", buf1.release);
-   printf("Machine = %s\n", buf1.machine);
-}
-*/
 
-// #include <string>
-// #include <string.h>
-// #include <net/if.h>
-// #include <sys/ioctl.h>
-
-// using namespace std;
-
-// int _System(const char * cmd, char *pRetMsg, int msg_len)
-// {
-// 	FILE * fp;
-// 	char * p = NULL;
-// 	int res = -1;
-// 	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
-// 	{
-// 		printf("Param Error!\n");
-// 		return -1;
-// 	}
-// 	if ((fp = popen(cmd, "r") ) == NULL)
-// 	{
-// 		printf("Popen Error!\n");
-// 		return -2;
-// 	}
-// 	else
-// 	{
-// 		memset(pRetMsg, 0, msg_len);
-// 		//get lastest result
-// 		while(fgets(pRetMsg, msg_len, fp) != NULL)
-// 		{
-// 			printf("Msg:%s",pRetMsg); //print all info
-// 		}
- 
-// 		if ( (res = pclose(fp)) == -1)
-// 		{
-// 			printf("close popenerror!\n");
-// 			return -3;
-// 		}
-// 		pRetMsg[strlen(pRetMsg)-1] = '\0';
-// 		return 0;
-// 	}
-// }
-
-// void get_mac(char * mac_a)
-// {
-//     int                 sockfd;
-//     struct ifreq        ifr;
-
-//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-//     if (sockfd == -1) {
-//         perror("socket error");
-//         exit(1);
-//     }
-//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
-
-//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-//         memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
-//     }
-// }
-
+// #include<stdio.h>
+// #include<stdlib.h>
+// #include<errno.h>
+// #include<sys/utsname.h>
 // int main()
 // {
-//     // string str1 = "cat /sys/class/net/eth0/address";
-//     // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
-//     // system(command1);
-//     char buf[100];
-//     int msg_len = 100;
-//     // _System("cat /sys/class/net/eth0/address", buf, msg_len);
-//     char * this_mac = new char[6];
-//     get_mac(this_mac);
-//     printf("mac: %02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-
+//    struct utsname buf1;
+//    errno =0;
+//    if(uname(&buf1)!=0)
+//    {
+//       perror("uname doesn't return 0, so there is an error");
+//       exit(EXIT_FAILURE);
+//    }
+//    printf("System Name = %s\n", buf1.sysname);
+//    printf("Node Name = %s\n", buf1.nodename);
+//    printf("Version = %s\n", buf1.version);
+//    printf("Release = %s\n", buf1.release);
+//    printf("Machine = %s\n", buf1.machine);
 // }
+
+
+#include <string>
+#include <string.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+
+using namespace std;
+
+int _System(const char * cmd, char *pRetMsg, int msg_len)
+{
+	FILE * fp;
+	char * p = NULL;
+	int res = -1;
+	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
+	{
+		printf("Param Error!\n");
+		return -1;
+	}
+	if ((fp = popen(cmd, "r") ) == NULL)
+	{
+		printf("Popen Error!\n");
+		return -2;
+	}
+	else
+	{
+		memset(pRetMsg, 0, msg_len);
+		//get lastest result
+		while(fgets(pRetMsg, msg_len, fp) != NULL)
+		{
+			printf("Msg:%s",pRetMsg); //print all info
+		}
+ 
+		if ( (res = pclose(fp)) == -1)
+		{
+			printf("close popenerror!\n");
+			return -3;
+		}
+		pRetMsg[strlen(pRetMsg)-1] = '\0';
+		return 0;
+	}
+}
+
+void get_mac(char * mac_a)
+{
+    int                 sockfd;
+    struct ifreq        ifr;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
+    }
+}
+
+int verify()
+{
+    int                 sockfd;
+    struct ifreq        ifr;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+
+    char * buf = new char[6];
+
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
+    }
+    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+
+    
+    char gt[] = "00:54:5a:19:03:5f";
+    
+    char p[50];
+    sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+    // printf("p::%s\n", p);
+
+    return strcmp(gt, p);
+}
+
+int main()
+{
+    // string str1 = "cat /sys/class/net/eth0/address";
+    // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
+    // system(command1);
+    // char buf[100];
+    // int msg_len = 100;
+    // // _System("cat /sys/class/net/eth0/address", buf, msg_len);
+    // char * this_mac = new char[6];
+    // get_mac(this_mac);
+    // char gt[] = "00:54:5a:1b:02:7b";
+    // printf("tm::%s\n", this_mac);
+    // printf("gt::%s\n", gt);
+    
+    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+    // char p[80];
+    // sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+    // printf("p::%s\n", p);
+    // if(!strcmp(gt, p))
+    // {
+    //     printf("equal\n");
+    // }
+
+    if(verify())
+        printf("verification failed, exit\n");
+
+}
 
 /********* test yaml *********/
 // #include "yaml-cpp/yaml.h"
@@ -597,36 +641,36 @@ int main()
 // }
 
 /********* test opencv video capture*********/
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <opencv2/core/cuda.hpp>
-#include <opencv2/cudaimgproc.hpp> 
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include <opencv2/core/cuda.hpp>
+// #include <opencv2/cudaimgproc.hpp> 
 
-using namespace std;
-using namespace cv;
-int main(int argc, char **argv)
-{
-	VideoCapture cap;
-	// cap.open("/home/nvidia/ssd/img/video/0-ori.avi");
+// using namespace std;
+// using namespace cv;
+// int main(int argc, char **argv)
+// {
+// 	VideoCapture cap;
+// 	// cap.open("/home/nvidia/ssd/img/video/0-ori.avi");
 	
-    // cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('F','L','V','1'));
-    cap.open("/home/nvidia/ssd/code/0209is/build/0-ori.avi");
-    printf("video open:%d\n", cap.isOpened());
-    // cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
-    // VideoWriter *panoWriter = new VideoWriter("-pano.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, cv::Size(1305,466));
-    // VideoWriter *panoWriter = new VideoWriter("-pano.mp4", CV_FOURCC('D', 'I', 'V', 'X'), 10, cv::Size(1305,466));
-    int  ii = 0;
-    std::vector<int> lret,rret;
-    Mat frame;
-	while (cap.read(frame))
-    {
-        if (frame.empty())
-		{
-			cout << "Finish" << endl;
-			break;
-		}
-        imshow("Input video", frame);
-    }
+//     // cap.set(CV_CAP_PROP_FOURCC, CV_FOURCC('F','L','V','1'));
+//     cap.open("/home/nvidia/ssd/code/0209is/build/0-ori.avi");
+//     printf("video open:%d\n", cap.isOpened());
+//     // cap.set(CV_CAP_PROP_MODE,CV_CAP_MODE_YUYV);
+//     // VideoWriter *panoWriter = new VideoWriter("-pano.avi", CV_FOURCC('M', 'J', 'P', 'G'), 10, cv::Size(1305,466));
+//     // VideoWriter *panoWriter = new VideoWriter("-pano.mp4", CV_FOURCC('D', 'I', 'V', 'X'), 10, cv::Size(1305,466));
+//     int  ii = 0;
+//     std::vector<int> lret,rret;
+//     Mat frame;
+// 	while (cap.read(frame))
+//     {
+//         if (frame.empty())
+// 		{
+// 			cout << "Finish" << endl;
+// 			break;
+// 		}
+//         imshow("Input video", frame);
+//     }
 
-    return 0;
-}
+//     return 0;
+// }

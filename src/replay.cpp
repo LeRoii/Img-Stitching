@@ -81,48 +81,7 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
-std::mutex g_stitcherMtx[2];
-std::condition_variable stitcherCon[2];
-vector<vector<Mat>> stitcherInput{upImgs, downImgs};
 std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
-
-void fit2final(Mat &input, Mat &output)
-{
-    // int offsetX, offsetY, h, w; 
-    static bool fitsizeok = false;
-    cv::Mat tmp;
-    if(!fitsizeok)
-    {
-        if(input.cols > 1920)
-        {
-            fitscale = 1920 * 1.0 / input.cols;
-            cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
-        }
-        w = tmp.cols;
-        h = tmp.rows;
-        offsetX = (1920 - w)/2;
-        offsetY = (1080 - h)/2;
-
-        fitsizeok = true;
-    }
-    cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
-    tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
-}
-
-void stitcherTh(int id, ocvStitcher *stitcher)
-{
-    while(1)
-    {
-        std::unique_lock<std::mutex> lock(g_stitcherMtx[id]);
-        while(!stitcher->inputOk)
-            stitcherCon[id].wait(lock);
-        stitcher->process(stitcherInput[id], stitcherOut[id]);
-        // stitcher->simpprocess(stitcherInput[id], stitcherOut[id]);
-        stitcher->inputOk = false;
-        stitcher->outputOk = true;
-        stitcherCon[id].notify_all();
-    }
-}
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -222,8 +181,6 @@ imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::debug);
-
     cv::Mat final = cv::Mat(cv::Size(1920,1080), CV_8UC3);
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
@@ -248,6 +205,24 @@ int main(int argc, char *argv[])
     std::string canname = config["canname"].as<string>();
     renderMode = config["renderMode"].as<int>();
 
+    stitcherMatchConf = config["stitcherMatchConf"].as<float>();
+    stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
+    stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+
+    std::string loglvl = config["loglvl"].as<string>();
+    if(loglvl == "critical")
+        spdlog::set_level(spdlog::level::critical);
+    else if(loglvl == "trace")
+        spdlog::set_level(spdlog::level::trace);
+    else if(loglvl == "warn")
+        spdlog::set_level(spdlog::level::warn);
+    else if(loglvl == "info")
+        spdlog::set_level(spdlog::level::info);
+    else
+        spdlog::set_level(spdlog::level::debug);
+
+
+
     int finalcut = 15;
     if(stitcherinputWidth == 480)
         finalcut = 15;
@@ -263,20 +238,47 @@ int main(int argc, char *argv[])
     if (detect)
         nvProcessor = new imageProcessor(net);  
 
-    ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1, cfgpath);
-    ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2, cfgpath);
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath}};
 
-    upImgs.clear();
-    upImgs.push_back(imread("/home/nvidia/ssd/img/1.png"));
-    upImgs.push_back(imread("/home/nvidia/ssd/img/2.png"));
-    upImgs.push_back(imread("/home/nvidia/ssd/img/3.png"));
-    upImgs.push_back(imread("/home/nvidia/ssd/img/4.png"));
+    ocvStitcher ostitcherUp(stitchercfg[0]);
+    ocvStitcher ostitcherDown(stitchercfg[1]);
+
+    // upImgs.clear();
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/1.png"));
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/2.png"));
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/3.png"));
+    // upImgs.push_back(imread("/home/nvidia/ssd/img/4.png"));
+
+    // downImgs.clear();
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/5.png"));
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/6.png"));
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/7.png"));
+    // downImgs.push_back(imread("/home/nvidia/ssd/img/8.png"));
+
+    upImgs.clear(); 
+    upImgs.push_back(imread("./1.png"));
+    upImgs.push_back(imread("./2.png"));
+    upImgs.push_back(imread("./3.png"));
+    upImgs.push_back(imread("./4.png"));
 
     downImgs.clear();
-    downImgs.push_back(imread("/home/nvidia/ssd/img/5.png"));
-    downImgs.push_back(imread("/home/nvidia/ssd/img/6.png"));
-    downImgs.push_back(imread("/home/nvidia/ssd/img/7.png"));
-    downImgs.push_back(imread("/home/nvidia/ssd/img/8.png"));
+    downImgs.push_back(imread("./5.png"));
+    downImgs.push_back(imread("./6.png"));
+    downImgs.push_back(imread("./7.png"));
+    downImgs.push_back(imread("./8.png"));
+
+    // upImgs.clear(); 
+    // upImgs.push_back(imread("./5.png"));
+    // upImgs.push_back(imread("./6.png"));
+    // upImgs.push_back(imread("./7.png"));
+    // upImgs.push_back(imread("./8.png"));
+
+    // downImgs.clear();
+    // downImgs.push_back(imread("./1.png"));
+    // downImgs.push_back(imread("./2.png"));
+    // downImgs.push_back(imread("./3.png"));
+    // downImgs.push_back(imread("./4.png"));
 
     for(int i=0;i<4;i++)
     {
@@ -291,8 +293,7 @@ int main(int argc, char *argv[])
     while(ostitcherDown.init(downImgs, initonline) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    std::thread st1 = std::thread(stitcherTh, 0, &ostitcherUp);
-    std::thread st2 = std::thread(stitcherTh, 1, &ostitcherDown);
+    // return 0; 
 
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;
@@ -302,7 +303,7 @@ int main(int argc, char *argv[])
     sdkCreateTimer(&timer);
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
-    
+
     while(1)
     {
         spdlog::debug("start loop");
@@ -310,35 +311,12 @@ int main(int argc, char *argv[])
         
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
-        
         /* parallel*/
-        stitcherInput[0][0] = upImgs[0];
-        stitcherInput[0][1] = upImgs[1];
-        stitcherInput[0][2] = upImgs[2];
-        stitcherInput[0][3] = upImgs[3];
+        std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
+        std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
-        stitcherInput[1][0] = downImgs[0];
-        stitcherInput[1][1] = downImgs[1];
-        stitcherInput[1][2] = downImgs[2];
-        stitcherInput[1][3] = downImgs[3];
-
-        std::unique_lock<std::mutex> lock(g_stitcherMtx[0]);
-        std::unique_lock<std::mutex> lock1(g_stitcherMtx[1]);
-
-        ostitcherUp.inputOk = true;
-        ostitcherDown.inputOk = true;
-        
-        stitcherCon[1].notify_all();
-        stitcherCon[0].notify_all();
-        
-        while(!(ostitcherUp.outputOk && ostitcherDown.outputOk))
-        {
-            stitcherCon[1].wait(lock1);
-            stitcherCon[0].wait(lock);
-        }
-
-        ostitcherUp.outputOk = false;
-        ostitcherDown.outputOk = false;
+        t1.join();
+        t2.join();
 
         int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
         int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
@@ -378,8 +356,11 @@ int main(int argc, char *argv[])
         spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
 
         // if(ctl_command.use_ssr || start_ssr) 
-        if(start_ssr) 
+        if(start_ssr)
+        {
             ret = nvProcessor->SSR(ret);
+            spdlog::debug("SSR takes:{} ms", sdkGetTimerValue(&timer));
+        }
 
         if(detect)
         {
@@ -418,9 +399,10 @@ int main(int argc, char *argv[])
             *oriWriter << ori;
         }
 
-        fit2final(ret, final);
         // cv::imshow("ret", ret);
         // cv::imshow("ret", final);
+        
+        spdlog::debug("render");
         renderer->render(ret);
         // setMouseCallback("ret",OnMouseAction);
 
@@ -468,7 +450,7 @@ int main(int argc, char *argv[])
                 detCamNum = 0;
                 break;
             case 's':
-                cv::imwrite("final.png", final);
+                cv::imwrite("final.png", ret);
                 break;
             default:
                 break;

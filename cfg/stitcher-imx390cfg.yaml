@@ -6,12 +6,11 @@ camsrcheight: 1080
 distorWidth: 1920
 distorHeight: 1080
 # undistor size can only be 960x540 or 1920x1080
+undistor: true
 undistorWidth: 960
 undistorHeight: 540
 stitcherinputWidth: 640
 stitcherinputHeight: 360
-
-undistor: false
 
 # parameters for renderer
 renderWidth: 960
@@ -20,7 +19,8 @@ renderX: 0
 renderY: 0
 renderBufWidth: 1920
 renderBufHeight: 1080
-renderMode: 0
+# 0 for egl, 1 for opencv
+renderMode: 1
 
 USED_CAMERA_NUM: 8
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
@@ -29,3 +29,10 @@ camcfgpath: "../cfg/390camcfg/"
 # camcfgpath: "/home/nvidia/ssd/code/Img-Stitching/cfg/390camcfg/"
 canname: "can0" 
 showall: true
+
+loglvl: "debug"
+
+# parameters for stitcher
+stitcherMatchConf: 0.3
+stitcherAdjusterConf: 0.7
+stitcherBlenderStrength: 0

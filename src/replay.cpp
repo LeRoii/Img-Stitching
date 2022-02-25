@@ -74,7 +74,7 @@ void serverCap()
 #endif
 
 bool saveret = false;
-bool detect = false;
+bool detect = true;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
@@ -181,7 +181,6 @@ imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
-    cv::Mat final = cv::Mat(cv::Size(1920,1080), CV_8UC3);
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
@@ -208,6 +207,8 @@ int main(int argc, char *argv[])
     stitcherMatchConf = config["stitcherMatchConf"].as<float>();
     stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
     stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+
+    batchSize = config["batchSize"].as<int>();
 
     std::string loglvl = config["loglvl"].as<string>();
     if(loglvl == "critical")
@@ -236,7 +237,7 @@ int main(int argc, char *argv[])
         return RET_ERR;
 
     if (detect)
-        nvProcessor = new imageProcessor(net);  
+        nvProcessor = new imageProcessor(net, canname, batchSize);  
 
     stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath},
                                     stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath}};
@@ -349,11 +350,12 @@ int main(int argc, char *argv[])
         //     imwrite("7.png", downImgs[2]);
         //     imwrite("8.png", downImgs[3]);
         // }
-
+#if CAM_IMX424
         controlData ctl_command;
         ctl_command = nvProcessor->getCtlCommand();
         spdlog::info("***********get command: ");
         spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
+#endif
 
         // if(ctl_command.use_ssr || start_ssr) 
         if(start_ssr)
@@ -365,12 +367,17 @@ int main(int argc, char *argv[])
         if(detect)
         {
             // yoloRet = nvProcessor.Process(ret);
-            ret = nvProcessor->ProcessOnce(ret);
+
+            std::vector<cv::Mat> imgs = {ret};
+            std::vector<std::vector<int>> dets;
+            // nvProcessor->ImageDetect(imgs, dets); 
+            ret = nvProcessor->ProcessOnce(ret);  
         //    if(ctl_command.use_detect || detect){
         //         nvProcessor.publishImage(yoloRet);
         //     } else{
                 // nvProcessor.publishImage(ret);
             // }
+            spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
         }
 
         if(!writerInit && savevideo)

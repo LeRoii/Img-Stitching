@@ -479,21 +479,42 @@ public:
         }
         else if(m_camSrcWidth == 1920)
         {
-            //imx390 960x540 undistored
-            intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.015264419405688e+03, 0, 5.175898502304585e+02,
-                                0, 1.011960767907845e+03, 2.927908447845667e+02,
-                                0, 0, 1);
+            if(camcfg.vendor == 0)
+            {
+                // sensing imx390 1920x1080 undistored
+                intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.946119547414241e+03, 0, 1.016749758038493e+03,
+                                    0, 1.943374997244887e+03, 5.679760696574299e+02,
+                                    0, 0, 1);
 
-            distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6027, 0.2956, 0, 0);
-            rectPara[1] = vector<int>{45,64,882,423};
+                distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.5554, 0.2303, 0, 0);
+                rectPara[0] = vector<int>{95,130,1751,840};
 
-            //imx390 1920x1080 undistored
-            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.946119547414241e+03, 0, 1.016749758038493e+03,
-                                0, 1.943374997244887e+03, 5.679760696574299e+02,
-                                0, 0, 1);
+                // sensing imx390 960x540 undistored
+                intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.015264419405688e+03, 0, 5.175898502304585e+02,
+                                    0, 1.011960767907845e+03, 2.927908447845667e+02,
+                                    0, 0, 1);
 
-            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.5554, 0.2303, 0, 0);
-            rectPara[0] = vector<int>{95,130,1751,840};
+                distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6027, 0.2956, 0, 0);
+                rectPara[1] = vector<int>{45,64,882,423};
+            }
+            else if(camcfg.vendor == 1)
+            {
+                // lijing imx390 1920x1080 undistored
+                intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 2.075765787574657e+03, 0, 9.479666200437899e+02,
+                                    0, 2.066538110898970e+03, 5.677805443267157e+02,
+                                    0, 0, 1);
+
+                distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.6183, 0.3355, 0, 0);
+                rectPara[0] = vector<int>{69,103,1782,889};
+
+                // lijing imx390 960x540 undistored
+                intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.049076504159804e+03, 0, 4.893740319911021e+02,
+                                    0, 1.042781786220125e+03, 2.982826528435153e+02,
+                                    0, 0, 1);
+
+                distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6479, 0.3817, 0, 0);
+                rectPara[1] = vector<int>{37,55,886,442};
+            }
         }
         else
         {

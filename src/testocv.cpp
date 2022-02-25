@@ -9,40 +9,63 @@
 /********* test resize *********/
 /********* test stitcher *********/
 /********* test opencv video capture *********/
+/********* test imgprocessor *********/
 
 /********* test detector *********/
-// #include "imageProcess.h"
-// // #include <opencv2/opencv.hpp>
-// #include <iostream>
-// int main()
-// {
-//     std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt";
-//     imageProcessor nvProcessor(net);
-//     // cv::Mat img = cv::imread("/home/nvidia/ssd/data/1.jpg");
-//     cv::Mat img = cv::imread("/home/nvidia/ssd/data/7.png");
-//     if (img.empty()) //check whether the image is loaded or not
-//     {
-//         std::cout << "Error : Image cannot be loaded..!!" << std::endl;
-//         //system("pause"); //wait for a key press
-//         return -1;
-//     }
-//     // cv::imshow("1", img);
-//     // cv::waitKey(0);
-//     // cv::imwrite("3.jpg", img);
-//     // cv::Mat croped = img(cv::Rect(640, 300, 640, 480));
-//     std::vector<int> detret;
-//     int cnt = 0;
-//     cv::Mat ret = nvProcessor.ImageDetect(img, detret);
-//     // cnt++;
-//     cv::imshow("1", ret);
-//     cv::waitKey(1);
+#include "imageProcess.h"
+// #include <opencv2/opencv.hpp>
+#include <iostream>
+#include "helper_timer.h"
+#include "spdlog/spdlog.h"
 
-//     cv::imwrite("det.png", ret);
-//     // cv::waitKey(0);
+int main()
+{
+    // std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt";
+    std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt";
+    imageProcessor nvProcessor(net);
+    // cv::Mat img = cv::imread("/home/nvidia/ssd/data/1.jpg");
+    cv::Mat img = cv::imread("/home/nvidia/ssd/img/0211/2-ori16361-400m.png");
+    if (img.empty()) //check whether the image is loaded or not
+    {
+        std::cout << "Error : Image cannot be loaded..!!" << std::endl;
+        //system("pause"); //wait for a key press
+        return -1;
+    }
+    // cv::imshow("1", img);
+    // cv::waitKey(0);
+    // cv::imwrite("3.jpg", img);
+    cv::Mat croped = img(cv::Rect(640, 300, 640, 480)).clone();
+    cv::Mat  rsimg;
+    cv::resize(img, rsimg, cv::Size(640,360));
+    std::vector<int> detret;
+    std::vector<std::vector<int>> detrets;
+    std::vector<cv::Mat> imgs;
+    imgs.push_back(croped);
+    imgs.push_back(rsimg);
+    int cnt = 0;
+    StopWatchInterface *timer = NULL;
+    sdkCreateTimer(&timer);
+    sdkResetTimer(&timer);
+    sdkStartTimer(&timer);
 
-//     return 0;
+    while(1)
+    {
+        sdkResetTimer(&timer);
+        cv::Mat ret = nvProcessor.ImageDetect(croped, detret);
+        spdlog::info("detect takes:{} ms", sdkGetTimerValue(&timer));
+    }
+    // nvProcessor.ImageDetect(imgs, detrets);
+    // cnt++;
+    // cv::imshow("1", ret);
+    // cv::waitKey(1);
 
-// }
+    cv::imwrite("det1.png", imgs[0]);
+    cv::imwrite("det2.png", imgs[1]);
+    // cv::waitKey(0);
+
+    return 0;
+
+}
 
 
 /********* test binding mac address *********/
@@ -68,120 +91,120 @@
 // }
 
 
-#include <string>
-#include <string.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
+// #include <string>
+// #include <string.h>
+// #include <net/if.h>
+// #include <sys/ioctl.h>
 
-using namespace std;
+// using namespace std;
 
-int _System(const char * cmd, char *pRetMsg, int msg_len)
-{
-	FILE * fp;
-	char * p = NULL;
-	int res = -1;
-	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
-	{
-		printf("Param Error!\n");
-		return -1;
-	}
-	if ((fp = popen(cmd, "r") ) == NULL)
-	{
-		printf("Popen Error!\n");
-		return -2;
-	}
-	else
-	{
-		memset(pRetMsg, 0, msg_len);
-		//get lastest result
-		while(fgets(pRetMsg, msg_len, fp) != NULL)
-		{
-			printf("Msg:%s",pRetMsg); //print all info
-		}
+// int _System(const char * cmd, char *pRetMsg, int msg_len)
+// {
+// 	FILE * fp;
+// 	char * p = NULL;
+// 	int res = -1;
+// 	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
+// 	{
+// 		printf("Param Error!\n");
+// 		return -1;
+// 	}
+// 	if ((fp = popen(cmd, "r") ) == NULL)
+// 	{
+// 		printf("Popen Error!\n");
+// 		return -2;
+// 	}
+// 	else
+// 	{
+// 		memset(pRetMsg, 0, msg_len);
+// 		//get lastest result
+// 		while(fgets(pRetMsg, msg_len, fp) != NULL)
+// 		{
+// 			printf("Msg:%s",pRetMsg); //print all info
+// 		}
  
-		if ( (res = pclose(fp)) == -1)
-		{
-			printf("close popenerror!\n");
-			return -3;
-		}
-		pRetMsg[strlen(pRetMsg)-1] = '\0';
-		return 0;
-	}
-}
+// 		if ( (res = pclose(fp)) == -1)
+// 		{
+// 			printf("close popenerror!\n");
+// 			return -3;
+// 		}
+// 		pRetMsg[strlen(pRetMsg)-1] = '\0';
+// 		return 0;
+// 	}
+// }
 
-void get_mac(char * mac_a)
-{
-    int                 sockfd;
-    struct ifreq        ifr;
+// void get_mac(char * mac_a)
+// {
+//     int                 sockfd;
+//     struct ifreq        ifr;
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd == -1) {
-        perror("socket error");
-        exit(1);
-    }
-    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+//     if (sockfd == -1) {
+//         perror("socket error");
+//         exit(1);
+//     }
+//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-        memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
-    }
-}
+//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+//         memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
+//     }
+// }
 
-int verify()
-{
-    int                 sockfd;
-    struct ifreq        ifr;
+// int verify()
+// {
+//     int                 sockfd;
+//     struct ifreq        ifr;
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd == -1) {
-        perror("socket error");
-        exit(1);
-    }
-    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+//     if (sockfd == -1) {
+//         perror("socket error");
+//         exit(1);
+//     }
+//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-    char * buf = new char[6];
+//     char * buf = new char[6];
 
-    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-        memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
-    }
-    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+//         memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
+//     }
+//     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 
     
-    char gt[] = "00:54:5a:19:03:5f";
+//     char gt[] = "00:54:5a:19:03:5f";
     
-    char p[50];
-    sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
-    // printf("p::%s\n", p);
+//     char p[50];
+//     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+//     // printf("p::%s\n", p);
 
-    return strcmp(gt, p);
-}
+//     return strcmp(gt, p);
+// }
 
-int main()
-{
-    // string str1 = "cat /sys/class/net/eth0/address";
-    // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
-    // system(command1);
-    // char buf[100];
-    // int msg_len = 100;
-    // // _System("cat /sys/class/net/eth0/address", buf, msg_len);
-    // char * this_mac = new char[6];
-    // get_mac(this_mac);
-    // char gt[] = "00:54:5a:1b:02:7b";
-    // printf("tm::%s\n", this_mac);
-    // printf("gt::%s\n", gt);
+// int main()
+// {
+//     // string str1 = "cat /sys/class/net/eth0/address";
+//     // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
+//     // system(command1);
+//     // char buf[100];
+//     // int msg_len = 100;
+//     // // _System("cat /sys/class/net/eth0/address", buf, msg_len);
+//     // char * this_mac = new char[6];
+//     // get_mac(this_mac);
+//     // char gt[] = "00:54:5a:1b:02:7b";
+//     // printf("tm::%s\n", this_mac);
+//     // printf("gt::%s\n", gt);
     
-    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-    // char p[80];
-    // sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-    // printf("p::%s\n", p);
-    // if(!strcmp(gt, p))
-    // {
-    //     printf("equal\n");
-    // }
+//     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+//     // char p[80];
+//     // sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+//     // printf("p::%s\n", p);
+//     // if(!strcmp(gt, p))
+//     // {
+//     //     printf("equal\n");
+//     // }
 
-    if(verify())
-        printf("verification failed, exit\n");
+//     if(verify())
+//         printf("verification failed, exit\n");
 
-}
+// }
 
 /********* test yaml *********/
 // #include "yaml-cpp/yaml.h"

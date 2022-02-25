@@ -18,7 +18,7 @@ int angle_y;  //第一个目标中心坐标-角度
 
 
 
-int n_batch = 1;
+// int n_batch = 1;
 
 targetInfo sendData;
 
@@ -146,8 +146,10 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
     batch_frame.clear();
 
     batch_frame.push_back(tmp);
+    // batch_frame.push_back(tmp);
     // this will be resized to the net format
     batch_dnn_input.push_back(tmp);
+    // batch_dnn_input.push_back(tmp);
 
     detNN.update(batch_dnn_input, n_batch);
     detret.clear();
@@ -178,6 +180,29 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
 
     // return tmp;
     return batch_frame.back();
+}
+
+void imageProcessor::ImageDetect(std::vector<cv::Mat> &imgs, std::vector<std::vector<int>> &detret)
+{
+    std::vector<cv::Mat> batch_frame;
+    std::vector<cv::Mat> batch_dnn_input;
+    std::vector<std::string> classnames;
+
+    batch_dnn_input.clear();
+    batch_frame.clear();
+    for(auto &img:imgs)
+    {
+        batch_frame.push_back(img);
+        batch_dnn_input.push_back(img.clone());
+    }
+
+    detNN.update(batch_dnn_input, n_batch);
+    detret.clear();
+    detNN.draw(batch_frame, detret, classnames);
+    spdlog::debug("draw box fini, batch size:{}, detret size:{}", n_batch, detret.size());
+    // printf("detret size:%d\n",  detret.size());   //x,y,w,h,class,probality
+
+    return ;
 }
 
 void imageProcessor::cut_img(cv::Mat &src_img, std::vector<cv::Mat> &ceil_img)
@@ -351,7 +376,7 @@ controlData imageProcessor::getCtlCommand(){
     return ctl_data;
 }
 //Init here
-imageProcessor::imageProcessor(std::string net, std::string canname) {
+imageProcessor::imageProcessor(std::string net, std::string canname, int batchsize):n_batch(batchsize) {
     pthread_t tid;
     // canInit();
     printf("can init ok!\n");

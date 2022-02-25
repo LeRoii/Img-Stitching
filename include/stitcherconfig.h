@@ -6,6 +6,7 @@
 const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 // const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
 
+int vendor = 0;
 int camSrcWidth = 3840;
 int camSrcHeight = 2160;
 
@@ -44,6 +45,8 @@ float stitcherMatchConf = 0.3;
 float stitcherAdjusterConf = 0.7f;
 float stitcherBlenderStrength = 3;
 
+int batchSize = 1;
+
 struct stCamCfg
 {
     int camSrcWidth;
@@ -57,6 +60,7 @@ struct stCamCfg
     bool undistor;
 	int id;
     char name[20];
+    int vendor;
 };
 
 

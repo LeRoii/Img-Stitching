@@ -111,31 +111,31 @@ public:
         renderX = config["renderX"].as<int>();
         renderY = config["renderY"].as<int>();
 
-        stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+        stitcherBlenderStrength = config["quality"].as<float>();
 
         std::string loglvl = config["loglvl"].as<string>();
-        if(loglvl == "critical")
+        if(loglvl == "criticall")
             spdlog::set_level(spdlog::level::critical);
-        else if(loglvl == "trace")
+        else if(loglvl == "tracee")
             spdlog::set_level(spdlog::level::trace);
-        else if(loglvl == "warn")
+        else if(loglvl == "warnn")
             spdlog::set_level(spdlog::level::warn);
         else if(loglvl == "info")
             spdlog::set_level(spdlog::level::info);
-        else
+        else if(loglvl == "debugg")
             spdlog::set_level(spdlog::level::debug);
 #if CAM_IMX424
         USED_CAMERA_NUM = 6;
 #endif
 
-        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0"},
-                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1"},
-                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2"},
-                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3"},
-                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4"},
-                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5"},
-                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6"},
-                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7"}};
+        stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2", vendor},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3", vendor},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4", vendor},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5", vendor},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6", vendor},
+                                    stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7", vendor}};
 
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
@@ -146,10 +146,16 @@ public:
         stitchers[0].reset(new ocvStitcher(stitchercfg[0]));
         stitchers[1].reset(new ocvStitcher(stitchercfg[1]));
 
-        pImgProc = new imageProcessor(net, canname);
+        pImgProc = new imageProcessor(net, canname, batchSize);
 
         nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
         pRenderer = new nvrender(rendercfg);
+
+            
+        if(stitcherinputWidth == 480)
+            finalcut = 15;
+        else if(stitcherinputWidth == 640)
+            finalcut = 30;
 
         spdlog::debug("panocam ctor complete");
     }
@@ -191,7 +197,7 @@ public:
             for(int i=0;i<4;i++)
             {
                 cameras[i+4]->read_frame();
-                downImgs.push_back(cameras[i]->m_ret);
+                downImgs.push_back(cameras[i+4]->m_ret);
             }
 #elif CAM_IMX424
             serverCap();
@@ -278,9 +284,9 @@ public:
         t2.join();
 
         int width = min(up.size().width, down.size().width);
-        int height = min(up.size().height, down.size().height) - 60;
-        up = up(Rect(0,30,width,height));
-        down = down(Rect(0,30,width,height));
+        int height = min(up.size().height, down.size().height) - finalcut*2;
+        up = up(Rect(0,finalcut,width,height));
+        down = down(Rect(0,finalcut,width,height));
 
         cv::vconcat(up, down, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
@@ -341,6 +347,7 @@ private:
     std::shared_ptr<ocvStitcher> stitchers[2];
     imageProcessor *pImgProc; 
     nvrender *pRenderer;
+    int finalcut;
 };
 
 panocam::panocam(std::string yamlpath):

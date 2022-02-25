@@ -51,13 +51,14 @@ typedef struct
 class imageProcessor
 {
     public:
-    imageProcessor(std::string net, std::string canname = "can0");
+    imageProcessor(std::string net, std::string canname = "can0", int batchsize = 1);
     cv::Mat Process(cv::Mat &img);
     cv::Mat ProcessOnce(cv::Mat &img);
     void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
     cv::Mat SSR(cv::Mat input);     //图像增强
     controlData getCtlCommand();    //UDP通讯获得上位机控制命令
     cv::Mat ImageDetect(cv::Mat &img, std::vector<int> &detret);     //目标检测
+    void ImageDetect(std::vector<cv::Mat> &imgs, std::vector<std::vector<int>> &detret);
 
     private:
     cv::Mat channel_process(cv::Mat R);     //对图像单通道进行增强
@@ -68,6 +69,7 @@ class imageProcessor
     tk::dnn::Yolo3Detection detNN;
     jetsonEncoder nvEncoder;
     cansender *pCanSender;
+    int n_batch;
 };
 
 #endif

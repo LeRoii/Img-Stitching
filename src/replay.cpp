@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
     while(ostitcherDown.init(downImgs, initonline) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    // return 0; 
+    return 0;    
 
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;

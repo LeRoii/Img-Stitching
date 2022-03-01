@@ -12,60 +12,60 @@
 /********* test imgprocessor *********/
 
 /********* test detector *********/
-#include "imageProcess.h"
-// #include <opencv2/opencv.hpp>
-#include <iostream>
-#include "helper_timer.h"
-#include "spdlog/spdlog.h"
+// #include "imageProcess.h"
+// // #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include "helper_timer.h"
+// #include "spdlog/spdlog.h"
 
-int main()
-{
-    // std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt";
-    std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt";
-    imageProcessor nvProcessor(net);
-    // cv::Mat img = cv::imread("/home/nvidia/ssd/data/1.jpg");
-    cv::Mat img = cv::imread("/home/nvidia/ssd/img/0211/2-ori16361-400m.png");
-    if (img.empty()) //check whether the image is loaded or not
-    {
-        std::cout << "Error : Image cannot be loaded..!!" << std::endl;
-        //system("pause"); //wait for a key press
-        return -1;
-    }
-    // cv::imshow("1", img);
-    // cv::waitKey(0);
-    // cv::imwrite("3.jpg", img);
-    cv::Mat croped = img(cv::Rect(640, 300, 640, 480)).clone();
-    cv::Mat  rsimg;
-    cv::resize(img, rsimg, cv::Size(640,360));
-    std::vector<int> detret;
-    std::vector<std::vector<int>> detrets;
-    std::vector<cv::Mat> imgs;
-    imgs.push_back(croped);
-    imgs.push_back(rsimg);
-    int cnt = 0;
-    StopWatchInterface *timer = NULL;
-    sdkCreateTimer(&timer);
-    sdkResetTimer(&timer);
-    sdkStartTimer(&timer);
+// int main()
+// {
+//     // std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt";
+//     std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt";
+//     imageProcessor nvProcessor(net);
+//     // cv::Mat img = cv::imread("/home/nvidia/ssd/data/1.jpg");
+//     cv::Mat img = cv::imread("/home/nvidia/ssd/img/0211/2-ori16361-400m.png");
+//     if (img.empty()) //check whether the image is loaded or not
+//     {
+//         std::cout << "Error : Image cannot be loaded..!!" << std::endl;
+//         //system("pause"); //wait for a key press
+//         return -1;
+//     }
+//     // cv::imshow("1", img);
+//     // cv::waitKey(0);
+//     // cv::imwrite("3.jpg", img);
+//     cv::Mat croped = img(cv::Rect(640, 300, 640, 480)).clone();
+//     cv::Mat  rsimg;
+//     cv::resize(img, rsimg, cv::Size(640,360));
+//     std::vector<int> detret;
+//     std::vector<std::vector<int>> detrets;
+//     std::vector<cv::Mat> imgs;
+//     imgs.push_back(croped);
+//     imgs.push_back(rsimg);
+//     int cnt = 0;
+//     StopWatchInterface *timer = NULL;
+//     sdkCreateTimer(&timer);
+//     sdkResetTimer(&timer);
+//     sdkStartTimer(&timer);
 
-    while(1)
-    {
-        sdkResetTimer(&timer);
-        cv::Mat ret = nvProcessor.ImageDetect(croped, detret);
-        spdlog::info("detect takes:{} ms", sdkGetTimerValue(&timer));
-    }
-    // nvProcessor.ImageDetect(imgs, detrets);
-    // cnt++;
-    // cv::imshow("1", ret);
-    // cv::waitKey(1);
+//     while(1)
+//     {
+//         sdkResetTimer(&timer);
+//         cv::Mat ret = nvProcessor.ImageDetect(croped, detret);
+//         spdlog::info("detect takes:{} ms", sdkGetTimerValue(&timer));
+//     }
+//     // nvProcessor.ImageDetect(imgs, detrets);
+//     // cnt++;
+//     // cv::imshow("1", ret);
+//     // cv::waitKey(1);
 
-    cv::imwrite("det1.png", imgs[0]);
-    cv::imwrite("det2.png", imgs[1]);
-    // cv::waitKey(0);
+//     cv::imwrite("det1.png", imgs[0]);
+//     cv::imwrite("det2.png", imgs[1]);
+//     // cv::waitKey(0);
 
-    return 0;
+//     return 0;
 
-}
+// }
 
 
 /********* test binding mac address *********/
@@ -697,3 +697,67 @@ int main()
 
 //     return 0;
 // }
+
+/********* test rotation R to euler angle *********/
+#include <opencv2/opencv.hpp>
+#include <iostream>
+
+using namespace cv;
+// Checks if a matrix is a valid rotation matrix.
+bool isRotationMatrix(Mat &R)
+{
+    Mat Rt;
+    transpose(R, Rt);
+    Mat shouldBeIdentity = Rt * R;
+    Mat I = Mat::eye(3,3, shouldBeIdentity.type());
+
+    std::cout << shouldBeIdentity << std::endl;
+    std::cout << norm(I, shouldBeIdentity) << std::endl;
+    return  norm(I, shouldBeIdentity) < 1e-6;
+     
+}
+
+float radian2degree(float x)
+{
+    return x*180/M_PI;
+}
+ 
+// Calculates rotation matrix to euler angles
+// The result is the same as MATLAB except the order
+// of the euler angles ( x and z are swapped ).
+Vec3f rotationMatrixToEulerAngles(Mat &R)
+{
+ 
+    // assert(isRotationMatrix(R));
+     
+    float sy = sqrt(R.at<double>(0,0) * R.at<double>(0,0) +  R.at<double>(1,0) * R.at<double>(1,0) );
+ 
+    bool singular = sy < 1e-6; // If
+ 
+    float x, y, z;
+    if (!singular)
+    {
+        x = atan2(R.at<double>(2,1) , R.at<double>(2,2));
+        y = atan2(-R.at<double>(2,0), sy);
+        z = atan2(R.at<double>(1,0), R.at<double>(0,0));
+    }
+    else
+    {
+        x = atan2(-R.at<double>(1,2), R.at<double>(1,1));
+        y = atan2(-R.at<double>(2,0), sy);
+        z = 0;
+    }
+    return Vec3f(radian2degree(x), radian2degree(y), radian2degree(z));
+}
+
+int main()
+{
+    cv::Mat R = (cv::Mat_<double>(3,3) <<0.504408, -0.0382247 , 0.862619, 
+                                    0.00677822, 0.999164, 0.0403119,
+                                    -0.863438, -0.0144866, 0.504246);
+    Vec3f angles = rotationMatrixToEulerAngles(R);
+
+    std::cout << R << std::endl;
+    std::cout << angles << std::endl;
+    return 0;
+}

@@ -357,6 +357,8 @@ int main(int argc, char *argv[])
     while(ostitcherUp.init(upImgs, initonline) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
 
+    return 0;
+
     do{
 #if CAM_IMX390
         downImgs.clear();

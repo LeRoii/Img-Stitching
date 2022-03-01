@@ -38,6 +38,7 @@ showall: true
 loglvl: "debug"
 
 # parameters for stitcher
+stitcherParaThres: 30
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
 stitcherBlenderStrength: 1

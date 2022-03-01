@@ -97,7 +97,7 @@ static int verify()
 class panocam::panocamimpl
 {
 public:
-    panocamimpl(std::string yamlpath)
+    panocamimpl(std::string yamlpath):framecnt(0)
     {
         YAML::Node config = YAML::LoadFile(yamlpath);
         int camw = config["camwidth"].as<int>();
@@ -291,6 +291,9 @@ public:
         cv::vconcat(up, down, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
+        spdlog::debug("panorama frame:{}",framecnt++);
+
+        return RET_OK;
     }
 
     int detect(cv::Mat &img, std::vector<int> &ret)
@@ -348,6 +351,7 @@ private:
     imageProcessor *pImgProc; 
     nvrender *pRenderer;
     int finalcut;
+    int framecnt;
 };
 
 panocam::panocam(std::string yamlpath):
@@ -393,8 +397,4 @@ int panocam::imgEnhancement(cv::Mat &img)
 int panocam::render(cv::Mat &img)
 {
     return pimpl->render(img);
-
-    // pRenderer->render1();
-
-    return 1;
 }

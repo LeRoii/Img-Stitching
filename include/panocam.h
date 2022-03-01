@@ -28,8 +28,6 @@ public:
 private:
     class panocamimpl;
     std::unique_ptr<panocamimpl> pimpl;
-
-
 };
 
 #endif

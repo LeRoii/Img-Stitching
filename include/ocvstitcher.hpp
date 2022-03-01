@@ -76,6 +76,7 @@ class ocvStitcher
         
         (initCamParams(m_cfgpath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
 
+        spdlog::debug("stitcher {} constructor completed!", m_id);
     }
 
     ~ocvStitcher()

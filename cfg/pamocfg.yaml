@@ -1,6 +1,6 @@
 camwidth: 1920
 camheight: 1080
-netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
+netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"
 camcfgpath: "/home/nvidia/ssd/code/0209is/cfg/390camcfg/"
 canname: "can0" 
 
@@ -10,6 +10,6 @@ renderHeight: 540
 renderX: 0
 renderY: 0
 
-loglvl: "info"
+loglvl: "debugg"
 # image stitching quality, 0:the wrost and fastest, 5:the best and slowest
 quality: 0

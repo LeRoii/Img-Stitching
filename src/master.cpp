@@ -228,7 +228,10 @@ int main(int argc, char *argv[])
     if(stitcherinputWidth == 480)
         finalcut = 15;
     else if(stitcherinputWidth == 640)
-        finalcut = 30;
+        finalcut = 40;
+    else if(stitcherinputWidth == 720)
+        finalcut = 35;
+        
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
@@ -587,7 +590,7 @@ int main(int argc, char *argv[])
                 detCamNum = 0;
                 break;
             case 's':
-                cv::imwrite("final.png", ret);
+                cv::imwrite("final.png", final);
                 break;
             default:
                 break;

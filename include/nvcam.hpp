@@ -621,8 +621,6 @@ public:
         sdkCreateTimer(&timer);
         sdkResetTimer(&timer);
         sdkStartTimer(&timer);
-
-        printf("m_gpuDistoredImg:%p, m_gpuUndistoredImg:%p, m_gpuargb:%p\n", m_gpuDistoredImg.data, m_gpuUndistoredImg.data, m_gpuargb.data);
     }
 
     ~nvCam()

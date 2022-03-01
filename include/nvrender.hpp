@@ -108,7 +108,7 @@ public:
     {
         fit2final(img, canvas);
         cv::imshow("final", canvas);
-        final  = canvas;
+        final  = canvas.clone();
         // cv::waitKey(1);
     }
 

@@ -209,8 +209,10 @@ int main(int argc, char *argv[])
     stitcherMatchConf = config["stitcherMatchConf"].as<float>();
     stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
     stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+    stitcherCameraParaThres = config["stitcherCameraParaThres"].as<float>();
 
     batchSize = config["batchSize"].as<int>();
+    initMode = config["initMode"].as<int>();
 
     std::string loglvl = config["loglvl"].as<string>();
     if(loglvl == "critical")
@@ -339,12 +341,13 @@ int main(int argc, char *argv[])
     // }
     /************************************stitch all end*****************************************/
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);
 
+    int failnum = 0;
     do{
         upImgs.clear();
         for(int i=0;i<4;i++)
@@ -352,12 +355,19 @@ int main(int argc, char *argv[])
             cameras[i]->read_frame();
             upImgs.push_back(cameras[i]->m_ret);
             
-        }   
+        }
+
+        failnum++;
+        if(failnum > 5)
+        {
+            spdlog::warn("initalization failed due to environment, use default parameters");
+            initMode = 2;
+        }
     }
-    while(ostitcherUp.init(upImgs, initonline) != 0);
+    while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
 
-    return 0;
+    // return 0;
 
     do{
 #if CAM_IMX390
@@ -375,7 +385,7 @@ int main(int argc, char *argv[])
         downImgs[1] = cameras[5]->m_ret;
 #endif
     }
-    while(ostitcherDown.init(downImgs, initonline) != 0);
+    while(ostitcherDown.init(downImgs, initMode) != 0);
 
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 

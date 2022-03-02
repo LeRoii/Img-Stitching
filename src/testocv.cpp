@@ -699,65 +699,120 @@
 // }
 
 /********* test rotation R to euler angle *********/
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+
+// using namespace cv;
+// // Checks if a matrix is a valid rotation matrix.
+// bool isRotationMatrix(Mat &R)
+// {
+//     Mat Rt;
+//     transpose(R, Rt);
+//     Mat shouldBeIdentity = Rt * R;
+//     Mat I = Mat::eye(3,3, shouldBeIdentity.type());
+
+//     std::cout << shouldBeIdentity << std::endl;
+//     std::cout << norm(I, shouldBeIdentity) << std::endl;
+//     return  norm(I, shouldBeIdentity) < 1e-6;
+     
+// }
+
+// float radian2degree(float x)
+// {
+//     return x*180/M_PI;
+// }
+ 
+// // Calculates rotation matrix to euler angles
+// // The result is the same as MATLAB except the order
+// // of the euler angles ( x and z are swapped ).
+// Vec3f rotationMatrixToEulerAngles(Mat &R)
+// {
+ 
+//     // assert(isRotationMatrix(R));
+     
+//     float sy = sqrt(R.at<double>(0,0) * R.at<double>(0,0) +  R.at<double>(1,0) * R.at<double>(1,0) );
+ 
+//     bool singular = sy < 1e-6; // If
+ 
+//     float x, y, z;
+//     if (!singular)
+//     {
+//         x = atan2(R.at<double>(2,1) , R.at<double>(2,2));
+//         y = atan2(-R.at<double>(2,0), sy);
+//         z = atan2(R.at<double>(1,0), R.at<double>(0,0));
+//     }
+//     else
+//     {
+//         x = atan2(-R.at<double>(1,2), R.at<double>(1,1));
+//         y = atan2(-R.at<double>(2,0), sy);
+//         z = 0;
+//     }
+//     return Vec3f(radian2degree(x), radian2degree(y), radian2degree(z));
+// }
+
+// int main()
+// {
+//     cv::Mat R = (cv::Mat_<double>(3,3) <<0.504408, -0.0382247 , 0.862619, 
+//                                     0.00677822, 0.999164, 0.0403119,
+//                                     -0.863438, -0.0144866, 0.504246);
+//     Vec3f angles = rotationMatrixToEulerAngles(R);
+
+//     std::cout << R << std::endl;
+//     std::cout << angles << std::endl;
+//     return 0;
+// }
+
+/********* test string 2 matrix *********/
 #include <opencv2/opencv.hpp>
 #include <iostream>
+#include <string>
 
-using namespace cv;
-// Checks if a matrix is a valid rotation matrix.
-bool isRotationMatrix(Mat &R)
-{
-    Mat Rt;
-    transpose(R, Rt);
-    Mat shouldBeIdentity = Rt * R;
-    Mat I = Mat::eye(3,3, shouldBeIdentity.type());
+using namespace std;
 
-    std::cout << shouldBeIdentity << std::endl;
-    std::cout << norm(I, shouldBeIdentity) << std::endl;
-    return  norm(I, shouldBeIdentity) < 1e-6;
-     
-}
+std::string s = "487.808,0,320,0,487.808,180,0,0,1,0.358901,-0.00255477,-0.933372,-0.00515675,0.999976,-0.00471995,0.933361,0.00650716,0.358879,\
+533.62,0,320,0,533.62,180,0,0,1,0.927762,-0.00397522,-0.373152,0.0130791,0.999675,0.0218688,0.372944,-0.0251695,0.927512,\
+566.215,0,320,0,566.215,180,0,0,1,0.920505,0.0103068,0.390594,-0.0137577,0.999887,0.00603792,-0.390488,-0.0109316,0.920543,\
+595.578,0,320,0,595.578,180,0,0,1,0.401075,0.014492,0.915931,0.00593535,0.999813,-0.0184182,-0.916026,0.0128234,0.400914,\
+549.917";
 
-float radian2degree(float x)
+static void Stringsplit(string str, const char split, vector<string>& res)
 {
-    return x*180/M_PI;
-}
- 
-// Calculates rotation matrix to euler angles
-// The result is the same as MATLAB except the order
-// of the euler angles ( x and z are swapped ).
-Vec3f rotationMatrixToEulerAngles(Mat &R)
-{
- 
-    // assert(isRotationMatrix(R));
-     
-    float sy = sqrt(R.at<double>(0,0) * R.at<double>(0,0) +  R.at<double>(1,0) * R.at<double>(1,0) );
- 
-    bool singular = sy < 1e-6; // If
- 
-    float x, y, z;
-    if (!singular)
+    istringstream iss(str);	// 输入流
+    string token;			// 接收缓冲区
+    res.clear();
+    while (getline(iss, token, split))	// 以split为分隔符
     {
-        x = atan2(R.at<double>(2,1) , R.at<double>(2,2));
-        y = atan2(-R.at<double>(2,0), sy);
-        z = atan2(R.at<double>(1,0), R.at<double>(0,0));
+        res.push_back(token);
     }
-    else
-    {
-        x = atan2(-R.at<double>(1,2), R.at<double>(1,1));
-        y = atan2(-R.at<double>(2,0), sy);
-        z = 0;
-    }
-    return Vec3f(radian2degree(x), radian2degree(y), radian2degree(z));
 }
 
 int main()
 {
-    cv::Mat R = (cv::Mat_<double>(3,3) <<0.504408, -0.0382247 , 0.862619, 
-                                    0.00677822, 0.999164, 0.0403119,
-                                    -0.863438, -0.0144866, 0.504246);
-    Vec3f angles = rotationMatrixToEulerAngles(R);
+    std::vector<cv::Mat> R;
+    std::vector<cv::Mat> K;
 
-    std::cout << R << std::endl;
-    std::cout << angles << std::endl;
-    return 0;
+    for(int i=0;i<4;i++)
+    {
+        R.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
+        K.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
+    }
+
+    for(int i=0;i<4;i++)
+    {
+        vector<string> res;
+        Stringsplit(s, ',', res);
+        cout<<"res size:"<<res.size()<<endl;
+
+        for(int mi=0;mi<3;mi++)
+        {
+            for(int mj=0;mj<3;mj++)
+            {
+                K[i].at<float>(mi,mj) = stof(res[18*i+mi*3+mj]);
+                R[i].at<float>(mi,mj) = stof(res[18*i+9+mi*3+mj]);
+            }
+        }
+
+        cout<<K[i]<<endl;
+        cout<<R[i]<<endl;
+    }
 }

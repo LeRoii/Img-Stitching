@@ -44,8 +44,11 @@ bool undistor = false;
 float stitcherMatchConf = 0.3;
 float stitcherAdjusterConf = 0.7f;
 float stitcherBlenderStrength = 3;
+float stitcherCameraParaThres = 30;
 
 int batchSize = 1;
+
+int initMode = 1;
 
 struct stCamCfg
 {
@@ -83,7 +86,15 @@ struct stStitcherCfg
     float matchConf;
     float adjusterConf;
     float blendStrength;
+    float stitcherCameraParaThres;
     std::string cfgPath;
+};
+
+enum enStitcherInitMode
+{
+    enInitALL = 1,
+    enInitByDefault = 2,
+    enInitByCfg = 3
 };
 
 

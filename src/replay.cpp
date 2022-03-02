@@ -207,8 +207,10 @@ int main(int argc, char *argv[])
     stitcherMatchConf = config["stitcherMatchConf"].as<float>();
     stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
     stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+    stitcherCameraParaThres = config["stitcherCameraParaThres"].as<float>();
 
     batchSize = config["batchSize"].as<int>();
+    initMode = config["initMode"].as<int>();
 
     std::string loglvl = config["loglvl"].as<string>();
     if(loglvl == "critical")
@@ -239,8 +241,8 @@ int main(int argc, char *argv[])
     if (detect)
         nvProcessor = new imageProcessor(net, canname, batchSize);  
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);
@@ -288,10 +290,10 @@ int main(int argc, char *argv[])
     }
 
 
-    while(ostitcherUp.init(upImgs, initonline) != 0);
+    while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    while(ostitcherDown.init(downImgs, initonline) != 0);
+    while(ostitcherDown.init(downImgs, initMode) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
     return 0;    

@@ -35,6 +35,19 @@ static int num_images = 4;
 
 std::mutex stmtx;
 
+std::string camParams[2] = {"487.808,0,320,0,487.808,180,0,0,1,0.358901,-0.00255477,-0.933372,-0.00515675,0.999976,-0.00471995,0.933361,0.00650716,0.358879,\
+533.62,0,320,0,533.62,180,0,0,1,0.927762,-0.00397522,-0.373152,0.0130791,0.999675,0.0218688,0.372944,-0.0251695,0.927512,\
+566.215,0,320,0,566.215,180,0,0,1,0.920505,0.0103068,0.390594,-0.0137577,0.999887,0.00603792,-0.390488,-0.0109316,0.920543,\
+595.578,0,320,0,595.578,180,0,0,1,0.401075,0.014492,0.915931,0.00593535,0.999813,-0.0184182,-0.916026,0.0128234,0.400914,\
+549.917",
+"492.936,0,320,0,492.936,180,0,0,1,0.333934,0.00376102,-0.942589,-0.00390736,0.999989,0.00260578,0.942588,0.00281288,0.333945,\
+531.666,0,320,0,531.666,180,0,0,1,0.920266,-0.00331873,-0.391279,-0.00138152,0.99993,-0.0117304,0.391291,0.0113356,0.920197,\
+563.184,0,320,0,563.184,180,0,0,1,0.91131,0.00169592,0.411716,0.00588441,0.999836,-0.0171433,-0.411678,0.0180456,0.911151,\
+605.804,0,320,0,605.804,180,0,0,1,0.386633,0.0122536,0.922152,-0.00720674,0.999921,-0.0102654,-0.922205,-0.00267676,0.386691,\
+547.425"
+};
+
+
 static void Stringsplit(string str, const char split, vector<string>& res)
 {
     istringstream iss(str);	// 输入流
@@ -84,7 +97,8 @@ class ocvStitcher
     public:
     ocvStitcher(stStitcherCfg cfg):
     m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id), m_cfgpath(cfg.cfgPath), 
-    match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength)
+    match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
+    cameraParaThres(cfg.stitcherCameraParaThres)
     {
         // auto gpu = cuda::getCudaEnabledDeviceCount();
         // if (gpu > 0)
@@ -107,9 +121,14 @@ class ocvStitcher
             cameraR.push_back(Mat(Size(3,3), CV_32FC1));
             camK.push_back(Mat(Size(3,3), CV_32FC1));
         }
-        
-        (initCamParams(m_cfgpath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
 
+        useDefaultCamParams();
+// #ifdef GENERATE_SO
+//         useDefaultCamParams();
+//         presetParaOk = true;
+// #else
+//         (initCamParams(m_cfgpath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
+// #endif
         spdlog::debug("stitcher {} constructor completed!", m_id);
     }
 
@@ -152,15 +171,41 @@ class ocvStitcher
             Vec3f defaultAngle = rotationMatrixToEulerAngles(cameraR[i]);
             Vec3f estimatedAngle = rotationMatrixToEulerAngles(cameras[i].R);
             double diff = norm(defaultAngle, estimatedAngle);
-            spdlog::debug("cameraPara thres:{}",diff);
+            spdlog::debug("camera[{}] Para thres:{}", i, diff);
+            std::cout<<defaultAngle<<endl<<estimatedAngle<<endl;
             if(diff > cameraParaThres)
             {
-                spdlog::warn("environment is not suitable for init, use default params");
+                spdlog::warn("environment is not suitable for init, calibration failed");
                 return RET_ERR;
             }
-            return RET_OK;
         }
+
+        return RET_OK; 
         
+    }
+
+    int useDefaultCamParams()
+    {
+        vector<string> res;
+        Stringsplit(camParams[m_id-1], ',', res);
+        spdlog::debug("useDefaultCamParams,res size:{}", res.size());
+        for(int i=0;i<4;i++)
+        {
+            for(int mi=0;mi<3;mi++)
+            {
+                for(int mj=0;mj<3;mj++)
+                {
+                    camK[i].at<float>(mi,mj) = stof(res[18*i+mi*3+mj]);
+                    cameraR[i].at<float>(mi,mj) = stof(res[18*i+9+mi*3+mj]);
+                }
+            }
+
+            // cout<<K[i]<<endl;
+            // cout<<R[i]<<endl;
+        }
+        warped_image_scale = stof(res.back());
+
+        return RET_OK;
     }
 
     int initCamParams(std::string cfgpath)
@@ -275,17 +320,40 @@ class ocvStitcher
         return RET_OK;
     }
 
-    int init(vector<Mat> &imgs, bool initMode)
+    // init mode, 1:initall, 2:use default, init seam, 3:read cfg, init seam
+    int init(vector<Mat> &imgs, int initMode)
     {
-        if(initMode || !presetParaOk)
+        // if(initMode || !presetParaOk)
+        //     return initAll(imgs);
+        // else
+        //     return initSeam(imgs);
+
+        if(enInitALL == initMode)
             return initAll(imgs);
-        else
+        else if(enInitByDefault)
+        {
+            useDefaultCamParams();
             return initSeam(imgs);
+        }
+        else if(enInitByCfg)
+        {
+            if(RET_OK ==initCamParams(m_cfgpath))
+                return initSeam(imgs);
+            else
+                return initAll(imgs);
+        }
+        else
+        {
+            spdlog::critical("invalid init mode, exit");
+            return RET_ERR;
+        }
+
+
     }
 
     int initAll(vector<Mat> &imgs)
     {
-        spdlog::info("***********stitcher {} init start**************", m_id);
+        spdlog::debug("***********stitcher {} init start**************", m_id);
         auto t = getTickCount();
         auto app_start_time = getTickCount();
         vector<ImageFeatures> features(num_images);

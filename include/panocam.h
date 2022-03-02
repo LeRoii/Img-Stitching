@@ -4,18 +4,12 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 
-enum enInitMode
-{
-    INIT_ONLINE = 1,
-    INIT_OFFLINE = 2
-};
-
 class __attribute__((visibility("default"))) panocam
 {
 public:
     panocam(std::string yamlpath);
     ~panocam();
-    int init(enInitMode mode);
+    int init();
     // int captureFrames();
     int getCamFrame(int id, unsigned char *pData, unsigned int nDataSize);
     int getCamFrame(int id, cv::Mat &frame);

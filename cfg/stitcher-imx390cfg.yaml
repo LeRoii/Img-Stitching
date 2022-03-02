@@ -11,8 +11,8 @@ distorHeight: 540
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-stitcherinputWidth: 720
-stitcherinputHeight: 405
+stitcherinputWidth: 640
+stitcherinputHeight: 360
 
 # parameters for renderer
 renderWidth: 960
@@ -42,6 +42,8 @@ stitcherParaThres: 30
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
 stitcherBlenderStrength: 1
+stitcherCameraParaThres: 30
+initMode: 3
 
 # parameters for detector
 batchSize: 1

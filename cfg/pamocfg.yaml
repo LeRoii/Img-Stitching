@@ -10,6 +10,7 @@ renderHeight: 540
 renderX: 0
 renderY: 0
 
-loglvl: "debugg"
+loglvl: "info"
 # image stitching quality, 0:the wrost and fastest, 5:the best and slowest
 quality: 0
+initMode: 1

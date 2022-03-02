@@ -1,6 +1,5 @@
 #include "panocam.h"
 #include "spdlog/spdlog.h"
-#include "nvrender.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -10,7 +9,11 @@ int main(int argc, char *argv[])
 
     panocam *pcam = new panocam(yamlpath);
     cv::Mat frame;
-    pcam->init(INIT_OFFLINE);
+    if(-1 == pcam->init())
+    {
+        spdlog::critical("init failed, exit");
+        return 0;
+    }
     while(1)
     {
         // pcam->getCamFrame(1, frame);

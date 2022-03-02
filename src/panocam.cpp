@@ -112,6 +112,7 @@ public:
         renderY = config["renderY"].as<int>();
 
         stitcherBlenderStrength = config["quality"].as<float>();
+        initMode = config["initMode"].as<int>();
 
         std::string loglvl = config["loglvl"].as<string>();
         if(loglvl == "criticall")
@@ -140,8 +141,8 @@ public:
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
 
-        stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg}};
+        stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, camcfg},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, camcfg}};
 
         stitchers[0].reset(new ocvStitcher(stitchercfg[0]));
         stitchers[1].reset(new ocvStitcher(stitchercfg[1]));
@@ -162,7 +163,7 @@ public:
     
     ~panocamimpl() = default;
 
-    int init(enInitMode mode)
+    int init()
     {
         spdlog::info("init");
         if(verify())
@@ -170,7 +171,7 @@ public:
             spdlog::critical("verification failed, exit");
             return RET_ERR;
         }
-        bool initonlie = ((mode == INIT_ONLINE) ? true : false);
+        // bool initonlie = ((mode == INIT_ONLINE) ? true : false);
         upImgs.clear();
         int failnum = 0;
         do{
@@ -187,7 +188,7 @@ public:
                 return RET_ERR;
             }
         }
-        while(stitchers[0]->init(upImgs, initonlie) != 0); 
+        while(stitchers[0]->init(upImgs, initMode) != 0); 
         spdlog::info("init completed 50%");
 
         failnum = 0;
@@ -213,7 +214,7 @@ public:
                 return RET_ERR;
             }
         }
-        while(stitchers[1]->init(downImgs, initonlie) != 0);
+        while(stitchers[1]->init(downImgs, initMode) != 0);
 
         spdlog::info("init completed!");
 
@@ -364,9 +365,9 @@ panocam::panocam(std::string yamlpath):
 
 panocam::~panocam() = default;
 
-int panocam::init(enInitMode mode)
+int panocam::init()
 {
-    return pimpl->init(mode);
+    return pimpl->init();
 }
 
 int panocam::getCamFrame(int id, cv::Mat &frame)

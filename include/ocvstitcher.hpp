@@ -489,9 +489,10 @@ class ocvStitcher
             warped_image_scale = estimated_warped_image_scale;
            }
        }
-
+#ifdef DEV_MODE
         /*save camera parsms*/
         saveCameraParams();
+#endif
 
         vector<UMat> masks(num_images);
         // Preapre images masks

@@ -103,8 +103,8 @@ public:
         int camw = config["camwidth"].as<int>();
         int camh = config["camheight"].as<int>();
         std::string net = config["netpath"].as<string>();
-        std::string camcfg = config["camcfgpath"].as<string>();
         std::string canname = config["canname"].as<string>();
+        std::string camcfg = "";
 
         renderWidth = config["renderWidth"].as<int>();
         renderHeight = config["renderHeight"].as<int>();
@@ -169,6 +169,12 @@ public:
         if(verify())
         {
             spdlog::critical("verification failed, exit");
+            return RET_ERR;
+        }
+
+        if(!(initMode == 1 || initMode == 2))
+        {
+            spdlog::critical("invalid init mode, exit");
             return RET_ERR;
         }
         // bool initonlie = ((mode == INIT_ONLINE) ? true : false);

@@ -379,7 +379,6 @@ controlData imageProcessor::getCtlCommand(){
 imageProcessor::imageProcessor(std::string net, std::string canname, int batchsize):n_batch(batchsize) {
     pthread_t tid;
     // canInit();
-    printf("can init ok!\n");
     int n_classes = 80;
     float conf_thresh=0.8;
     detNN.init(net, n_classes, n_batch, conf_thresh);
@@ -391,5 +390,5 @@ imageProcessor::imageProcessor(std::string net, std::string canname, int batchsi
     // {
     //    spdlog::warn("pthread_create error: error_code={}", ret);
     // }
-   spdlog::info("detNN init okkkkk");
+   spdlog::debug("detNN init completed");
 }

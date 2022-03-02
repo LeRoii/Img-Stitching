@@ -172,7 +172,7 @@ class ocvStitcher
             Vec3f estimatedAngle = rotationMatrixToEulerAngles(cameras[i].R);
             double diff = norm(defaultAngle, estimatedAngle);
             spdlog::debug("camera[{}] Para thres:{}", i, diff);
-            std::cout<<defaultAngle<<endl<<estimatedAngle<<endl;
+            // std::cout<<defaultAngle<<endl<<estimatedAngle<<endl;
             if(diff > cameraParaThres)
             {
                 spdlog::warn("environment is not suitable for init, calibration failed");
@@ -531,10 +531,10 @@ class ocvStitcher
             sizes[i] = images_warped[i].size();
 
             seamfinder_warper->warp(masks[i], K, cameraR[i], INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
-
+#ifdef DEV_MODE
             imwrite(std::to_string(i)+"-images_warped.png", images_warped[i]);
             imwrite(std::to_string(i)+"-masks_warped.png", masks_warped[i]);
-
+#endif
             // LOGLN("****first warp:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
         }
 
@@ -653,7 +653,9 @@ class ocvStitcher
         blender->blend(result, result_mask);
 
         spdlog::debug("init ok takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+#ifdef DEV_MODE
         imwrite(to_string(m_id)+"_ocv.png", result);
+#endif
 
         return 0;
     }
@@ -814,7 +816,9 @@ class ocvStitcher
         blender->blend(result, result_mask);
 
         spdlog::debug("init ok takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+#ifdef DEV_MODE
         imwrite(to_string(m_id)+"_ocv.png", result);
+#endif
 
         return 0;
     }

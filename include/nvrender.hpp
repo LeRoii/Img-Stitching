@@ -49,7 +49,7 @@ public:
         }
         
         spdlog::debug("cfg.bufferh:{}, cfg.bufferw:{}",cfg.bufferh, cfg.bufferw);
-        spdlog::info("render ctor cplt");
+        spdlog::debug("render ctor cplt");
     }
     ~nvrender()
     {

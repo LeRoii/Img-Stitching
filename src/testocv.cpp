@@ -9,7 +9,8 @@
 /********* test resize *********/
 /********* test stitcher *********/
 /********* test opencv video capture *********/
-/********* test imgprocessor *********/
+/********* test rotation R to euler angle *********/
+/********* test string 2 matrix *********/
 
 /********* test detector *********/
 // #include "imageProcess.h"
@@ -91,120 +92,120 @@
 // }
 
 
-// #include <string>
-// #include <string.h>
-// #include <net/if.h>
-// #include <sys/ioctl.h>
+#include <string>
+#include <string.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
-// using namespace std;
+using namespace std;
 
-// int _System(const char * cmd, char *pRetMsg, int msg_len)
-// {
-// 	FILE * fp;
-// 	char * p = NULL;
-// 	int res = -1;
-// 	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
-// 	{
-// 		printf("Param Error!\n");
-// 		return -1;
-// 	}
-// 	if ((fp = popen(cmd, "r") ) == NULL)
-// 	{
-// 		printf("Popen Error!\n");
-// 		return -2;
-// 	}
-// 	else
-// 	{
-// 		memset(pRetMsg, 0, msg_len);
-// 		//get lastest result
-// 		while(fgets(pRetMsg, msg_len, fp) != NULL)
-// 		{
-// 			printf("Msg:%s",pRetMsg); //print all info
-// 		}
+int _System(const char * cmd, char *pRetMsg, int msg_len)
+{
+	FILE * fp;
+	char * p = NULL;
+	int res = -1;
+	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
+	{
+		printf("Param Error!\n");
+		return -1;
+	}
+	if ((fp = popen(cmd, "r") ) == NULL)
+	{
+		printf("Popen Error!\n");
+		return -2;
+	}
+	else
+	{
+		memset(pRetMsg, 0, msg_len);
+		//get lastest result
+		while(fgets(pRetMsg, msg_len, fp) != NULL)
+		{
+			printf("Msg:%s",pRetMsg); //print all info
+		}
  
-// 		if ( (res = pclose(fp)) == -1)
-// 		{
-// 			printf("close popenerror!\n");
-// 			return -3;
-// 		}
-// 		pRetMsg[strlen(pRetMsg)-1] = '\0';
-// 		return 0;
-// 	}
-// }
+		if ( (res = pclose(fp)) == -1)
+		{
+			printf("close popenerror!\n");
+			return -3;
+		}
+		pRetMsg[strlen(pRetMsg)-1] = '\0';
+		return 0;
+	}
+}
 
-// void get_mac(char * mac_a)
-// {
-//     int                 sockfd;
-//     struct ifreq        ifr;
+void get_mac(char * mac_a)
+{
+    int                 sockfd;
+    struct ifreq        ifr;
 
-//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-//     if (sockfd == -1) {
-//         perror("socket error");
-//         exit(1);
-//     }
-//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-//         memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
-//     }
-// }
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
+    }
+}
 
-// int verify()
-// {
-//     int                 sockfd;
-//     struct ifreq        ifr;
+int verify()
+{
+    int                 sockfd;
+    struct ifreq        ifr;
 
-//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-//     if (sockfd == -1) {
-//         perror("socket error");
-//         exit(1);
-//     }
-//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-//     char * buf = new char[6];
+    char * buf = new char[6];
 
-//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-//         memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
-//     }
-//     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
+    }
+    printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 
     
-//     char gt[] = "00:54:5a:19:03:5f";
+    char gt[] = "00:54:5a:19:03:5f";
     
-//     char p[50];
-//     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
-//     // printf("p::%s\n", p);
+    char p[50];
+    sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+    // printf("p::%s\n", p);
 
-//     return strcmp(gt, p);
-// }
+    return strcmp(gt, p);
+}
 
-// int main()
-// {
-//     // string str1 = "cat /sys/class/net/eth0/address";
-//     // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
-//     // system(command1);
-//     // char buf[100];
-//     // int msg_len = 100;
-//     // // _System("cat /sys/class/net/eth0/address", buf, msg_len);
-//     // char * this_mac = new char[6];
-//     // get_mac(this_mac);
-//     // char gt[] = "00:54:5a:1b:02:7b";
-//     // printf("tm::%s\n", this_mac);
-//     // printf("gt::%s\n", gt);
+int main()
+{
+    // string str1 = "cat /sys/class/net/eth0/address";
+    // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
+    // system(command1);
+    // char buf[100];
+    // int msg_len = 100;
+    // // _System("cat /sys/class/net/eth0/address", buf, msg_len);
+    // char * this_mac = new char[6];
+    // get_mac(this_mac);
+    // char gt[] = "00:54:5a:1b:02:7b";
+    // printf("tm::%s\n", this_mac);
+    // printf("gt::%s\n", gt);
     
-//     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-//     // char p[80];
-//     // sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-//     // printf("p::%s\n", p);
-//     // if(!strcmp(gt, p))
-//     // {
-//     //     printf("equal\n");
-//     // }
+    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+    // char p[80];
+    // sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+    // printf("p::%s\n", p);
+    // if(!strcmp(gt, p))
+    // {
+    //     printf("equal\n");
+    // }
 
-//     if(verify())
-//         printf("verification failed, exit\n");
+    if(verify())
+        printf("verification failed, exit\n");
 
-// }
+}
 
 /********* test yaml *********/
 // #include "yaml-cpp/yaml.h"
@@ -763,56 +764,56 @@
 // }
 
 /********* test string 2 matrix *********/
-#include <opencv2/opencv.hpp>
-#include <iostream>
-#include <string>
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include <string>
 
-using namespace std;
+// using namespace std;
 
-std::string s = "487.808,0,320,0,487.808,180,0,0,1,0.358901,-0.00255477,-0.933372,-0.00515675,0.999976,-0.00471995,0.933361,0.00650716,0.358879,\
-533.62,0,320,0,533.62,180,0,0,1,0.927762,-0.00397522,-0.373152,0.0130791,0.999675,0.0218688,0.372944,-0.0251695,0.927512,\
-566.215,0,320,0,566.215,180,0,0,1,0.920505,0.0103068,0.390594,-0.0137577,0.999887,0.00603792,-0.390488,-0.0109316,0.920543,\
-595.578,0,320,0,595.578,180,0,0,1,0.401075,0.014492,0.915931,0.00593535,0.999813,-0.0184182,-0.916026,0.0128234,0.400914,\
-549.917";
+// std::string s = "487.808,0,320,0,487.808,180,0,0,1,0.358901,-0.00255477,-0.933372,-0.00515675,0.999976,-0.00471995,0.933361,0.00650716,0.358879,\
+// 533.62,0,320,0,533.62,180,0,0,1,0.927762,-0.00397522,-0.373152,0.0130791,0.999675,0.0218688,0.372944,-0.0251695,0.927512,\
+// 566.215,0,320,0,566.215,180,0,0,1,0.920505,0.0103068,0.390594,-0.0137577,0.999887,0.00603792,-0.390488,-0.0109316,0.920543,\
+// 595.578,0,320,0,595.578,180,0,0,1,0.401075,0.014492,0.915931,0.00593535,0.999813,-0.0184182,-0.916026,0.0128234,0.400914,\
+// 549.917";
 
-static void Stringsplit(string str, const char split, vector<string>& res)
-{
-    istringstream iss(str);	// 输入流
-    string token;			// 接收缓冲区
-    res.clear();
-    while (getline(iss, token, split))	// 以split为分隔符
-    {
-        res.push_back(token);
-    }
-}
+// static void Stringsplit(string str, const char split, vector<string>& res)
+// {
+//     istringstream iss(str);	// 输入流
+//     string token;			// 接收缓冲区
+//     res.clear();
+//     while (getline(iss, token, split))	// 以split为分隔符
+//     {
+//         res.push_back(token);
+//     }
+// }
 
-int main()
-{
-    std::vector<cv::Mat> R;
-    std::vector<cv::Mat> K;
+// int main()
+// {
+//     std::vector<cv::Mat> R;
+//     std::vector<cv::Mat> K;
 
-    for(int i=0;i<4;i++)
-    {
-        R.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
-        K.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
-    }
+//     for(int i=0;i<4;i++)
+//     {
+//         R.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
+//         K.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
+//     }
 
-    for(int i=0;i<4;i++)
-    {
-        vector<string> res;
-        Stringsplit(s, ',', res);
-        cout<<"res size:"<<res.size()<<endl;
+//     for(int i=0;i<4;i++)
+//     {
+//         vector<string> res;
+//         Stringsplit(s, ',', res);
+//         cout<<"res size:"<<res.size()<<endl;
 
-        for(int mi=0;mi<3;mi++)
-        {
-            for(int mj=0;mj<3;mj++)
-            {
-                K[i].at<float>(mi,mj) = stof(res[18*i+mi*3+mj]);
-                R[i].at<float>(mi,mj) = stof(res[18*i+9+mi*3+mj]);
-            }
-        }
+//         for(int mi=0;mi<3;mi++)
+//         {
+//             for(int mj=0;mj<3;mj++)
+//             {
+//                 K[i].at<float>(mi,mj) = stof(res[18*i+mi*3+mj]);
+//                 R[i].at<float>(mi,mj) = stof(res[18*i+9+mi*3+mj]);
+//             }
+//         }
 
-        cout<<K[i]<<endl;
-        cout<<R[i]<<endl;
-    }
-}
+//         cout<<K[i]<<endl;
+//         cout<<R[i]<<endl;
+//     }
+// }

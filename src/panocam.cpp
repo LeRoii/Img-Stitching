@@ -85,7 +85,8 @@ static int verify()
     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 
     
-    char gt[] = "00:54:5a:19:03:5f";
+    // char gt[] = "00:54:5a:19:03:5f";//91v-dev
+    char gt[] = "00:54:5a:1b:02:7b";//91s-dev
     
     char p[50];
     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
@@ -115,16 +116,18 @@ public:
         initMode = config["initMode"].as<int>();
 
         std::string loglvl = config["loglvl"].as<string>();
-        if(loglvl == "criticall")
+        if(loglvl == "critical-iair")
             spdlog::set_level(spdlog::level::critical);
-        else if(loglvl == "tracee")
+        else if(loglvl == "trace-iair")
             spdlog::set_level(spdlog::level::trace);
-        else if(loglvl == "warnn")
+        else if(loglvl == "warn-iair")
             spdlog::set_level(spdlog::level::warn);
         else if(loglvl == "info")
             spdlog::set_level(spdlog::level::info);
-        else if(loglvl == "debugg")
+        else if(loglvl == "debug-iair")
             spdlog::set_level(spdlog::level::debug);
+        else
+            spdlog::set_level(spdlog::level::info);
 #if CAM_IMX424
         USED_CAMERA_NUM = 6;
 #endif
@@ -156,7 +159,7 @@ public:
         if(stitcherinputWidth == 480)
             finalcut = 15;
         else if(stitcherinputWidth == 640)
-            finalcut = 30;
+            finalcut = 40;
 
         spdlog::debug("panocam ctor complete");
     }

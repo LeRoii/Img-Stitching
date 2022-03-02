@@ -39,7 +39,7 @@ typedef struct
     bool contrast_method; //对比度调节摸索，1为手动，0为自动
     unsigned char contrast; 
     bool use_flip;  //图像翻转开关
-    bool use_detect; //图像十八开关
+    bool use_detect; //图像识别开关
     bool use_cross; //电十字加载/消隐，1为加载，0为消隐
     bool video_save;    //视频存储开关
     bool self_check;    //自检开关

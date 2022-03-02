@@ -54,7 +54,8 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 add_compile_options(-std=c++14 )
 # add_definitions(-DDEBUG)
 # add_definitions(-DSPDLOG_DEBUG_ON )
-add_definitions(-DCAM_IMX390 -DDEV_MODE)
+# add_definitions(-DCAM_IMX390 -DDEV_MODE)
+add_definitions(-DCAM_IMX390)
 
 cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CUDA_INCLUDE_DIRS} )
 

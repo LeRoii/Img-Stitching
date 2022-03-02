@@ -616,7 +616,7 @@ public:
         gpuMapy[1] = cv::cuda::GpuMat(mapy[1]);
 
         setDistoredSize(m_undistoredWidth);
-        spdlog::info("!!!!!![{}] cam init ok!!!!!!!!!\n", m_id);
+        spdlog::debug("cam [{}] init complete", m_id);
 
         sdkCreateTimer(&timer);
         sdkResetTimer(&timer);
@@ -883,7 +883,7 @@ public:
 			std::unique_lock<std::mutex> lock(m_mtx[m_id]);
 			while(m_queue.size() >= 50)
             {
-                spdlog::warn("cam:[{}] wait for consumer", m_id);
+                spdlog::trace("cam:[{}] wait for consumer", m_id);
 				// m_queue.pop_front();
                 con[m_id].wait(lock);
             }
@@ -901,7 +901,7 @@ public:
         std::unique_lock<std::mutex> lock(m_mtx[m_id]);
         while(m_queue.empty())
         {
-            spdlog::warn("cam:[{}] wait for img", m_id);
+            spdlog::trace("cam:[{}] wait for img", m_id);
             // return 0;
             con[m_id].wait(lock);
         }

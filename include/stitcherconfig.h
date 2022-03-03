@@ -44,10 +44,10 @@ bool undistor = false;
 float stitcherMatchConf = 0.3;
 float stitcherAdjusterConf = 0.7f;
 float stitcherBlenderStrength = 3;
-float stitcherCameraParaThres = 30;
+float stitcherCameraExThres = 30;
+float stitcherCameraInThres = 100;
 
 int batchSize = 1;
-
 int initMode = 1;
 
 struct stCamCfg
@@ -65,7 +65,6 @@ struct stCamCfg
     char name[20];
     int vendor;
 };
-
 
 struct nvrenderCfg
 {
@@ -86,7 +85,8 @@ struct stStitcherCfg
     float matchConf;
     float adjusterConf;
     float blendStrength;
-    float stitcherCameraParaThres;
+    float stitchercameraExThres;
+    float stitchercameraInThres;
     std::string cfgPath;
 };
 

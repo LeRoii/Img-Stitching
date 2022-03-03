@@ -209,7 +209,8 @@ int main(int argc, char *argv[])
     stitcherMatchConf = config["stitcherMatchConf"].as<float>();
     stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
     stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
-    stitcherCameraParaThres = config["stitcherCameraParaThres"].as<float>();
+    stitcherCameraExThres = config["stitcherCameraExThres"].as<float>();
+    stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
 
     batchSize = config["batchSize"].as<int>();
     initMode = config["initMode"].as<int>();
@@ -341,8 +342,8 @@ int main(int argc, char *argv[])
     // }
     /************************************stitch all end*****************************************/
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);

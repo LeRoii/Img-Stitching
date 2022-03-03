@@ -22,7 +22,7 @@ renderY: 0
 renderBufWidth: 1920
 renderBufHeight: 1080
 # 0 for egl, 1 for opencv
-renderMode: 1
+renderMode: 0
 
 USED_CAMERA_NUM: 8
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
@@ -38,12 +38,12 @@ showall: true
 loglvl: "debug"
 
 # parameters for stitcher
-stitcherParaThres: 30
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
-stitcherBlenderStrength: 1
-stitcherCameraParaThres: 30
-initMode: 3
+stitcherBlenderStrength: 0
+stitcherCameraExThres: 30
+stitcherCameraInThres: 70
+initMode: 1
 
 # parameters for detector
 batchSize: 1

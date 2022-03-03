@@ -98,7 +98,7 @@ class ocvStitcher
     ocvStitcher(stStitcherCfg cfg):
     m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id), m_cfgpath(cfg.cfgPath), 
     match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
-    cameraParaThres(cfg.stitcherCameraParaThres)
+    cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres)
     {
         // auto gpu = cuda::getCudaEnabledDeviceCount();
         // if (gpu > 0)
@@ -171,11 +171,22 @@ class ocvStitcher
             Vec3f defaultAngle = rotationMatrixToEulerAngles(cameraR[i]);
             Vec3f estimatedAngle = rotationMatrixToEulerAngles(cameras[i].R);
             double diff = norm(defaultAngle, estimatedAngle);
-            spdlog::debug("camera[{}] Para thres:{}", i, diff);
-            // std::cout<<defaultAngle<<endl<<estimatedAngle<<endl;
-            if(diff > cameraParaThres)
+            spdlog::debug("camera[{}] extrinsic diff:{}", i, diff);
+            // std::cout<<"angle:"<<endl<<defaultAngle<<endl<<estimatedAngle<<endl;
+            if(diff > cameraExThres)
             {
-                spdlog::warn("environment is not suitable for init, calibration failed");
+                spdlog::warn("environment is not suitable for calibration, init failed");
+                return RET_ERR;
+            }
+            
+            Vec2f defaultIntrinsic = Vec2f{camK[i].at<float>(0,0), camK[i].at<float>(1,1)};
+            Vec2f estimatedIntrinsic = Vec2f{cameras[i].K().at<double>(0,0), cameras[i].K().at<double>(1,1)};
+            // cout<<"instrinsic:"<<endl<<defaultIntrinsic<<endl<<estimatedIntrinsic<<endl;
+            diff = norm(defaultIntrinsic, estimatedIntrinsic);
+            spdlog::debug("camera[{}] intrinsic diff:{}", i, diff);
+            if(diff > cameraInThres)
+            {
+                spdlog::warn("environment is not suitable for calibration, init failed");
                 return RET_ERR;
             }
         }
@@ -975,7 +986,7 @@ class ocvStitcher
     bool presetParaOk;
     std::string m_cfgpath;
 
-    float match_conf, conf_thresh, blend_strength, cameraParaThres;
+    float match_conf, conf_thresh, blend_strength, cameraExThres, cameraInThres;
 
     // Ptr<Blender> blender;
 

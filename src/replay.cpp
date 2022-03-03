@@ -74,7 +74,7 @@ void serverCap()
 #endif
 
 bool saveret = false;
-bool detect = true;
+bool detect = false;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
@@ -207,7 +207,8 @@ int main(int argc, char *argv[])
     stitcherMatchConf = config["stitcherMatchConf"].as<float>();
     stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
     stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
-    stitcherCameraParaThres = config["stitcherCameraParaThres"].as<float>();
+    stitcherCameraExThres = config["stitcherCameraExThres"].as<float>();
+    stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
 
     batchSize = config["batchSize"].as<int>();
     initMode = config["initMode"].as<int>();
@@ -230,7 +231,7 @@ int main(int argc, char *argv[])
     if(stitcherinputWidth == 480)
         finalcut = 15;
     else if(stitcherinputWidth == 640)
-        finalcut = 30;
+        finalcut = 40;
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
@@ -241,8 +242,8 @@ int main(int argc, char *argv[])
     if (detect)
         nvProcessor = new imageProcessor(net, canname, batchSize);  
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraParaThres, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);
@@ -295,8 +296,6 @@ int main(int argc, char *argv[])
 
     while(ostitcherDown.init(downImgs, initMode) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
-
-    return 0;    
 
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;
@@ -370,7 +369,7 @@ int main(int argc, char *argv[])
         {
             // yoloRet = nvProcessor.Process(ret);
 
-            std::vector<cv::Mat> imgs = {ret};
+            std::vector<cv::Mat> imgs = {ret,ret,ret,ret};
             std::vector<std::vector<int>> dets;
             // nvProcessor->ImageDetect(imgs, dets); 
             ret = nvProcessor->ProcessOnce(ret);  
@@ -412,7 +411,9 @@ int main(int argc, char *argv[])
         // cv::imshow("ret", final);
         
         spdlog::debug("render");
+        Mat final;
         renderer->render(ret);
+        // renderer->render(ret, final);
         // setMouseCallback("ret",OnMouseAction);
 
         if(detCamNum!=0)
@@ -459,7 +460,7 @@ int main(int argc, char *argv[])
                 detCamNum = 0;
                 break;
             case 's':
-                cv::imwrite("final.png", ret);
+                cv::imwrite("final.png", final);
                 break;
             default:
                 break;

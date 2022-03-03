@@ -71,141 +71,141 @@
 
 /********* test binding mac address *********/
 
-// #include<stdio.h>
-// #include<stdlib.h>
-// #include<errno.h>
-// #include<sys/utsname.h>
-// int main()
+// // #include<stdio.h>
+// // #include<stdlib.h>
+// // #include<errno.h>
+// // #include<sys/utsname.h>
+// // int main()
+// // {
+// //    struct utsname buf1;
+// //    errno =0;
+// //    if(uname(&buf1)!=0)
+// //    {
+// //       perror("uname doesn't return 0, so there is an error");
+// //       exit(EXIT_FAILURE);
+// //    }
+// //    printf("System Name = %s\n", buf1.sysname);
+// //    printf("Node Name = %s\n", buf1.nodename);
+// //    printf("Version = %s\n", buf1.version);
+// //    printf("Release = %s\n", buf1.release);
+// //    printf("Machine = %s\n", buf1.machine);
+// // }
+
+
+// #include <string>
+// #include <string.h>
+// #include <net/if.h>
+// #include <sys/ioctl.h>
+
+// using namespace std;
+
+// int _System(const char * cmd, char *pRetMsg, int msg_len)
 // {
-//    struct utsname buf1;
-//    errno =0;
-//    if(uname(&buf1)!=0)
-//    {
-//       perror("uname doesn't return 0, so there is an error");
-//       exit(EXIT_FAILURE);
-//    }
-//    printf("System Name = %s\n", buf1.sysname);
-//    printf("Node Name = %s\n", buf1.nodename);
-//    printf("Version = %s\n", buf1.version);
-//    printf("Release = %s\n", buf1.release);
-//    printf("Machine = %s\n", buf1.machine);
+// 	FILE * fp;
+// 	char * p = NULL;
+// 	int res = -1;
+// 	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
+// 	{
+// 		printf("Param Error!\n");
+// 		return -1;
+// 	}
+// 	if ((fp = popen(cmd, "r") ) == NULL)
+// 	{
+// 		printf("Popen Error!\n");
+// 		return -2;
+// 	}
+// 	else
+// 	{
+// 		memset(pRetMsg, 0, msg_len);
+// 		//get lastest result
+// 		while(fgets(pRetMsg, msg_len, fp) != NULL)
+// 		{
+// 			printf("Msg:%s",pRetMsg); //print all info
+// 		}
+ 
+// 		if ( (res = pclose(fp)) == -1)
+// 		{
+// 			printf("close popenerror!\n");
+// 			return -3;
+// 		}
+// 		pRetMsg[strlen(pRetMsg)-1] = '\0';
+// 		return 0;
+// 	}
 // }
 
+// void get_mac(char * mac_a)
+// {
+//     int                 sockfd;
+//     struct ifreq        ifr;
 
-#include <string>
-#include <string.h>
-#include <net/if.h>
-#include <sys/ioctl.h>
+//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+//     if (sockfd == -1) {
+//         perror("socket error");
+//         exit(1);
+//     }
+//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-using namespace std;
+//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+//         memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
+//     }
+// }
 
-int _System(const char * cmd, char *pRetMsg, int msg_len)
-{
-	FILE * fp;
-	char * p = NULL;
-	int res = -1;
-	if (cmd == NULL || pRetMsg == NULL || msg_len < 0)
-	{
-		printf("Param Error!\n");
-		return -1;
-	}
-	if ((fp = popen(cmd, "r") ) == NULL)
-	{
-		printf("Popen Error!\n");
-		return -2;
-	}
-	else
-	{
-		memset(pRetMsg, 0, msg_len);
-		//get lastest result
-		while(fgets(pRetMsg, msg_len, fp) != NULL)
-		{
-			printf("Msg:%s",pRetMsg); //print all info
-		}
- 
-		if ( (res = pclose(fp)) == -1)
-		{
-			printf("close popenerror!\n");
-			return -3;
-		}
-		pRetMsg[strlen(pRetMsg)-1] = '\0';
-		return 0;
-	}
-}
+// int verify()
+// {
+//     int                 sockfd;
+//     struct ifreq        ifr;
 
-void get_mac(char * mac_a)
-{
-    int                 sockfd;
-    struct ifreq        ifr;
+//     sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+//     if (sockfd == -1) {
+//         perror("socket error");
+//         exit(1);
+//     }
+//     strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
 
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd == -1) {
-        perror("socket error");
-        exit(1);
-    }
-    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+//     char * buf = new char[6];
 
-    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-        memcpy(mac_a, ifr.ifr_hwaddr.sa_data, 6);
-    }
-}
-
-int verify()
-{
-    int                 sockfd;
-    struct ifreq        ifr;
-
-    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sockfd == -1) {
-        perror("socket error");
-        exit(1);
-    }
-    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
-
-    char * buf = new char[6];
-
-    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
-        memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
-    }
-    printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+//     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+//         memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
+//     }
+//     printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 
     
-    char gt[] = "00:54:5a:19:03:5f";
+//     char gt[] = "00:54:5a:19:03:5f";
     
-    char p[50];
-    sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
-    // printf("p::%s\n", p);
+//     char p[50];
+//     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+//     // printf("p::%s\n", p);
 
-    return strcmp(gt, p);
-}
+//     return strcmp(gt, p);
+// }
 
-int main()
-{
-    // string str1 = "cat /sys/class/net/eth0/address";
-    // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
-    // system(command1);
-    // char buf[100];
-    // int msg_len = 100;
-    // // _System("cat /sys/class/net/eth0/address", buf, msg_len);
-    // char * this_mac = new char[6];
-    // get_mac(this_mac);
-    // char gt[] = "00:54:5a:1b:02:7b";
-    // printf("tm::%s\n", this_mac);
-    // printf("gt::%s\n", gt);
+// int main()
+// {
+//     // string str1 = "cat /sys/class/net/eth0/address";
+//     // const char *command1 = str1.c_str();     //c_str() converts the string into a C-Style string
+//     // system(command1);
+//     // char buf[100];
+//     // int msg_len = 100;
+//     // // _System("cat /sys/class/net/eth0/address", buf, msg_len);
+//     // char * this_mac = new char[6];
+//     // get_mac(this_mac);
+//     // char gt[] = "00:54:5a:1b:02:7b";
+//     // printf("tm::%s\n", this_mac);
+//     // printf("gt::%s\n", gt);
     
-    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-    // char p[80];
-    // sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
-    // printf("p::%s\n", p);
-    // if(!strcmp(gt, p))
-    // {
-    //     printf("equal\n");
-    // }
+//     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+//     // char p[80];
+//     // sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", this_mac[0]&0xff, this_mac[1]&0xff, this_mac[2]&0xff, this_mac[3]&0xff, this_mac[4]&0xff, this_mac[5]&0xff);
+//     // printf("p::%s\n", p);
+//     // if(!strcmp(gt, p))
+//     // {
+//     //     printf("equal\n");
+//     // }
 
-    if(verify())
-        printf("verification failed, exit\n");
+//     if(verify())
+//         printf("verification failed, exit\n");
 
-}
+// }
 
 /********* test yaml *********/
 // #include "yaml-cpp/yaml.h"
@@ -817,3 +817,54 @@ int main()
 //         cout<<R[i]<<endl;
 //     }
 // }
+/********* draw indicator *********/
+#include <opencv2/opencv.hpp>
+#include <iostream>
+
+using namespace cv;
+int main()
+{
+    cv::Mat mt = cv::Mat(1080, 1920, CV_8UC3);
+
+
+    int longStartX = 0;
+    int uplongStartY = 230;
+    int uplongEndY = uplongStartY+30;
+    int upshortEndY = uplongStartY+15;
+    for(int i=0;i<19;i++)
+    {
+        longStartX = 40+i*100;
+        line(mt, Point(longStartX, uplongStartY), Point(longStartX, uplongEndY), Scalar(0, 255, 0), 3);
+        if(i==0)
+            cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+        else
+            cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+        if(i == 18)
+            continue;
+        for(int j=0;j<4;j++)
+            line(mt, Point(longStartX+20*(1+j), uplongStartY), Point(longStartX+20*(1+j), upshortEndY), Scalar(0, 255, 0), 3);
+    }
+
+    int downlongStartY = 830;
+    int downlongEndY = downlongStartY+30;
+    int downshortEndY = downlongStartY+15;
+    for(int i=0;i<19;i++)
+    {
+        longStartX = 40+i*100;
+        line(mt, Point(longStartX, downlongStartY), Point(longStartX, downlongEndY), Scalar(0, 255, 0), 3);
+        if(i==0)
+            cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+        else
+            cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+        if(i == 18)
+            continue;
+        for(int j=0;j<4;j++)
+            line(mt, Point(longStartX+20*(1+j), downlongStartY), Point(longStartX+20*(1+j), downshortEndY), Scalar(0, 255, 0), 3);
+    }
+
+    // imshow("1", mt);
+    // waitKey(0);
+    imwrite("aa.png", mt);
+
+    return 0;
+}

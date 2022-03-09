@@ -104,8 +104,8 @@ static int parse_cmdline(int argc, char **argv)
                         showall = false;
                         idx = std::stoi(optarg);
 #ifdef CAM_IMX390
-                        // stitcherinputWidth = undistorWidth = camSrcWidth;
-                        // stitcherinputHeight = undistorHeight = camSrcHeight;
+                        stitcherinputWidth = undistorWidth = camSrcWidth;
+                        stitcherinputHeight = undistorHeight = camSrcHeight;
 #endif
                         if(0 < idx < 9)
                             break;

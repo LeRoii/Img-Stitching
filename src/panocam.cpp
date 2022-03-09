@@ -86,7 +86,8 @@ static int verify()
 
     
     // char gt[] = "00:54:5a:19:03:5f";//91v-dev
-    char gt[] = "00:54:5a:1b:02:7b";//91s-dev
+    // char gt[] = "00:54:5a:1b:02:7b";//91s-dev
+    char gt[] = "00:54:5a:1c:00:bd";//91s-207
     
     char p[50];
     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
@@ -168,7 +169,7 @@ public:
 
     int init()
     {
-        spdlog::info("init");
+        spdlog::info("panocam init start");
         if(verify())
         {
             spdlog::critical("verification failed, exit");
@@ -293,6 +294,7 @@ public:
         t1.join();
         t2.join();
 
+        cv::flip(down, down, 1);
         int width = min(up.size().width, down.size().width);
         int height = min(up.size().height, down.size().height) - finalcut*2;
         up = up(Rect(0,finalcut,width,height));

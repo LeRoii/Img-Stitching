@@ -412,8 +412,13 @@ int main(int argc, char *argv[])
         
         spdlog::debug("render");
         Mat final;
+
+        
+#ifdef DEV_MODE
+        renderer->render(ret, final);
+#else
         renderer->render(ret);
-        // renderer->render(ret, final);
+#endif
         // setMouseCallback("ret",OnMouseAction);
 
         if(detCamNum!=0)

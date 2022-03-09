@@ -76,18 +76,22 @@ public:
         uplongStartY = 200;
         uplongEndY = uplongStartY+30;
         upshortEndY = uplongStartY+15;
+        double fontScale = 0.6;
+        int lineSickness = 2;
+        int fontSickness = 2;
+        cv::Scalar color = cv::Scalar(5, 217, 82 );
         for(int i=0;i<19;i++)
         {
             longStartX = indicatorStartX+i*102;
-            cv::line(canvas, cv::Point(longStartX, uplongStartY), cv::Point(longStartX, uplongEndY), cv::Scalar(0, 255, 0), 3);
+            cv::line(canvas, cv::Point(longStartX, uplongStartY), cv::Point(longStartX, uplongEndY), color, lineSickness);
             if(i==0)
-                cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+                cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
             else
-                cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+                cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
             if(i == 18)
                 continue;
             for(int j=0;j<4;j++)
-                cv::line(canvas, cv::Point(longStartX+20*(1+j), uplongStartY), cv::Point(longStartX+20*(1+j), upshortEndY), cv::Scalar(0, 255, 0), 3);
+                cv::line(canvas, cv::Point(longStartX+20*(1+j), uplongStartY), cv::Point(longStartX+20*(1+j), upshortEndY), color, lineSickness);
         }
 
         downlongStartY = 880;
@@ -96,15 +100,15 @@ public:
         for(int i=0;i<19;i++)
         {
             longStartX = indicatorStartX+i*102;
-            cv::line(canvas, cv::Point(longStartX, downlongStartY), cv::Point(longStartX, downlongEndY), cv::Scalar(0, 255, 0), 3);
+            cv::line(canvas, cv::Point(longStartX, downlongStartY), cv::Point(longStartX, downlongEndY), color, lineSickness);
             if(i==0)
-                cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+                cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
             else
-                cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+                cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
             if(i == 18)
                 continue;
             for(int j=0;j<4;j++)
-                cv::line(canvas, cv::Point(longStartX+20*(1+j), downlongStartY), cv::Point(longStartX+20*(1+j), downshortEndY), cv::Scalar(0, 255, 0), 3);
+                cv::line(canvas, cv::Point(longStartX+20*(1+j), downlongStartY), cv::Point(longStartX+20*(1+j), downshortEndY), color, lineSickness);
         }
 
         maxWidth = 18*102;
@@ -163,7 +167,7 @@ public:
         ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
         std::string str = ss.str();
         // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-        cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+        cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
         cv::Mat tmp;
         if(m_mode == RENDER_EGL)
@@ -179,7 +183,7 @@ public:
         ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
         std::string str = ss.str();
         // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-        cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+        cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
         if(m_mode == RENDER_EGL)
             renderegl(img);

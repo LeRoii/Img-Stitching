@@ -5,10 +5,10 @@ camsrcwidth: 1920
 camsrcheight: 1080
 # in general the distor img size should be the same with camera img origin size, otherwise there will be a high latency,
 # this parameter is kept only for 4k camera
-distorWidth: 960
-distorHeight: 540
+distorWidth: 1920
+distorHeight: 1080
 # undistor size can only be 960x540 or 1920x1080
-undistor: true
+undistor: false
 undistorWidth: 960
 undistorHeight: 540
 stitcherinputWidth: 640
@@ -22,7 +22,7 @@ renderY: 0
 renderBufWidth: 1920
 renderBufHeight: 1080
 # 0 for egl, 1 for opencv
-renderMode: 0
+renderMode: 1
 
 USED_CAMERA_NUM: 8
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
@@ -42,7 +42,7 @@ stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
 stitcherBlenderStrength: 0
 stitcherCameraExThres: 30
-stitcherCameraInThres: 70
+stitcherCameraInThres: 100
 initMode: 1
 
 # parameters for detector

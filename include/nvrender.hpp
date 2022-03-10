@@ -46,6 +46,9 @@ public:
         {
             canvas = cv::Mat(cfg.bufferh, cfg.bufferw, CV_8UC3);
             canvas.setTo(0);
+            // cv::namedWindow("input", CV_WINDOW_AUTOSIZE);
+            // cv::moveWindow("input",0,0);
+            // cv::setWindowProperty("input", CV_WINDOW_FULLSCREEN, CV_WINDOW_FULLSCREEN);
         }
         drawIndicator();
         

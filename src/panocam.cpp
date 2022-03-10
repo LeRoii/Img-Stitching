@@ -294,7 +294,7 @@ public:
         t1.join();
         t2.join();
 
-        cv::flip(down, down, 1);
+        // cv::flip(down, down, 1);
         int width = min(up.size().width, down.size().width);
         int height = min(up.size().height, down.size().height) - finalcut*2;
         up = up(Rect(0,finalcut,width,height));

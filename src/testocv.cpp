@@ -11,6 +11,8 @@
 /********* test opencv video capture *********/
 /********* test rotation R to euler angle *********/
 /********* test string 2 matrix *********/
+/********* draw indicator *********/
+/********* test keyboard listener *********/
 
 /********* test detector *********/
 // #include "imageProcess.h"
@@ -818,53 +820,114 @@
 //     }
 // }
 /********* draw indicator *********/
-#include <opencv2/opencv.hpp>
-#include <iostream>
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
 
-using namespace cv;
-int main()
+// using namespace cv;
+// int main()
+// {
+//     cv::Mat mt = cv::Mat(1080, 1920, CV_8UC3);
+
+
+//     int longStartX = 0;
+//     int uplongStartY = 230;
+//     int uplongEndY = uplongStartY+30;
+//     int upshortEndY = uplongStartY+15;
+//     for(int i=0;i<19;i++)
+//     {
+//         longStartX = 40+i*100;
+//         line(mt, Point(longStartX, uplongStartY), Point(longStartX, uplongEndY), Scalar(0, 255, 0), 3);
+//         if(i==0)
+//             cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         else
+//             cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         if(i == 18)
+//             continue;
+//         for(int j=0;j<4;j++)
+//             line(mt, Point(longStartX+20*(1+j), uplongStartY), Point(longStartX+20*(1+j), upshortEndY), Scalar(0, 255, 0), 3);
+//     }
+
+//     int downlongStartY = 830;
+//     int downlongEndY = downlongStartY+30;
+//     int downshortEndY = downlongStartY+15;
+//     for(int i=0;i<19;i++)
+//     {
+//         longStartX = 40+i*100;
+//         line(mt, Point(longStartX, downlongStartY), Point(longStartX, downlongEndY), Scalar(0, 255, 0), 3);
+//         if(i==0)
+//             cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         else
+//             cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         if(i == 18)
+//             continue;
+//         for(int j=0;j<4;j++)
+//             line(mt, Point(longStartX+20*(1+j), downlongStartY), Point(longStartX+20*(1+j), downshortEndY), Scalar(0, 255, 0), 3);
+//     }
+
+//     // imshow("1", mt);
+//     // waitKey(0);
+//     imwrite("aa.png", mt);
+
+//     return 0;
+// }
+/********* test keyboard listener *********/
+#include <termio.h>
+#include <stdio.h>
+#include <unistd.h>
+int scanKeyboard()
 {
-    cv::Mat mt = cv::Mat(1080, 1920, CV_8UC3);
+  //  struct termios
+  //    {
+  //      tcflag_t c_iflag;		/* input mode flags */
+  //      tcflag_t c_oflag;		/* output mode flags */
+  //      tcflag_t c_cflag;		/* control mode flags */
+  //      tcflag_t c_lflag;		/* local mode flags */
+  //      cc_t c_line;			/* line discipline */
+  //      cc_t c_cc[NCCS];		/* control characters */
+  //      speed_t c_ispeed;		/* input speed */
+  //      speed_t c_ospeed;		/* output speed */
+  //  #define _HAVE_STRUCT_TERMIOS_C_ISPEED 1
+  //  #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
+  //    };
+  int in;
+  struct termios new_settings;
+  struct termios stored_settings;
+  tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+  new_settings = stored_settings;           //
+  new_settings.c_lflag &= (~ICANON);        //
+  new_settings.c_cc[VTIME] = 0;
+  tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+  new_settings.c_cc[VMIN] = 1;
+  tcsetattr(STDIN_FILENO,TCSANOW,&new_settings); //
+
+  in = getchar();
+
+  tcsetattr(STDIN_FILENO,TCSANOW,&stored_settings);
+  return in;
+}
 
 
-    int longStartX = 0;
-    int uplongStartY = 230;
-    int uplongEndY = uplongStartY+30;
-    int upshortEndY = uplongStartY+15;
-    for(int i=0;i<19;i++)
-    {
-        longStartX = 40+i*100;
-        line(mt, Point(longStartX, uplongStartY), Point(longStartX, uplongEndY), Scalar(0, 255, 0), 3);
-        if(i==0)
-            cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
-        else
-            cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
-        if(i == 18)
-            continue;
-        for(int j=0;j<4;j++)
-            line(mt, Point(longStartX+20*(1+j), uplongStartY), Point(longStartX+20*(1+j), upshortEndY), Scalar(0, 255, 0), 3);
-    }
 
-    int downlongStartY = 830;
-    int downlongEndY = downlongStartY+30;
-    int downshortEndY = downlongStartY+15;
-    for(int i=0;i<19;i++)
-    {
-        longStartX = 40+i*100;
-        line(mt, Point(longStartX, downlongStartY), Point(longStartX, downlongEndY), Scalar(0, 255, 0), 3);
-        if(i==0)
-            cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
-        else
-            cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
-        if(i == 18)
-            continue;
-        for(int j=0;j<4;j++)
-            line(mt, Point(longStartX+20*(1+j), downlongStartY), Point(longStartX+20*(1+j), downshortEndY), Scalar(0, 255, 0), 3);
-    }
+int main(int argc, char *argv[]) {
 
-    // imshow("1", mt);
-    // waitKey(0);
-    imwrite("aa.png", mt);
-
-    return 0;
+  while(1){
+    printf(":%d\r\n",scanKeyboard());
+    //    int input_id = scanKeyboard();
+    //    switch(input_id) {
+    //      case 119:  //w or can set as case 'w':
+    //      case 87:   //W case 'W':
+    //        break;
+    //      case 115: //s
+    //      case 83:  //S
+    //        break;
+    //      case 97:  //a
+    //      case 67:  //A
+    //        break;
+    //      case 100: //d
+    //      case 68:  //D
+    //        break;
+    //      default:
+    //        break;
+    //    }
+  }
 }

@@ -22,7 +22,7 @@
 #include "opencv2/stitching/warpers.hpp"
 
 #include "spdlog/spdlog.h"
-#include "stitcherconfig.h"
+#include "stitcherglobal.h"
 
 using namespace std;
 using namespace cv;

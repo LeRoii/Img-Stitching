@@ -1,0 +1,52 @@
+#include "context.h"
+
+namespace panoAPP{
+    
+    context::context():m_pCurState(nullptr)
+    {
+        m_startTimapoint = std::chrono::steady_clock::now();
+    }
+
+    context::~context()
+    {
+        for (auto iter : m_states)
+		{
+			if (iter.second != nullptr)
+			{
+				delete iter.second;
+				iter.second = nullptr;
+			}
+		}
+		m_states.clear();
+    }
+
+    void context::RegisterState(panoAPP::enAPPFSMSTATE statename, fsmstate* state)
+    {
+        m_states.emplace(statename, state);
+    }
+
+    void context::start(panoAPP::enAPPFSMSTATE statename)
+    {
+        std::unordered_map<panoAPP::enAPPFSMSTATE, fsmstate*>::iterator iter_map = m_states.find(statename);
+		if (iter_map != m_states.end())
+		{
+			m_enCurStateName = iter_map->first;
+            m_pCurState = iter_map->second;
+			iter_map->second->start();
+		}
+    }
+
+    void context::update()
+    {
+        if(m_pCurState != nullptr)
+            m_pCurState->update();
+
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+        std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimapoint);
+        // std::cout << "ms: " << time_span.count() << std::endl;
+        spdlog::info("state:{}, ms:{}", m_enCurStateName, time_span.count());
+    }
+
+
+
+} // namespace panoAPP

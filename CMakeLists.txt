@@ -54,7 +54,8 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 add_compile_options(-std=c++14 )
 # add_definitions(-DDEBUG)
 # add_definitions(-DSPDLOG_DEBUG_ON )
-add_definitions(-DCAM_IMX390 -DDEV_MODE)
+# add_definitions(-DCAM_IMX390 -DDEV_MODE)
+add_definitions(-DCAM_IMX424 -DDEV_MODE)
 # add_definitions(-DCAM_IMX390)
 
 cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CUDA_INCLUDE_DIRS} )
@@ -89,21 +90,24 @@ include_directories(
 
 # add_executable(${PROJECT_NAME} src/imageProcess.cpp src/xavier.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 
-add_executable(camshow src/camshow.cpp src/imageProcess.cpp src/PracticalSocket.cpp  ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 add_executable(sti src/sti.cpp )
 add_executable(sd src/stitching_detailed.cpp )
 add_executable(mo src/stithermo.cpp )
 # add_executable(testocv src/testocv.cpp  ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
-add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
-add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
-add_executable(slave src/slave.cpp  src/PracticalSocket.cpp)
+add_executable(slave src/slave.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
+add_executable(slaveshow src/slaveshow.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
 
-add_library(panocam SHARED src/panocam.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(camshow src/camshow.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
+
+add_library(panocam SHARED src/panocam.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
 add_executable(demo src/demo.cpp)
+add_executable(panoapp src/panoapp.cpp src/nvrender.cpp src/context.cpp src/fsmstate.cpp)
 
 
 # target_link_libraries(${PROJECT_NAME}
@@ -168,8 +172,13 @@ target_link_libraries(panocam
 )
 target_link_libraries(demo
     panocam)
+    
+target_link_libraries(panoapp
+    panocam)
 
 target_link_libraries(server 
+    ${OpenCV_LIBS})
+target_link_libraries(slave 
     ${OpenCV_LIBS})
 target_link_libraries(slave 
     ${OpenCV_LIBS})

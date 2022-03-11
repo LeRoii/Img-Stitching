@@ -7,7 +7,7 @@
 #include "PracticalSocket.h"
 #include "ocvstitcher.hpp"
 #include "helper_timer.h"
-#include "nvrender.hpp"
+#include "nvrender.h"
 
 
 // #define CAMERA_NUM 8
@@ -64,6 +64,50 @@ void serverCap()
     }
     downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
     downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // imwrite("7.png", downImgs[2]);
+    // imwrite("8.png", downImgs[3]);
+    // imshow("recv", recvedFrame);
+    // waitKey(1);
+    free(longbuf);
+}
+
+void serverCap2()
+{
+    downImgs.clear();
+    int recvMsgSize; // Size of received message
+    string sourceAddress; // Address of datagram source
+    unsigned short sourcePort; // Port of datagram source
+    Mat recvedFrame;
+
+    do {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+    } while (recvMsgSize > sizeof(int));
+    int total_pack = ((int * ) buffer)[0];
+
+    spdlog::info("expecting length of packs: {}", total_pack);
+    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
+    for (int i = 0; i < total_pack; i++) {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
+            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
+            free(longbuf);
+            return;
+        }
+        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
+    }
+
+    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
+
+    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
+    recvedFrame = imdecode(rawData, IMREAD_COLOR);
+    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
+    if (recvedFrame.size().width == 0) {
+        spdlog::warn("decode failure!");
+        // continue;
+    }
+    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    downImgs[3] = recvedFrame.clone();
     // imwrite("7.png", downImgs[2]);
     // imwrite("8.png", downImgs[3]);
     // imshow("recv", recvedFrame);

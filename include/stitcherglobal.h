@@ -5,50 +5,47 @@
 
 const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 // const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
-
-int vendor = 0;
-int camSrcWidth = 3840;
-int camSrcHeight = 2160;
-
-int distorWidth =  1920;
-int distorHeight = 1080;
-
-int undistorWidth =  960;
-int undistorHeight = 540;
-
-int stitcherinputWidth = 640;
-int stitcherinputHeight = 360;
-
 const int RENDER_EGL = 0;
 const int RENDER_OCV = 1;
-
-int renderWidth = 1920;
-int renderHeight = 1080;
-int renderX = 0;
-int renderY = 0;
-int renderMode = 0;
-
-// output render buffer, in general it's fixed
-int renderBufWidth = 1920; 
-int renderBufHeight = 1080;
-
 const int CAMERA_NUM = 8;
-int USED_CAMERA_NUM = 8;
 const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
-
 const int RET_OK = 0;
 const int RET_ERR = -1;
 
-bool undistor = false;
+extern int vendor;
+extern int camSrcWidth;
+extern int camSrcHeight;
 
-float stitcherMatchConf = 0.3;
-float stitcherAdjusterConf = 0.7f;
-float stitcherBlenderStrength = 3;
-float stitcherCameraExThres = 30;
-float stitcherCameraInThres = 100;
+extern int distorWidth;
+extern int distorHeight;
 
-int batchSize = 1;
-int initMode = 1;
+extern int undistorWidth;
+extern int undistorHeight;
+
+extern int stitcherinputWidth;
+extern int stitcherinputHeight;
+
+extern int renderWidth;
+extern int renderHeight;
+extern int renderX;
+extern int renderY;
+extern int renderMode;
+
+// output render buffer, in general it's fixed
+extern int renderBufWidth; 
+extern int renderBufHeight;
+
+extern int USED_CAMERA_NUM;
+extern bool undistor;
+
+extern float stitcherMatchConf;
+extern float stitcherAdjusterConf;
+extern float stitcherBlenderStrength;
+extern float stitcherCameraExThres;
+extern float stitcherCameraInThres;
+
+extern int batchSize;
+extern int initMode;
 
 struct stCamCfg
 {
@@ -96,7 +93,5 @@ enum enStitcherInitMode
     enInitByDefault = 2,
     enInitByCfg = 3
 };
-
-
 
 #endif

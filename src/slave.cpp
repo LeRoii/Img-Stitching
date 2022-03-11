@@ -4,7 +4,7 @@
 #include <string>
 #include "ocvstitcher.hpp"
 #include "PracticalSocket.h"
-#include "stitcherconfig.h"
+#include "stitcherglobal.h"
 
 #define USED_CAMERA_NUM 2
 #define BUF_LEN 65540 

@@ -1,4 +1,4 @@
-#include "stitcherconfig.h"
+#include "stitcherglobal.h"
 #include "yaml-cpp/yaml.h"
 #include "panocam.h"
 
@@ -8,7 +8,7 @@
 #include "PracticalSocket.h"
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
-#include "nvrender.hpp"
+#include "nvrender.h"
 
 
 std::vector<cv::Mat> upImgs(4);
@@ -154,7 +154,7 @@ public:
         pImgProc = new imageProcessor(net, canname, batchSize);
 
         nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
-        pRenderer = new nvrender(rendercfg);
+        // pRenderer = new nvrender(rendercfg);
 
             
         if(stitcherinputWidth == 480)
@@ -170,11 +170,14 @@ public:
     int init()
     {
         spdlog::info("panocam init start");
+
+#ifndef DEV_MODE
         if(verify())
         {
             spdlog::critical("verification failed, exit");
             return RET_ERR;
         }
+#endif
 
         if(!(initMode == 1 || initMode == 2))
         {

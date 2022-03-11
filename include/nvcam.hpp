@@ -59,7 +59,7 @@
 
 #include "camera_v4l2-cuda.h"
 #include "spdlog/spdlog.h"
-#include "stitcherconfig.h"
+#include "stitcherglobal.h"
 #include "helper_timer.h"
 
 
@@ -529,6 +529,8 @@ public:
         ctx.cam_w = m_camSrcWidth;
         ctx.cam_h = m_camSrcHeight;
 
+        spdlog::critical("m_camSrcWidth:{}",m_camSrcWidth);
+
         bool ok;
         ok = init_components(&ctx);
         ok &= prepare_buffers(&ctx);
@@ -559,8 +561,8 @@ public:
         retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
         // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
         bufparams.payloadType = NvBufferPayload_SurfArray;
-        bufparams.width = m_distoredWidth;
-        bufparams.height = m_distoredHeight;
+        bufparams.width = m_camSrcWidth;
+        bufparams.height = m_camSrcHeight;
         bufparams.layout = NvBufferLayout_Pitch;
         bufparams.colorFormat = NvBufferColorFormat_ARGB32;
         bufparams.nvbuf_tag = NvBufferTag_NONE;

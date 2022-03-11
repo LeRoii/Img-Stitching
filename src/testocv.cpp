@@ -334,7 +334,7 @@
 // #include "nvcam.hpp"
 // #include "PracticalSocket.h"
 // // #include "ocvstitcher.hpp"
-// #include "stitcherconfig.h"
+// #include "stitcherglobal.h"
 // #include "imageProcess.h"
 // #include "helper_timer.h"
 
@@ -583,7 +583,7 @@
 /********* test nvrender *********/
 
 // #include <opencv2/opencv.hpp>
-// #include "nvrender.hpp"
+// #include "nvrender.h"
 
 // int main()
 // {

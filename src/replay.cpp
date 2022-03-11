@@ -7,7 +7,7 @@
 #include "PracticalSocket.h"
 #include "ocvstitcher.hpp"
 #include "helper_timer.h"
-#include "nvrender.hpp"
+#include "nvrender.h"
 
 
 // #define CAMERA_NUM 8

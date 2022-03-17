@@ -3,7 +3,8 @@
 
 
 #include <unordered_map>
-#include <chrono>
+
+
 #include "fsmstate.h"
 
 namespace panoAPP{
@@ -21,7 +22,8 @@ namespace panoAPP{
             std::unordered_map<panoAPP::enAPPFSMSTATE, fsmstate*> m_states;
             panoAPP::enAPPFSMSTATE m_enCurStateName;
             fsmstate *m_pCurState;
-            std::chrono::steady_clock::time_point m_startTimapoint;
+            panocam *m_pPanocam;
+            
 
     };
 }

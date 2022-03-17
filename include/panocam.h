@@ -18,6 +18,7 @@ public:
     int detect(cv::Mat &img);
     int imgEnhancement(cv::Mat &img);
     int render(cv::Mat &img);
+    int verify();
 
 private:
     class panocamimpl;

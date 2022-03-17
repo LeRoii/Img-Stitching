@@ -8,6 +8,7 @@ nvrender *pRenderer;
 
 int main(int argc, char *argv[])
 {
+    spdlog::set_level(spdlog::level::debug);
     std::string yamlpath = "/home/nvidia/ssd/code/0209is/cfg/pamocfg.yaml";
     if(argc > 1)
         yamlpath = argv[1];
@@ -23,6 +24,7 @@ int main(int argc, char *argv[])
     panoAPP::Factory::CreateState(appctx, panoAPP::PANOAPP_STATE_VERIFY);
     panoAPP::Factory::CreateState(appctx, panoAPP::PANOAPP_STATE_INIT);
     panoAPP::Factory::CreateState(appctx, panoAPP::PANOAPP_STATE_RUN);
+    panoAPP::Factory::CreateState(appctx, panoAPP::PANOAPP_STATE_FINISH);
 
     appctx->start(panoAPP::PANOAPP_STATE_START);
 

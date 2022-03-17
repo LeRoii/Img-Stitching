@@ -4,7 +4,7 @@ namespace panoAPP{
     
     context::context():m_pCurState(nullptr)
     {
-        m_startTimapoint = std::chrono::steady_clock::now();
+        // m_startTimapoint = std::chrono::steady_clock::now();
     }
 
     context::~context()
@@ -38,13 +38,23 @@ namespace panoAPP{
 
     void context::update()
     {
+        auto next = m_enCurStateName;
         if(m_pCurState != nullptr)
-            m_pCurState->update();
+            next = m_pCurState->update(m_pPanocam);
 
-        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-        std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimapoint);
-        // std::cout << "ms: " << time_span.count() << std::endl;
-        spdlog::info("state:{}, ms:{}", m_enCurStateName, time_span.count());
+        if(next != m_enCurStateName)
+        {
+            spdlog::debug("state transition");
+            m_pCurState->stop();
+            start(next);
+            m_enCurStateName = next;
+        }
+
+        // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+        // std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimapoint);
+        // // std::cout << "ms: " << time_span.count() << std::endl;
+        // spdlog::info("state:{}, ms:{}", m_enCurStateName, time_span.count());
+        // if(time_span.count() > 3000)
     }
 
 

@@ -98,7 +98,7 @@ add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
 add_executable(slave src/slave.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
-add_executable(slaveshow src/slaveshow.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
+# add_executable(slaveshow src/slaveshow.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
 
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
@@ -177,8 +177,6 @@ target_link_libraries(panoapp
     panocam)
 
 target_link_libraries(server 
-    ${OpenCV_LIBS})
-target_link_libraries(slave 
     ${OpenCV_LIBS})
 target_link_libraries(slave 
     ${OpenCV_LIBS})

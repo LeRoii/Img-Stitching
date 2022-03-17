@@ -125,7 +125,7 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
-std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
+std::string stitchercfgpath = "/home/nvidia/cfg/stitcher-imx424cfg.yaml";
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -225,6 +225,9 @@ imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
+    if(RET_ERR == parse_cmdline(argc, argv))
+        return RET_ERR;
+
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     vendor = config["vendor"].as<int>();
     camSrcWidth = config["camsrcwidth"].as<int>();
@@ -283,8 +286,7 @@ int main(int argc, char *argv[])
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
 
-    if(RET_ERR == parse_cmdline(argc, argv))
-        return RET_ERR;
+
 
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},

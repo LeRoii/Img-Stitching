@@ -25,6 +25,10 @@ namespace panoAPP{
                 {
                     state = new panoAPP::fsmstateRun();
                 }
+                else if (name == panoAPP::PANOAPP_STATE_FINISH)
+                {
+                    state = new panoAPP::fsmstateFinish();
+                }
         
                 context->RegisterState(name, state);
                 return state;

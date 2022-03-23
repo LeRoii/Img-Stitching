@@ -5,6 +5,7 @@ namespace panoAPP{
     context::context():m_pCurState(nullptr)
     {
         // m_startTimapoint = std::chrono::steady_clock::now();
+        m_pPanocam = new panocam("/home/nvidia/ssd/code/0209is/cfg/pamocfg.yaml");
     }
 
     context::~context()

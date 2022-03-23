@@ -1,6 +1,6 @@
+#include "yaml-cpp/yaml.h"
 #include "panocam.h"
 #include "panoapp.h"
-
 
 
 
@@ -12,10 +12,11 @@ int main(int argc, char *argv[])
     std::string yamlpath = "/home/nvidia/ssd/code/0209is/cfg/pamocfg.yaml";
     if(argc > 1)
         yamlpath = argv[1];
+    YAML::Node config = YAML::LoadFile(yamlpath);
     
 
-    renderWidth = 960;
-    renderHeight = 540;
+    renderWidth = config["renderWidth"].as<int>();
+    renderHeight = config["renderHeight"].as<int>();
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     pRenderer = new nvrender(rendercfg);
 

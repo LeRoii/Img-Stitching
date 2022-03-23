@@ -151,6 +151,7 @@ static int parse_cmdline(int argc, char **argv)
 #ifdef CAM_IMX390
                         stitcherinputWidth = undistorWidth = camSrcWidth;
                         stitcherinputHeight = undistorHeight = camSrcHeight;
+                        
 #endif
                         if(0 < idx < 9)
                             break;
@@ -187,11 +188,15 @@ imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
+    YAML::Node config = YAML::LoadFile(defaultcfgpath);
+    stitcherinputWidth = config["stitcherinputWidth"].as<int>();
+    stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+
 
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
 
-    YAML::Node config = YAML::LoadFile(defaultcfgpath);
+    
     vendor = config["vendor"].as<int>();
     camSrcWidth = config["camsrcwidth"].as<int>();
     camSrcHeight = config["camsrcheight"].as<int>();
@@ -199,9 +204,7 @@ int main(int argc, char *argv[])
     distorHeight = config["distorHeight"].as<int>();
     undistorWidth = config["undistorWidth"].as<int>();
     undistorHeight = config["undistorHeight"].as<int>();
-    stitcherinputWidth = config["stitcherinputWidth"].as<int>();
-    stitcherinputHeight = config["stitcherinputHeight"].as<int>();
-
+    
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
     renderX = config["renderX"].as<int>();

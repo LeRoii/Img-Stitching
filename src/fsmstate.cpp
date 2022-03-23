@@ -56,13 +56,15 @@ namespace panoAPP{
         int lineSickness = 2;
         int fontSickness = 2;
         cv::Scalar color = cv::Scalar(5, 217, 82 );
-        std::string dispInitStr = "initialization";
+        std::string dispInitStr = "panorama cam start";
         std::string dispFinalStr;// = "initialization"
                 // cv::imshow("a",screen);
         // cv::waitKey(1);
+        cv::Size testsz = cv::getTextSize(dispInitStr, cv::FONT_HERSHEY_SIMPLEX, fontScale, fontSickness, 0);
+        cv::Point textpos((renderBufWidth - testsz.width)/2, (renderBufHeight - testsz.height)/2+200);
 
         dispFinalStr = dispInitStr+strPts[heartbeat%3];
-        cv::putText(screen, dispFinalStr, cv::Point(900, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        cv::putText(screen, dispFinalStr, textpos, cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         pRenderer->showImg(screen);
 
         if(heartbeat > 3)
@@ -102,7 +104,9 @@ namespace panoAPP{
         std::string dispInitStr = "verification";
         std::string dispFinalStr;// = "initialization"
         dispFinalStr = dispInitStr+strPts[heartbeat%3];
-        cv::putText(screen, dispFinalStr, cv::Point(900, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        cv::Size testsz = cv::getTextSize(dispInitStr, cv::FONT_HERSHEY_SIMPLEX, fontScale, fontSickness, 0);
+        cv::Point textpos((renderBufWidth - testsz.width)/2, (renderBufHeight - testsz.height)/2+200);
+        cv::putText(screen, dispFinalStr, textpos, cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         pRenderer->showImg(screen);
 
         if(heartbeat > 3)
@@ -140,6 +144,32 @@ namespace panoAPP{
     panoAPP::enAPPFSMSTATE fsmstateInit::update(panocam *pPanocam)
     {
         spdlog::debug("state [{}] update", m_enStateName);
+        ticktok();
+        cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
+        screen.setTo(0);
+        double fontScale = 1.2;
+        int lineSickness = 2;
+        int fontSickness = 2;
+        cv::Scalar color = cv::Scalar(5, 217, 82 );
+        std::string dispInitStr = "initalization...";
+        std::string dispFinalStr;// = "initialization"
+        dispFinalStr = dispInitStr+strPts[heartbeat%3];
+        cv::Size testsz = cv::getTextSize(dispInitStr, cv::FONT_HERSHEY_SIMPLEX, fontScale, fontSickness, 0);
+        cv::Point textpos((renderBufWidth - testsz.width)/2, (renderBufHeight - testsz.height)/2+200);
+        cv::putText(screen, "initalization...", textpos, cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        pRenderer->showImg(screen);
+
+        int ret = pPanocam->init();
+        if(ret == RET_OK)
+        {
+            spdlog::debug("init succeed");
+            return PANOAPP_STATE_RUN;
+        }
+        else
+        {
+            spdlog::debug("init failed");
+            return PANOAPP_STATE_RUN;
+        }
     }
 
     void fsmstateInit::stop()
@@ -149,12 +179,17 @@ namespace panoAPP{
 
     void fsmstateRun::start()
     {
-
+        pRenderer->drawIndicator();
     }
 
     panoAPP::enAPPFSMSTATE fsmstateRun::update(panocam *pPanocam)
     {
+        spdlog::debug("state [{}] update", m_enStateName);
+        cv::Mat frame;
+        pPanocam->getPanoFrame(frame);
+        pRenderer->render(frame);
 
+        return PANOAPP_STATE_RUN;
     }
 
     void fsmstateRun::stop()

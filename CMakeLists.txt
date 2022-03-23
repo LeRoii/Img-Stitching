@@ -54,8 +54,8 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 add_compile_options(-std=c++14 )
 # add_definitions(-DDEBUG)
 # add_definitions(-DSPDLOG_DEBUG_ON )
-# add_definitions(-DCAM_IMX390 -DDEV_MODE)
-add_definitions(-DCAM_IMX424 -DDEV_MODE)
+add_definitions(-DCAM_IMX390 -DDEV_MODE)
+# add_definitions(-DCAM_IMX424 -DDEV_MODE)
 # add_definitions(-DCAM_IMX390)
 
 cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CUDA_INCLUDE_DIRS} )
@@ -101,7 +101,9 @@ add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.
 # add_executable(slaveshow src/slaveshow.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
 
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(master2 src/master2.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+add_executable(replay2 src/replay2.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(camshow src/camshow.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 
 add_library(panocam SHARED src/panocam.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
@@ -128,7 +130,21 @@ add_executable(panoapp src/panoapp.cpp src/nvrender.cpp src/context.cpp src/fsms
   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
   )
 
+ target_link_libraries(master2  -lyaml-cpp
+ -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+  )
+
  target_link_libraries(replay  -lyaml-cpp
+ -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+  )
+
+ target_link_libraries(replay2  -lyaml-cpp
  -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}

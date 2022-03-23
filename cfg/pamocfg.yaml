@@ -9,7 +9,7 @@ renderHeight: 540
 renderX: 0
 renderY: 0
 
-loglvl: "info"
+loglvl: "debug-iair"
 # image stitching quality, 0:the wrost and fastest, 5:the best and slowest
 quality: 0
 # init mode, 1:init by environment, 2:init by default parameters

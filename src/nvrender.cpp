@@ -20,7 +20,7 @@ m_mode(cfg.mode)
         renderer = NvEglRenderer::createEglRenderer("renderer0", cfg.renderw, cfg.renderh, cfg.renderx, cfg.rendery);
         if(!renderer)
             spdlog::critical("Failed to create EGL renderer");
-        renderer->setFPS(500);
+        renderer->setFPS(50);
 
         canvas = cv::Mat(cfg.bufferh, cfg.bufferw, CV_8UC4);
         canvas.setTo(0);

@@ -166,7 +166,7 @@ class ocvStitcher
         //     std::cout<<angles<<endl;
         // }
 
-        for(int i=0;i<4;i++)
+        for(int i=0;i<num_images;i++)
         {
             Vec3f defaultAngle = rotationMatrixToEulerAngles(cameraR[i]);
             Vec3f estimatedAngle = rotationMatrixToEulerAngles(cameras[i].R);
@@ -200,7 +200,7 @@ class ocvStitcher
         vector<string> res;
         Stringsplit(camParams[m_id-1], ',', res);
         spdlog::debug("useDefaultCamParams,res size:{}", res.size());
-        for(int i=0;i<4;i++)
+        for(int i=0;i<num_images;i++)
         {
             for(int mi=0;mi<3;mi++)
             {
@@ -260,7 +260,7 @@ class ocvStitcher
         // cout << "params time:" << str << endl;
         spdlog::debug("params timestamp:{}", str);
 
-        for(int i=0;i<4;i++)
+        for(int i=0;i<num_images;i++)
         {
             fin >> str;
             Stringsplit(str, ',', res);
@@ -493,7 +493,7 @@ class ocvStitcher
         // verify camera parameters
        if(RET_OK == verifyCamParams())
        {
-           for(int i=0;i<4;i++)
+           for(int i=0;i<num_images;i++)
            {
             cameraR[i] = cameras[i].R.clone();
             camK[i] = cameras[i].K().clone();
@@ -561,9 +561,9 @@ class ocvStitcher
         for (int i = 0; i < num_images; ++i)
             images_warped[i].convertTo(images_warped_f[i], CV_32F);
         
-        compensator = ExposureCompensator::createDefault(ExposureCompensator::GAIN_BLOCKS);
+        // compensator = ExposureCompensator::createDefault(ExposureCompensator::GAIN_BLOCKS);
 
-        compensator->feed(corners, images_warped, masks_warped);
+        // compensator->feed(corners, images_warped, masks_warped);
         seam_finder = makePtr<detail::GraphCutSeamFinder>(GraphCutSeamFinderBase::COST_COLOR);
         // seam_finder = makePtr<detail::NoSeamFinder>();
         seam_finder->find(images_warped_f, corners, masks_warped);

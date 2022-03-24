@@ -3,8 +3,6 @@
 
 
 #include <unordered_map>
-
-
 #include "fsmstate.h"
 
 namespace panoAPP{

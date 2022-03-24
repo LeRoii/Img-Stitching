@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
     std::string net = config["netpath"].as<string>();
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
-    showall = config["showall"].as<bool>();
+    // showall = config["showall"].as<bool>();
     undistor = config["undistor"].as<bool>();
     renderMode = config["renderMode"].as<int>();
 
@@ -421,12 +421,12 @@ int main(int argc, char *argv[])
         if(!savevideo)
         {
             spdlog::info("render");
-            // renderer->render(ret);
+            renderer->render(ret);
             // if(stitcherinputWidth==1920 && showall)
             //     renderer->render(imgs[1]);
             // else
             //     renderer->render(ret);
-                cv::imshow("m_dev_name", ret);
+                // cv::imshow("m_dev_name", ret);
             // else
             //     cv::imshow("m_dev_name", ret);
             //*writer[0] << ret;

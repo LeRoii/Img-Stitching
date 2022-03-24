@@ -1,0 +1,18 @@
+[Unit]
+Description=Configure gmsl camera
+
+
+[Service]
+Type=simple
+#ExecStartPre=/usr/bin/python -u /usr/local/bin/configure-camera/cam_cfg.py
+#ExecStart=/home/nvidia/pano.sh
+#ExecStart=/usr/bin/python -u /usr/local/bin/configure-camera/cam_cfg.py
+#ExecStart=/home/nvidia/code/0929IS/build/slave
+ExecStart=/home/nvidia/panoappexec.sh
+#Restart=on-failure
+RestartSec=5s
+
+
+[Install]
+WantedBy=multi-user.target
+

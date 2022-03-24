@@ -51,7 +51,7 @@ message(STATUS "CUDA_CUBLAS_LIBRARIES:::${CUDA_CUBLAS_LIBRARIES}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 
 # add_compile_options(-std=c++14 -g )
-add_compile_options(-std=c++14 )
+add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
 # add_definitions(-DSPDLOG_DEBUG_ON )
 add_definitions(-DCAM_IMX390 -DDEV_MODE)
@@ -190,7 +190,7 @@ target_link_libraries(demo
     panocam)
     
 target_link_libraries(panoapp
-    panocam)
+    panocam -lpthread)
 
 # target_link_libraries(server 
 #     ${OpenCV_LIBS})

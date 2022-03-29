@@ -56,6 +56,23 @@ int main(int argc, char *argv[])
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     pRenderer = new nvrender(rendercfg);
 
+    cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
+    screen.setTo(0);
+    double fontScale = 1.2;
+    int lineSickness = 2;
+    int fontSickness = 2;
+    cv::Scalar color = cv::Scalar(5, 217, 82 );
+    std::string dispInitStr = "panorama cam start";
+    std::string dispFinalStr;// = "initialization"
+            // cv::imshow("a",screen);
+    // cv::waitKey(1);
+    cv::Size testsz = cv::getTextSize(dispInitStr, cv::FONT_HERSHEY_SIMPLEX, fontScale, fontSickness, 0);
+    cv::Point textpos((renderBufWidth - testsz.width)/2, (renderBufHeight - testsz.height)/2+200);
+
+    cv::putText(screen, dispInitStr, textpos, cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+    pRenderer->showImg(screen);
+
+
     panoAPP::context *appctx = new panoAPP::context();
     panoAPP::Factory::CreateState(appctx, panoAPP::PANOAPP_STATE_START);
     panoAPP::Factory::CreateState(appctx, panoAPP::PANOAPP_STATE_VERIFY);
@@ -75,37 +92,4 @@ int main(int argc, char *argv[])
 
     return 0;
 
-    cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
-    screen.setTo(0);
-
-    double fontScale = 0.6;
-    int lineSickness = 2;
-    int fontSickness = 2;
-    cv::Scalar color = cv::Scalar(5, 217, 82 );
-    cv::putText(screen, "initialization...", cv::Point(900, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-    while(1)
-        pRenderer->showImg(screen);
-
-    panocam *pcam = new panocam(yamlpath);
-    cv::Mat frame;
-
-    if(-1 == pcam->init())
-    {
-        spdlog::critical("init failed, exit");
-        return 0;
-    }
-    while(1)
-    {
-        // pcam->getCamFrame(1, frame);
-        std::vector<int> ret;
-        pcam->getPanoFrame(frame);
-
-        // pcam->detect(frame, ret);
-        spdlog::info("get frame");
-        pRenderer->render(frame);
-        // pcam->render(frame);
-        // cv::imshow("1", frame);
-        // cv::waitKey(1);
-    }
-    return 0;
 }

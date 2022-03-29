@@ -523,7 +523,7 @@ public:
 
         set_defaults(&ctx);
         strcpy(ctx.dev_name, camcfg.name);
-        ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;
+        ctx.cam_pixfmt = V4L2_PIX_FMT_UYVY;
         ctx.enable_cuda = true;
         ctx.enable_verbose = true;
         ctx.cam_w = m_camSrcWidth;

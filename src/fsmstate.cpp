@@ -37,14 +37,14 @@ namespace panoAPP{
 
     void fsmstateStart::start()
     {
-        cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
-        screen.setTo(0);
-        double fontScale = 1.2;
-        int lineSickness = 2;
-        int fontSickness = 2;
-        cv::Scalar color = cv::Scalar(5, 217, 82 );
-        cv::putText(screen, "initialization...", cv::Point(900, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-        pRenderer->showImg(screen);
+        // cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
+        // screen.setTo(0);
+        // double fontScale = 1.2;
+        // int lineSickness = 2;
+        // int fontSickness = 2;
+        // cv::Scalar color = cv::Scalar(5, 217, 82 );
+        // cv::putText(screen, "initialization...", cv::Point(900, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        // pRenderer->showImg(screen);
     }
 
     panoAPP::enAPPFSMSTATE fsmstateStart::update(panocam *pPanocam)

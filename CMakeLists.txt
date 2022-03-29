@@ -54,8 +54,8 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
 # add_definitions(-DSPDLOG_DEBUG_ON )
-add_definitions(-DCAM_IMX390 -DDEV_MODE)
-# add_definitions(-DCAM_IMX424 -DDEV_MODE)
+# add_definitions(-DCAM_IMX390 -DDEV_MODE)
+add_definitions(-DCAM_IMX424 -DDEV_MODE)
 # add_definitions(-DCAM_IMX390)
 
 cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CUDA_INCLUDE_DIRS} )
@@ -95,7 +95,7 @@ include_directories(
 # add_executable(mo src/stithermo.cpp )
 # add_executable(testocv src/testocv.cpp  ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
-# add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
+add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 # add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
 # add_executable(slave src/slave.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
 # add_executable(slaveshow src/slaveshow.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
@@ -173,11 +173,11 @@ target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUD
   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN)
 # target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} )
 
-# target_link_libraries(cameracuda  
-#     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
-#     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
-#      ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
-#      )
+target_link_libraries(cameracuda  
+    -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+    -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+     ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+     )
 
 target_link_libraries(panocam
     ${OPENGL_LIBRARY} ${OpenCV_LIBS} -lyaml-cpp

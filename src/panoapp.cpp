@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
         yamlpath = argv[1];
     YAML::Node config = YAML::LoadFile(yamlpath);
     
-
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
@@ -71,7 +70,6 @@ int main(int argc, char *argv[])
 
     cv::putText(screen, dispInitStr, textpos, cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
     pRenderer->showImg(screen);
-
 
     panoAPP::context *appctx = new panoAPP::context();
     panoAPP::Factory::CreateState(appctx, panoAPP::PANOAPP_STATE_START);

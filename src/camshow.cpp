@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
         {
 #if CAM_IMX424
             spdlog::info("wait for slave");
-            std::thread server(serverCap2);
+            std::thread server(serverCap);
             server.join();
 #endif
             spdlog::info("wait for slave end");
@@ -377,7 +377,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                std::thread server(serverCap);
+                std::thread server(serverCap2);
                 cameras[4]->getFrame(downImgs[0]);
                 cameras[5]->getFrame(downImgs[1]);
                 server.join();

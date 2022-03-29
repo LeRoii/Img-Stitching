@@ -570,7 +570,7 @@ public:
                 spdlog::critical("Failed to create NvBuffer 1920");
 
         m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
-        m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        // m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
         m_ret = cv::Mat(m_retHeight, m_retWidth, CV_8UC3);
 
         bufparams.width = m_retWidth;
@@ -585,9 +585,9 @@ public:
         // m_gpuargb[0] = cv::cuda::GpuMat(1080, 1920, CV_8UC4);
         // m_gpuargb[1] = cv::cuda::GpuMat(540, 960, CV_8UC4);
 
-        m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
-        m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
-        m_gpuret = cv::cuda::GpuMat(m_retHeight, m_retWidth, CV_8UC4);
+        // m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+        // m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+        // m_gpuret = cv::cuda::GpuMat(m_retHeight, m_retWidth, CV_8UC4);
 
         /* Init the NvBufferTransformParams */
         memset(&transParams, 0, sizeof(transParams));
@@ -605,8 +605,8 @@ public:
         cv::Mat R = cv::Mat::eye(3,3,CV_32F);
         cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
         cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx[0], mapy[0]);
-        gpuMapx[0] = cv::cuda::GpuMat(mapx[0].clone());
-        gpuMapy[0] = cv::cuda::GpuMat(mapy[0].clone());
+        // gpuMapx[0] = cv::cuda::GpuMat(mapx[0].clone());
+        // gpuMapy[0] = cv::cuda::GpuMat(mapy[0].clone());
         
         image_size = cv::Size(960, 540);
         undistorSize = image_size;
@@ -614,8 +614,11 @@ public:
         mapy[1] = cv::Mat(undistorSize,CV_32FC1);
         optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[1], distortion_coeffs[1], image_size, 1, undistorSize, 0);
         cv::initUndistortRectifyMap(intrinsic_matrix[1],distortion_coeffs[1], R, optMatrix, undistorSize, CV_32FC1, mapx[1], mapy[1]);
-        gpuMapx[1] = cv::cuda::GpuMat(mapx[1]);
-        gpuMapy[1] = cv::cuda::GpuMat(mapy[1]);
+        // gpuMapx[1] = cv::cuda::GpuMat(mapx[1]);
+        // gpuMapy[1] = cv::cuda::GpuMat(mapy[1]);
+
+        int bufsize = m_camSrcWidth*m_camSrcHeight*2;
+        m_258YUYVBuf = (unsigned char*)malloc(bufsize);
 
         setDistoredSize(m_undistoredWidth);
         spdlog::debug("cam [{}] init complete", m_id);
@@ -695,6 +698,14 @@ public:
         //         ERROR_RETURN("Failed to convert the buffer");
         // ctx.renderer->render(ctx.render_dmabuf_fd);
 
+#if YUYVCAM
+        // for 258 YUYV camera
+        if(-1 == NvBuffer2Raw(ctx.g_buff[v4l2_buf.index].dmabuff_fd, 0, m_camSrcWidth, m_camSrcHeight, m_258YUYVBuf))
+                ERROR_RETURN("Failed to NvBuffer2Raw");
+        cv::Mat mtt(m_camSrcHeight, m_camSrcWidth, CV_8UC2, m_258YUYVBuf);
+        cv::cvtColor(mtt,m_argb,cv::COLOR_YUV2BGRA_YUYV);
+        // 258 end
+#else
         /*  Convert the camera buffer from YUV422 to ARGB */
         if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd, &transParams))
             ERROR_RETURN("Failed to convert the buffer");
@@ -705,8 +716,8 @@ public:
                 ERROR_RETURN("Failed to NvBuffer2Raw");
         
         // spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
+#endif
 
-        
         if(m_undistor)
         {
             /***** cpu undistor *****/
@@ -942,4 +953,5 @@ public:
     cv::cuda::GpuMat m_gpuret;
 
     bool m_undistor;
+    unsigned char *m_258YUYVBuf;
 };

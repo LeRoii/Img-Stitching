@@ -719,7 +719,7 @@ start_capture(camcontext_t * ctx)
             
             cv::Mat mtt(2160, 3840, CV_8UC2, buf);
             cv::Mat mt;
-            cv::cvtColor(mtt,mt,cv::COLOR_YUV2RGB_YUYV);
+            cv::cvtColor(mtt,mt,cv::COLOR_YUV2BGR_YUYV);
             cv::imwrite("a.png", mt);
             return 0;
             // 258 end

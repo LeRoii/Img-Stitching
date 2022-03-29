@@ -1,4 +1,3 @@
-// 1 cams in slave
 // #include <opencv2/opencv.hpp>
 // #include <thread>
 // #include <string>
@@ -80,7 +79,6 @@
 //     return 0;
 // }
 
-// 2 cams in slave
 #include <opencv2/opencv.hpp>
 #include <thread>
 #include <string>
@@ -126,7 +124,7 @@ int main(int argc, char *argv[])
 
         cv::hconcat(vector<cv::Mat>{img7, img8}, ret);
         // cout << "7 s:" << img7.size()<<",8 s:"<<img8.size()<<".ret s:"<<ret.size()<<endl;
-        cv::imshow("1", img7);
+        // cv::imshow("1", img7);
         // cv::waitKey(1);
 
         //send to master

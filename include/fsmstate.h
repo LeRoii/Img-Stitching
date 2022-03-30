@@ -25,6 +25,14 @@ namespace panoAPP{
         PANOAPP_STATE_FINISH = 5
     };
 
+    struct stSystemStatus
+    {
+        bool imgEnhance;
+        bool detection;
+        bool cross;
+        stSystemStatus():imgEnhance(false), detection(false), cross(false){}
+    };
+
     class fsmstate
     {
         public:
@@ -40,6 +48,7 @@ namespace panoAPP{
            panoAPP::enAPPFSMSTATE m_enStateName; 
            static std::chrono::steady_clock::time_point m_startTimepoint;
            int heartbeat;
+           stSystemStatus m_stSysStatus;
     };
 
     class fsmstateStart : public fsmstate
@@ -84,8 +93,6 @@ namespace panoAPP{
         panoAPP::enAPPFSMSTATE update(panocam *pPanocam);
         void stop();
     };
-
-    
 }
 
 #endif

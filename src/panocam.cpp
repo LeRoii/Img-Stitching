@@ -32,7 +32,7 @@ int  serverCap()
     } while (recvMsgSize > sizeof(int));
     int total_pack = ((int * ) buffer)[0];
 
-    spdlog::info("expecting length of packs: {}", total_pack);
+    spdlog::debug("expecting length of packs: {}", total_pack);
     char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
         recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
@@ -170,14 +170,6 @@ public:
     int init()
     {
         spdlog::info("panocam init start");
-
-#ifndef DEV_MODE
-        if(verify())
-        {
-            spdlog::critical("verification failed, exit");
-            return RET_ERR;
-        }
-#endif
 
         if(!(initMode == 1 || initMode == 2))
         {

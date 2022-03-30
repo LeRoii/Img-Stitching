@@ -189,12 +189,47 @@ namespace panoAPP{
         spdlog::debug("state [{}] update", m_enStateName);
         cv::Mat frame;
         pPanocam->getPanoFrame(frame);
-        if(getbit(g_usrcmd, SETTING_IMGENHANCE))
+
+        // getbit(g_usrcmd, SETTING_IMGENHANCE) ? m_stSysStatus.imgEnhance = true : m_stSysStatus.imgEnhance = false;
+        // getbit(g_usrcmd, SETTING_DETECTION) ? m_stSysStatus.detection = true : m_stSysStatus.detection = false;
+        // getbit(g_usrcmd, SETTING_CROSS) ? m_stSysStatus.cross = true : m_stSysStatus.cross = false;
+
+        if(getbit(g_usrcmd, SETTING_IMGENHANCE) != m_stSysStatus.imgEnhance)
+        {
+            spdlog::info("image enhancement switch to [{}]", !m_stSysStatus.imgEnhance);
+            m_stSysStatus.imgEnhance = getbit(g_usrcmd, SETTING_IMGENHANCE);
+        }
+        if(getbit(g_usrcmd, SETTING_DETECTION) != m_stSysStatus.detection)
+        {
+            spdlog::info("image detection switch to [{}]", !m_stSysStatus.detection);
+            m_stSysStatus.detection = getbit(g_usrcmd, SETTING_DETECTION);
+        }
+        if(getbit(g_usrcmd, SETTING_CROSS) != m_stSysStatus.cross)
+        {
+            spdlog::info("image cross switch to [{}]", !m_stSysStatus.cross);
+            m_stSysStatus.cross = getbit(g_usrcmd, SETTING_CROSS);
+        }
+
+        if(m_stSysStatus.imgEnhance)
             pPanocam->imgEnhancement(frame);
-        if(getbit(g_usrcmd, SETTING_DETECTION))
+        if(m_stSysStatus.detection)
             pPanocam->detect(frame);
-        if(getbit(g_usrcmd, SETTING_CROSS))
+        if(m_stSysStatus.cross)
             pPanocam->drawCross(frame);
+        
+        // if(getbit(g_usrcmd, SETTING_IMGENHANCE))
+        // {
+        //     pPanocam->imgEnhancement(frame);
+        //     m_stSysStatus.imgEnhance = true;
+        // }
+        // if(getbit(g_usrcmd, SETTING_DETECTION))
+        // {
+        //     pPanocam->detect(frame);
+        //     m_stSysStatus.detection = true;
+        // }
+        // if(getbit(g_usrcmd, SETTING_CROSS))
+        //     pPanocam->drawCross(frame);
+        
         pRenderer->render(frame);
 
         return PANOAPP_STATE_RUN;

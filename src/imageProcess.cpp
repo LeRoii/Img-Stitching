@@ -157,8 +157,8 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
     spdlog::debug("detNN ret size:{}", detNN.batchDetected.size());
     // detNN.draw(batch_frame);
     detNN.draw(batch_frame, detret, classnames);
-    printf("detNN draw_boxes okkkkk\n");
-    printf("detret size:%d\n",  detret.size());   //x,y,w,h,class,probality
+    spdlog::debug("detNN draw_boxes okkkkk");
+    spdlog::debug("detret size:{}\n",  detret.size());   //x,y,w,h,class,probality
 
     // if(ii==0)
     // {

@@ -54,11 +54,24 @@ int scanKeyboard()
 
 int main(int argc, char *argv[])
 {
-    spdlog::set_level(spdlog::level::debug);
-    std::string yamlpath = "/home/nvidia/cfg/pamocfg.yaml";
+    std::string yamlpath = "/home/nvidia/cfg/panocfg.yaml";
     if(argc > 1)
         yamlpath = argv[1];
     YAML::Node config = YAML::LoadFile(yamlpath);
+
+    std::string loglvl = config["loglvl"].as<std::string>();
+    if(loglvl == "critical-iair")
+        spdlog::set_level(spdlog::level::critical);
+    else if(loglvl == "trace-iair")
+        spdlog::set_level(spdlog::level::trace);
+    else if(loglvl == "warn-iair")
+        spdlog::set_level(spdlog::level::warn);
+    else if(loglvl == "info")
+        spdlog::set_level(spdlog::level::info);
+    else if(loglvl == "debug-iair")
+        spdlog::set_level(spdlog::level::debug);
+    else
+        spdlog::set_level(spdlog::level::info);
     
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
@@ -96,7 +109,7 @@ int main(int argc, char *argv[])
     while(1 && g_keyboardinput!=113)
     {
         appctx->update();
-        spdlog::info("g_keyboardinput:", g_keyboardinput);
+        spdlog::debug("g_keyboardinput:", g_keyboardinput);
     }
     if(pRenderer != nullptr)
         delete pRenderer;

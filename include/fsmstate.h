@@ -5,6 +5,13 @@
 #include <chrono>
 #include "panocam.h"
 
+#define reversebit(x,y)  x^=(1<<y)
+#define getbit(x,y)   ((x) >> (y)&1)
+
+const int SETTING_IMGENHANCE = 0;
+const int SETTING_DETECTION = 1;
+const int SETTING_CROSS = 2;
+
 extern nvrender *pRenderer;
 
 namespace panoAPP{

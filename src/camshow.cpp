@@ -114,8 +114,12 @@ void serverCap2()
 #endif
 
 std::string cfgpath;
-// std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
+#if CAM_IMX390
+std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
+#else if CAM_IMX424
 std::string defaultcfgpath = "../cfg/stitcher-imx424cfg.yaml";
+#endif
+
 int framecnt = 0;
 
 bool detect = false;

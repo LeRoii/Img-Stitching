@@ -1,5 +1,6 @@
 #include "fsmstate.h"
 
+extern int g_usrcmd;
 
 std::string strPts[3] = {".","..","..."};
 
@@ -21,7 +22,7 @@ namespace panoAPP{
     {
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimepoint);
-        spdlog::debug("state:{}, ms:{}, diff:{}", m_enStateName, time_span.count(), (time_span-std::chrono::milliseconds{3000}).count());
+        spdlog::trace("state:{}, ms:{}, diff:{}", m_enStateName, time_span.count(), (time_span-std::chrono::milliseconds{3000}).count());
         if(time_span > std::chrono::milliseconds{1000})
         {
             spdlog::debug("heartbeat");
@@ -180,6 +181,7 @@ namespace panoAPP{
     void fsmstateRun::start()
     {
         pRenderer->drawIndicator();
+        m_enStateName = PANOAPP_STATE_RUN;
     }
 
     panoAPP::enAPPFSMSTATE fsmstateRun::update(panocam *pPanocam)
@@ -187,6 +189,12 @@ namespace panoAPP{
         spdlog::debug("state [{}] update", m_enStateName);
         cv::Mat frame;
         pPanocam->getPanoFrame(frame);
+        if(getbit(g_usrcmd, SETTING_IMGENHANCE))
+            pPanocam->imgEnhancement(frame);
+        if(getbit(g_usrcmd, SETTING_DETECTION))
+            pPanocam->detect(frame);
+        if(getbit(g_usrcmd, SETTING_CROSS))
+            pPanocam->drawCross(frame);
         pRenderer->render(frame);
 
         return PANOAPP_STATE_RUN;

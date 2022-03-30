@@ -8,7 +8,7 @@ camsrcheight: 2160
 distorWidth: 3840
 distorHeight: 2160
 # undistor size can only be 960x540 or 1920x1080
-undistor: false
+undistor: true
 undistorWidth: 960
 undistorHeight: 540
 stitcherinputWidth: 640

@@ -10,7 +10,7 @@ namespace panoAPP{
     class context
     {
         public:
-            context();
+            context(std::string yamlpath);
             ~context();
             void update();
             void RegisterState(panoAPP::enAPPFSMSTATE statename, fsmstate* state);

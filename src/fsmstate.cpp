@@ -57,7 +57,7 @@ namespace panoAPP{
         int lineSickness = 2;
         int fontSickness = 2;
         cv::Scalar color = cv::Scalar(5, 217, 82 );
-        std::string dispInitStr = "panorama cam start";
+        std::string dispInitStr = "xjtu panorama app start";
         std::string dispFinalStr;// = "initialization"
                 // cv::imshow("a",screen);
         // cv::waitKey(1);
@@ -182,6 +182,7 @@ namespace panoAPP{
     {
         pRenderer->drawIndicator();
         m_enStateName = PANOAPP_STATE_RUN;
+        spdlog::info("app started");
     }
 
     panoAPP::enAPPFSMSTATE fsmstateRun::update(panocam *pPanocam)
@@ -209,6 +210,11 @@ namespace panoAPP{
             spdlog::info("image cross switch to [{}]", !m_stSysStatus.cross);
             m_stSysStatus.cross = getbit(g_usrcmd, SETTING_CROSS);
         }
+        if(getbit(g_usrcmd, SETTING_SAVE) != m_stSysStatus.save)
+        {
+            spdlog::info("image save switch to [{}]", !m_stSysStatus.save);
+            m_stSysStatus.save = getbit(g_usrcmd, SETTING_SAVE);
+        }
 
         if(m_stSysStatus.imgEnhance)
             pPanocam->imgEnhancement(frame);
@@ -216,6 +222,8 @@ namespace panoAPP{
             pPanocam->detect(frame);
         if(m_stSysStatus.cross)
             pPanocam->drawCross(frame);
+        if(m_stSysStatus.save)
+            pPanocam->saveAndSend(frame);
         
         // if(getbit(g_usrcmd, SETTING_IMGENHANCE))
         // {
@@ -229,7 +237,6 @@ namespace panoAPP{
         // }
         // if(getbit(g_usrcmd, SETTING_CROSS))
         //     pPanocam->drawCross(frame);
-        
         pRenderer->render(frame);
 
         return PANOAPP_STATE_RUN;

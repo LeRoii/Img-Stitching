@@ -48,6 +48,8 @@ int scanKeyboard()
         reversebit(g_usrcmd, SETTING_DETECTION);
     else if(g_keyboardinput == 99)  //c
         reversebit(g_usrcmd, SETTING_CROSS);
+    else if(g_keyboardinput == 115)  //s
+        reversebit(g_usrcmd, SETTING_SAVE);
     // return g_keyboardinput;
   }
 }
@@ -84,7 +86,7 @@ int main(int argc, char *argv[])
     int lineSickness = 2;
     int fontSickness = 2;
     cv::Scalar color = cv::Scalar(5, 217, 82 );
-    std::string dispInitStr = "panorama cam start";
+    std::string dispInitStr = "xjtu panorama app start";
     std::string dispFinalStr;// = "initialization"
             // cv::imshow("a",screen);
     // cv::waitKey(1);
@@ -109,7 +111,7 @@ int main(int argc, char *argv[])
     while(1 && g_keyboardinput!=113)
     {
         appctx->update();
-        spdlog::debug("g_keyboardinput:", g_keyboardinput);
+        spdlog::debug("g_keyboardinput:{}", g_keyboardinput);
     }
     if(pRenderer != nullptr)
         delete pRenderer;

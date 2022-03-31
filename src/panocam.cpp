@@ -364,6 +364,15 @@ public:
 
         cv::line(img, cv::Point(x1-10,y2), cv::Point(x1+10,y2), cv::Scalar(0,255,0), 2);
         cv::line(img, cv::Point(x1,y2-10), cv::Point(x1,y2+10), cv::Scalar(0,255,0), 2);
+
+        return RET_OK;
+    }
+
+    int saveAndSend(cv::Mat &img)
+    {
+        pImgProc->publishImage(img);
+
+        return RET_OK;
     }
     
 
@@ -455,4 +464,9 @@ int panocam::verify()
     // printf("p::%s\n", p);
 
     return strcmp(gt, p);
+}
+
+int panocam::saveAndSend(cv::Mat &img)
+{
+    return pimpl->saveAndSend(img);
 }

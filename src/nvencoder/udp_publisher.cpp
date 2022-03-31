@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <poll.h>
+#include "spdlog/spdlog.h"
 
 using namespace std;
 
@@ -69,7 +70,7 @@ namespace udp_publisher
     send_addr.sin_port = htons(10000);
     send_addr.sin_addr.s_addr = inet_addr("192.168.1.103");
 
-		printf("Enter rgbimage to send:");
+		spdlog::debug("Enter rgbimage to send:");
 
     // if(sendto(m_sockfd,image,length,0,(sockaddr *)&send_addr,sizeof(send_addr)) <= 0)
     // {
@@ -82,7 +83,7 @@ namespace udp_publisher
     int ibuf[1];
     ibuf[0] = total_pack;
     sendto(m_sockfd,ibuf,sizeof(int),0,(sockaddr *)&send_addr,sizeof(send_addr));
-    std::cout<<"pack number : "<<total_pack<<std::endl;
+    spdlog::debug("pack number :{}",total_pack);
     for(int i = 0; i<total_pack; i++){
       sendto(m_sockfd,&image[i*UP_UDP_PACK_SIZE],UP_UDP_PACK_SIZE,0,(sockaddr *)&send_addr,sizeof(send_addr)) ;
     }
@@ -97,7 +98,9 @@ namespace udp_publisher
     send_addr.sin_port = htons(9999);
     send_addr.sin_addr.s_addr = inet_addr("192.168.1.103");
 
+#if DEV_MODE
 		printf("Enter data to send:");
+#endif
 
     if(sendto(m_sockfd,(targetInfo*)&data,length,0,(sockaddr *)&send_addr,sizeof(send_addr)) <= 0)
     {

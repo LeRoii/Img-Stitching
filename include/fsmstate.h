@@ -11,6 +11,7 @@
 const int SETTING_IMGENHANCE = 0;
 const int SETTING_DETECTION = 1;
 const int SETTING_CROSS = 2;
+const int SETTING_SAVE = 3;
 
 extern nvrender *pRenderer;
 
@@ -30,7 +31,8 @@ namespace panoAPP{
         bool imgEnhance;
         bool detection;
         bool cross;
-        stSystemStatus():imgEnhance(false), detection(false), cross(false){}
+        bool save;
+        stSystemStatus():imgEnhance(false), detection(false), cross(false), save(false){}
     };
 
     class fsmstate

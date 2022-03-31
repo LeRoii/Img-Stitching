@@ -20,6 +20,7 @@ public:
     int render(cv::Mat &img);
     int drawCross(cv::Mat &img);
     int verify();
+    int saveAndSend(cv::Mat &img);
 
 private:
     class panocamimpl;

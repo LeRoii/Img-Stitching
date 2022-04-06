@@ -41,8 +41,8 @@ loglvl: "debug"
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
 stitcherBlenderStrength: 0
-stitcherCameraExThres: 30
-stitcherCameraInThres: 100
+stitcherCameraExThres: 30e3
+stitcherCameraInThres: 100e3
 initMode: 1
 
 # parameters for detector

@@ -125,7 +125,12 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
-std::string stitchercfgpath = "/home/nvidia/ssd/code/0209is/cfg/stitcher-imx390cfg.yaml";
+
+#if CAM_IMX390
+std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
+#else if CAM_IMX424
+std::string stitchercfgpath = "../cfg/stitcher-imx424cfg.yaml";
+#endif
 
 static bool
 parse_cmdline(int argc, char **argv)

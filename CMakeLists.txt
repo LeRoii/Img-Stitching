@@ -55,6 +55,7 @@ add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
 # add_definitions(-DCAM_IMX390 -DDEV_MODE)
 # add_definitions(-DCAM_IMX424 -DDEV_MODE)
+# add_definitions(-DCAM_IMX424)
 # add_definitions(-DYUYVCAM -DCAM_IMX424 -DDEV_MODE)
 add_definitions(-DYUYVCAM -DCAM_IMX424)
 # add_definitions(-DCAM_IMX390)
@@ -98,31 +99,38 @@ include_directories(
 add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(cameracuda src/camera_v4l2-cuda.cpp ${COMMONCLSFILES})
 # add_executable(server src/Server.cpp  src/PracticalSocket.cpp)
-# add_executable(slave src/slave.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
-# add_executable(slaveshow src/slaveshow.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
 
 add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(master2 src/master2.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(replay2 src/replay2.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 add_executable(camshow src/camshow.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
+add_executable(camshow-2 src/camshow-2.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
 
 add_library(panocam SHARED src/panocam.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
 add_executable(demo src/demo.cpp)
 add_executable(panoapp src/panoapp.cpp src/nvrender.cpp src/context.cpp src/fsmstate.cpp)
 
+add_executable(slave src/slave.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
+add_executable(slaveshow src/slaveshow.cpp  src/nvrender.cpp src/imageProcess.cpp src/PracticalSocket.cpp  src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES}  )
 
-# target_link_libraries(${PROJECT_NAME}
-#   ${tkdnn_LIBS}
-#   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
-#   ${OpenCV_LIBS}
-#   ${GLUT_LIBRARY}
-#   ${CUDA_LIBRARIES}
-#    ${OPENGL_LIBRARY}
-#   v4l2
-#   yuyv2rgb
-#  )
+target_link_libraries(slave 
+${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
+-L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS} -lpthread)
+
+target_link_libraries(slaveshow 
+ -lyaml-cpp 
+ ${OPENGL_LIBRARY} 
+ ${CUDA_LIBRARIES}
+ -lpthread
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2  -lX11 -lEGL
+ -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -lkernels -ltkDNN
+ ${OpenCV_LIBS} 
+  )
 
  target_link_libraries(master  -lyaml-cpp
  -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
@@ -153,6 +161,12 @@ add_executable(panoapp src/panoapp.cpp src/nvrender.cpp src/context.cpp src/fsms
   )
 
 target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
+-L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+ -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+  ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
+  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+  )
+target_link_libraries(camshow-2  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
 -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}

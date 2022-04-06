@@ -63,6 +63,50 @@ int  serverCap()
 
     return RET_OK;
 }
+
+void serverCap2()
+{
+    downImgs.clear();
+    int recvMsgSize; // Size of received message
+    string sourceAddress; // Address of datagram source
+    unsigned short sourcePort; // Port of datagram source
+    Mat recvedFrame;
+
+    do {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+    } while (recvMsgSize > sizeof(int));
+    int total_pack = ((int * ) buffer)[0];
+
+    spdlog::debug("expecting length of packs: {}", total_pack);
+    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
+    for (int i = 0; i < total_pack; i++) {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
+            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
+            free(longbuf);
+            return;
+        }
+        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
+    }
+
+    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
+
+    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
+    recvedFrame = imdecode(rawData, IMREAD_COLOR);
+    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
+    if (recvedFrame.size().width == 0) {
+        spdlog::warn("decode failure!");
+        // continue;
+    }
+    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    downImgs[3] = recvedFrame.clone();
+    // imwrite("7.png", downImgs[2]);
+    // imwrite("8.png", downImgs[3]);
+    // imshow("recv", recvedFrame);
+    // waitKey(1);
+    free(longbuf);
+}
 #endif
 
 static int verify()
@@ -130,7 +174,7 @@ public:
         else
             spdlog::set_level(spdlog::level::info);
 #if CAM_IMX424
-        USED_CAMERA_NUM = 6;
+        USED_CAMERA_NUM = 7;
 #endif
 
         stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
@@ -206,11 +250,18 @@ public:
                 downImgs.push_back(cameras[i+4]->m_ret);
             }
 #elif CAM_IMX424
-            serverCap();
+            // serverCap();
+            // cameras[4]->read_frame();
+            // cameras[5]->read_frame();
+            // downImgs[0] = cameras[4]->m_ret;
+            // downImgs[1] = cameras[5]->m_ret;
+            serverCap2();
             cameras[4]->read_frame();
             cameras[5]->read_frame();
+            cameras[6]->read_frame();
             downImgs[0] = cameras[4]->m_ret;
             downImgs[1] = cameras[5]->m_ret;
+            downImgs[2] = cameras[6]->m_ret;
 #endif
             failnum++;
             if(failnum > 5)
@@ -259,13 +310,14 @@ public:
     int getPanoFrame(cv::Mat &ret)
     {
 #if CAM_IMX424
-        std::thread server(serverCap);
+        std::thread server(serverCap2);
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
         cameras[2]->getFrame(upImgs[2]);
         cameras[3]->getFrame(upImgs[3]);
         cameras[4]->getFrame(downImgs[0]);
         cameras[5]->getFrame(downImgs[1]);
+        cameras[6]->getFrame(downImgs[2]);
         server.join();
 #elif CAM_IMX390
         cameras[0]->getFrame(upImgs[0]);
@@ -455,14 +507,16 @@ int panocam::verify()
     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 
     
-    char gt[] = "00:54:5a:19:03:5f";//91v-dev
+    // char gt[] = "00:54:5a:19:03:5f";//91v-dev
     // char gt[] = "00:54:5a:1b:02:7b";//91s-dev
     // char gt[] = "00:54:5a:1c:00:bd";//91s-207
+    char gt[] = "00:54:5a:1b:01:a5";//91v-258-2nd
     
     char p[50];
     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
     // printf("p::%s\n", p);
 
+    return false;
     return strcmp(gt, p);
 }
 

@@ -196,7 +196,7 @@ class DetectionNN {
                     cv::putText(frames[bi], det_class, cv::Point(x0, (y0 - (baseline / 2))), cv::FONT_HERSHEY_SIMPLEX, font_scale, cv::Scalar(255, 255, 255), thickness);
                 }
 #if DEV_MODE
-                aaprintf("****!!!!!!!!!!detret size:::%d\n", detret.size());
+                printf("****!!!!!!!!!!detret size:::%d\n", detret.size());
 #endif
             }
             

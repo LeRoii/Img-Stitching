@@ -125,7 +125,7 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
-std::string stitchercfgpath = "/home/nvidia/ssd/code/0209is/cfg/stitcher-imx390cfg.yaml";
+std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -540,7 +540,8 @@ int main(int argc, char *argv[])
             writerInit = true;
         }
         cv::Mat final;
-        renderer->render(ret, final);
+        // renderer->render(ret, final);
+        cv::imshow("1",ret);
         if(savevideo)
         {
             *panoWriter << final;

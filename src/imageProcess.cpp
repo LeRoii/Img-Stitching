@@ -153,10 +153,12 @@ cv::Mat imageProcessor::ImageDetect(cv::Mat &img, std::vector<int> &detret)
 
     detNN.update(batch_dnn_input, n_batch);
     detret.clear();
+
+    spdlog::debug("detNN ret size:{}", detNN.batchDetected.size());
     // detNN.draw(batch_frame);
     detNN.draw(batch_frame, detret, classnames);
-    printf("detNN draw_boxes okkkkk\n");
-    printf("detret size:%d\n",  detret.size());   //x,y,w,h,class,probality
+    spdlog::debug("detNN draw_boxes okkkkk");
+    spdlog::debug("detret size:{}\n",  detret.size());   //x,y,w,h,class,probality
 
     // if(ii==0)
     // {
@@ -379,7 +381,6 @@ controlData imageProcessor::getCtlCommand(){
 imageProcessor::imageProcessor(std::string net, std::string canname, int batchsize):n_batch(batchsize) {
     pthread_t tid;
     // canInit();
-    printf("can init ok!\n");
     int n_classes = 80;
     float conf_thresh=0.8;
     detNN.init(net, n_classes, n_batch, conf_thresh);
@@ -391,5 +392,5 @@ imageProcessor::imageProcessor(std::string net, std::string canname, int batchsi
     // {
     //    spdlog::warn("pthread_create error: error_code={}", ret);
     // }
-   spdlog::info("detNN init okkkkk");
+   spdlog::debug("detNN init completed");
 }

@@ -70,7 +70,7 @@ char dev_name[24] = "/dev/video0";
 
 int width = PIXL_WIDTH;
 int height = PIXL_HEIGHT;
-static int v4l2_format = V4L2_PIX_FMT_YUYV;
+static int v4l2_format = V4L2_PIX_FMT_UYVY;
 
 static int flag_enable_trigger = 0;
 

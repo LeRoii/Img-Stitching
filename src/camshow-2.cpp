@@ -81,7 +81,7 @@ void serverCap2()
     } while (recvMsgSize > sizeof(int));
     int total_pack = ((int * ) buffer)[0];
 
-    spdlog::info("expecting length of packs: {}", total_pack);
+    spdlog::debug("expecting length of packs: {}", total_pack);
     char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
         recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
         {
 #if CAM_IMX424
             spdlog::info("wait for slave");
-            std::thread server(serverCap);
+            std::thread server(serverCap2);
             server.join();
 #endif
             spdlog::info("wait for slave end");
@@ -374,17 +374,17 @@ int main(int argc, char *argv[])
         else
         {
 #if CAM_IMX424
-            if(idx < 5)
+            if(idx < 8)
             {
                 cameras[idx-1]->getFrame(ret);
             }
             else
             {
                 std::thread server(serverCap2);
-                cameras[4]->getFrame(downImgs[0]);
-                cameras[5]->getFrame(downImgs[1]);
+                // cameras[4]->getFrame(downImgs[0]);
+                // cameras[5]->getFrame(downImgs[1]);
                 server.join();
-                ret = downImgs[idx-5];
+                ret = imgs[7];
             }
 #elif CAM_IMX390
             cameras[idx-1]->getFrame(ret);

@@ -55,6 +55,8 @@ using namespace std;
 
 StopWatchInterface *timer;
 
+unsigned char *buf;
+
 static void
 print_usage(void)
 {
@@ -154,7 +156,7 @@ set_defaults(camcontext_t * ctx)
 
     ctx->cam_devname = "/dev/video0";
     ctx->cam_fd = -1;
-    ctx->cam_pixfmt = V4L2_PIX_FMT_YUYV;
+    ctx->cam_pixfmt = V4L2_PIX_FMT_UYVY;
     ctx->cam_w = 640;
     ctx->cam_h = 480;
     ctx->frame = 0;
@@ -320,7 +322,7 @@ display_initialize(camcontext_t * ctx)
 {
     /* Create EGL renderer */
     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
-            ctx->cam_w/2, ctx->cam_h/2, 0, 0);
+            ctx->cam_w/8, ctx->cam_h/8, 0, 0);
     if (!ctx->renderer)
         ERROR_RETURN("Failed to create EGL renderer");
     ctx->renderer->setFPS(ctx->fps);
@@ -517,6 +519,9 @@ prepare_buffers(camcontext_t * ctx)
 
     m_argb = cv::Mat(540, 960, CV_8UC4);
 
+    int bufsize = 3840*2160*2;
+    buf = (unsigned char*)malloc(bufsize);
+
     INFO("Succeed in preparing stream buffers");
     return true;
 }
@@ -708,6 +713,17 @@ start_capture(camcontext_t * ctx)
                         &transParams))
                 ERROR_RETURN("Failed to convert the buffer");
 
+            // for 258 YUYV camera
+            if(-1 == NvBuffer2Raw(ctx->g_buff[v4l2_buf.index].dmabuff_fd, 0, 3840, 2160, buf))
+                ERROR_RETURN("Failed to NvBuffer2Raw");
+            
+            cv::Mat mtt(2160, 3840, CV_8UC2, buf);
+            cv::Mat mt;
+            cv::cvtColor(mtt,mt,cv::COLOR_YUV2BGR_YUYV);
+            cv::imwrite("a.png", mt);
+            return 0;
+            // 258 end
+
             
 
 
@@ -728,7 +744,7 @@ start_capture(camcontext_t * ctx)
                 ERROR_RETURN("Failed to queue camera buffers: %s (%d)",
                         strerror(errno), errno);
 
-            printf("takes:::%f\n", sdkGetTimerValue(&timer));
+            // printf("takes:::%f\n", sdkGetTimerValue(&timer));
         }
     }
 
@@ -769,12 +785,12 @@ main(int argc, char *argv[])
     CHECK_ERROR(parse_cmdline(&ctx, argc, argv), cleanup,
             "Invalid options specified");
 
-    // ctx.cam_devname = "/dev/video5";
-    ctx.cam_w = 1920;
-    ctx.cam_h = 1080;
-    ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;
-    ctx.enable_cuda = true;
-    ctx.enable_verbose = true;
+    // ctx.cam_devname = "/dev/video1";
+    // ctx.cam_w = 3840;
+    // ctx.cam_h = 2160;
+    // ctx.cam_pixfmt = V4L2_PIX_FMT_YUYV;
+    // ctx.enable_cuda = true;
+    // ctx.enable_verbose = true;
 
 
 

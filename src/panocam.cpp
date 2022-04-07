@@ -1,4 +1,4 @@
-#include "stitcherconfig.h"
+#include "stitcherglobal.h"
 #include "yaml-cpp/yaml.h"
 #include "panocam.h"
 
@@ -8,7 +8,7 @@
 #include "PracticalSocket.h"
 #include "imageProcess.h"
 #include "spdlog/spdlog.h"
-#include "nvrender.hpp"
+#include "nvrender.h"
 
 
 std::vector<cv::Mat> upImgs(4);
@@ -32,7 +32,7 @@ int  serverCap()
     } while (recvMsgSize > sizeof(int));
     int total_pack = ((int * ) buffer)[0];
 
-    spdlog::info("expecting length of packs: {}", total_pack);
+    spdlog::debug("expecting length of packs: {}", total_pack);
     char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
     for (int i = 0; i < total_pack; i++) {
         recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
@@ -63,6 +63,50 @@ int  serverCap()
 
     return RET_OK;
 }
+
+void serverCap2()
+{
+    downImgs.clear();
+    int recvMsgSize; // Size of received message
+    string sourceAddress; // Address of datagram source
+    unsigned short sourcePort; // Port of datagram source
+    Mat recvedFrame;
+
+    do {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+    } while (recvMsgSize > sizeof(int));
+    int total_pack = ((int * ) buffer)[0];
+
+    spdlog::debug("expecting length of packs: {}", total_pack);
+    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
+    for (int i = 0; i < total_pack; i++) {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
+            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
+            free(longbuf);
+            return;
+        }
+        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
+    }
+
+    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
+
+    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
+    recvedFrame = imdecode(rawData, IMREAD_COLOR);
+    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
+    if (recvedFrame.size().width == 0) {
+        spdlog::warn("decode failure!");
+        // continue;
+    }
+    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    downImgs[3] = recvedFrame.clone();
+    // imwrite("7.png", downImgs[2]);
+    // imwrite("8.png", downImgs[3]);
+    // imshow("recv", recvedFrame);
+    // waitKey(1);
+    free(longbuf);
+}
 #endif
 
 static int verify()
@@ -85,7 +129,9 @@ static int verify()
     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 
     
-    char gt[] = "00:54:5a:19:03:5f";
+    // char gt[] = "00:54:5a:19:03:5f";//91v-dev
+    // char gt[] = "00:54:5a:1b:02:7b";//91s-dev
+    char gt[] = "00:54:5a:1c:00:bd";//91s-207
     
     char p[50];
     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
@@ -97,14 +143,14 @@ static int verify()
 class panocam::panocamimpl
 {
 public:
-    panocamimpl(std::string yamlpath)
+    panocamimpl(std::string yamlpath):framecnt(0)
     {
         YAML::Node config = YAML::LoadFile(yamlpath);
         int camw = config["camwidth"].as<int>();
         int camh = config["camheight"].as<int>();
         std::string net = config["netpath"].as<string>();
-        std::string camcfg = config["camcfgpath"].as<string>();
         std::string canname = config["canname"].as<string>();
+        std::string camcfg = "";
 
         renderWidth = config["renderWidth"].as<int>();
         renderHeight = config["renderHeight"].as<int>();
@@ -112,20 +158,23 @@ public:
         renderY = config["renderY"].as<int>();
 
         stitcherBlenderStrength = config["quality"].as<float>();
+        initMode = config["initMode"].as<int>();
 
         std::string loglvl = config["loglvl"].as<string>();
-        if(loglvl == "criticall")
+        if(loglvl == "critical-iair")
             spdlog::set_level(spdlog::level::critical);
-        else if(loglvl == "tracee")
+        else if(loglvl == "trace-iair")
             spdlog::set_level(spdlog::level::trace);
-        else if(loglvl == "warnn")
+        else if(loglvl == "warn-iair")
             spdlog::set_level(spdlog::level::warn);
         else if(loglvl == "info")
             spdlog::set_level(spdlog::level::info);
-        else if(loglvl == "debugg")
+        else if(loglvl == "debug-iair")
             spdlog::set_level(spdlog::level::debug);
+        else
+            spdlog::set_level(spdlog::level::info);
 #if CAM_IMX424
-        USED_CAMERA_NUM = 6;
+        USED_CAMERA_NUM = 7;
 #endif
 
         stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camw,camh,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
@@ -140,8 +189,8 @@ public:
         for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
 
-        stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, camcfg}};
+        stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, camcfg},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, camcfg}};
 
         stitchers[0].reset(new ocvStitcher(stitchercfg[0]));
         stitchers[1].reset(new ocvStitcher(stitchercfg[1]));
@@ -149,28 +198,29 @@ public:
         pImgProc = new imageProcessor(net, canname, batchSize);
 
         nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
-        pRenderer = new nvrender(rendercfg);
+        // pRenderer = new nvrender(rendercfg);
 
             
         if(stitcherinputWidth == 480)
             finalcut = 15;
         else if(stitcherinputWidth == 640)
-            finalcut = 30;
+            finalcut = 40;
 
         spdlog::debug("panocam ctor complete");
     }
     
     ~panocamimpl() = default;
 
-    int init(enInitMode mode)
+    int init()
     {
-        spdlog::info("init");
-        if(verify())
+        spdlog::info("panocam init start");
+
+        if(!(initMode == 1 || initMode == 2))
         {
-            spdlog::critical("verification failed, exit");
+            spdlog::critical("invalid init mode, exit");
             return RET_ERR;
         }
-        bool initonlie = ((mode == INIT_ONLINE) ? true : false);
+        // bool initonlie = ((mode == INIT_ONLINE) ? true : false);
         upImgs.clear();
         int failnum = 0;
         do{
@@ -187,7 +237,7 @@ public:
                 return RET_ERR;
             }
         }
-        while(stitchers[0]->init(upImgs, initonlie) != 0); 
+        while(stitchers[0]->init(upImgs, initMode) != 0); 
         spdlog::info("init completed 50%");
 
         failnum = 0;
@@ -200,11 +250,18 @@ public:
                 downImgs.push_back(cameras[i+4]->m_ret);
             }
 #elif CAM_IMX424
-            serverCap();
+            // serverCap();
+            // cameras[4]->read_frame();
+            // cameras[5]->read_frame();
+            // downImgs[0] = cameras[4]->m_ret;
+            // downImgs[1] = cameras[5]->m_ret;
+            serverCap2();
             cameras[4]->read_frame();
             cameras[5]->read_frame();
+            cameras[6]->read_frame();
             downImgs[0] = cameras[4]->m_ret;
             downImgs[1] = cameras[5]->m_ret;
+            downImgs[2] = cameras[6]->m_ret;
 #endif
             failnum++;
             if(failnum > 5)
@@ -213,7 +270,7 @@ public:
                 return RET_ERR;
             }
         }
-        while(stitchers[1]->init(downImgs, initonlie) != 0);
+        while(stitchers[1]->init(downImgs, initMode) != 0);
 
         spdlog::info("init completed!");
 
@@ -253,13 +310,14 @@ public:
     int getPanoFrame(cv::Mat &ret)
     {
 #if CAM_IMX424
-        std::thread server(serverCap);
+        std::thread server(serverCap2);
         cameras[0]->getFrame(upImgs[0]);
         cameras[1]->getFrame(upImgs[1]);
         cameras[2]->getFrame(upImgs[2]);
         cameras[3]->getFrame(upImgs[3]);
         cameras[4]->getFrame(downImgs[0]);
         cameras[5]->getFrame(downImgs[1]);
+        cameras[6]->getFrame(downImgs[2]);
         server.join();
 #elif CAM_IMX390
         cameras[0]->getFrame(upImgs[0]);
@@ -283,6 +341,7 @@ public:
         t1.join();
         t2.join();
 
+        // cv::flip(down, down, 1);
         int width = min(up.size().width, down.size().width);
         int height = min(up.size().height, down.size().height) - finalcut*2;
         up = up(Rect(0,finalcut,width,height));
@@ -291,6 +350,9 @@ public:
         cv::vconcat(up, down, ret);
         cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
+        spdlog::debug("panorama frame:{}",framecnt++);
+
+        return RET_OK;
     }
 
     int detect(cv::Mat &img, std::vector<int> &ret)
@@ -340,6 +402,30 @@ public:
 
         return RET_OK;
     }
+
+    int drawCross(cv::Mat &img)
+    {
+        int w = img.cols;
+        int h = img.rows;
+        int x1 = w/2;
+        int y1 = h/4;
+        int y2 = h/4*3;
+        
+        cv::line(img, cv::Point(x1-10,y1), cv::Point(x1+10,y1), cv::Scalar(0,255,0), 2);
+        cv::line(img, cv::Point(x1,y1-10), cv::Point(x1,y1+10), cv::Scalar(0,255,0), 2);
+
+        cv::line(img, cv::Point(x1-10,y2), cv::Point(x1+10,y2), cv::Scalar(0,255,0), 2);
+        cv::line(img, cv::Point(x1,y2-10), cv::Point(x1,y2+10), cv::Scalar(0,255,0), 2);
+
+        return RET_OK;
+    }
+
+    int saveAndSend(cv::Mat &img)
+    {
+        pImgProc->publishImage(img);
+
+        return RET_OK;
+    }
     
 
 private:
@@ -348,6 +434,7 @@ private:
     imageProcessor *pImgProc; 
     nvrender *pRenderer;
     int finalcut;
+    int framecnt;
 };
 
 panocam::panocam(std::string yamlpath):
@@ -360,9 +447,9 @@ panocam::panocam(std::string yamlpath):
 
 panocam::~panocam() = default;
 
-int panocam::init(enInitMode mode)
+int panocam::init()
 {
-    return pimpl->init(mode);
+    return pimpl->init();
 }
 
 int panocam::getCamFrame(int id, cv::Mat &frame)
@@ -393,8 +480,47 @@ int panocam::imgEnhancement(cv::Mat &img)
 int panocam::render(cv::Mat &img)
 {
     return pimpl->render(img);
+}
 
-    // pRenderer->render1();
+int panocam::drawCross(cv::Mat &img)
+{
+    return pimpl->drawCross(img);
+}
 
-    return 1;
+int panocam::verify()
+{
+    int                 sockfd;
+    struct ifreq        ifr;
+
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        perror("socket error");
+        exit(1);
+    }
+    strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);      //Interface name
+
+    char * buf = new char[6];
+
+    if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
+        memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
+    }
+    // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+
+    
+    // char gt[] = "00:54:5a:19:03:5f";//91v-dev
+    // char gt[] = "00:54:5a:1b:02:7b";//91s-dev
+    // char gt[] = "00:54:5a:1c:00:bd";//91s-207
+    char gt[] = "00:54:5a:1b:01:a5";//91v-258-2nd
+    
+    char p[50];
+    sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+    // printf("p::%s\n", p);
+
+    return false;
+    return strcmp(gt, p);
+}
+
+int panocam::saveAndSend(cv::Mat &img)
+{
+    return pimpl->saveAndSend(img);
 }

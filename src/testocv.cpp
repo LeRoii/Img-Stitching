@@ -9,86 +9,89 @@
 /********* test resize *********/
 /********* test stitcher *********/
 /********* test opencv video capture *********/
-/********* test imgprocessor *********/
+/********* test rotation R to euler angle *********/
+/********* test string 2 matrix *********/
+/********* draw indicator *********/
+/********* test keyboard listener *********/
 
 /********* test detector *********/
-#include "imageProcess.h"
-// #include <opencv2/opencv.hpp>
-#include <iostream>
-#include "helper_timer.h"
-#include "spdlog/spdlog.h"
+// #include "imageProcess.h"
+// // #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include "helper_timer.h"
+// #include "spdlog/spdlog.h"
 
-int main()
-{
-    // std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt";
-    std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt";
-    imageProcessor nvProcessor(net);
-    // cv::Mat img = cv::imread("/home/nvidia/ssd/data/1.jpg");
-    cv::Mat img = cv::imread("/home/nvidia/ssd/img/0211/2-ori16361-400m.png");
-    if (img.empty()) //check whether the image is loaded or not
-    {
-        std::cout << "Error : Image cannot be loaded..!!" << std::endl;
-        //system("pause"); //wait for a key press
-        return -1;
-    }
-    // cv::imshow("1", img);
-    // cv::waitKey(0);
-    // cv::imwrite("3.jpg", img);
-    cv::Mat croped = img(cv::Rect(640, 300, 640, 480)).clone();
-    cv::Mat  rsimg;
-    cv::resize(img, rsimg, cv::Size(640,360));
-    std::vector<int> detret;
-    std::vector<std::vector<int>> detrets;
-    std::vector<cv::Mat> imgs;
-    imgs.push_back(croped);
-    imgs.push_back(rsimg);
-    int cnt = 0;
-    StopWatchInterface *timer = NULL;
-    sdkCreateTimer(&timer);
-    sdkResetTimer(&timer);
-    sdkStartTimer(&timer);
+// int main()
+// {
+//     // std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt";
+//     std::string net = "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt";
+//     imageProcessor nvProcessor(net);
+//     // cv::Mat img = cv::imread("/home/nvidia/ssd/data/1.jpg");
+//     cv::Mat img = cv::imread("/home/nvidia/ssd/img/0211/2-ori16361-400m.png");
+//     if (img.empty()) //check whether the image is loaded or not
+//     {
+//         std::cout << "Error : Image cannot be loaded..!!" << std::endl;
+//         //system("pause"); //wait for a key press
+//         return -1;
+//     }
+//     // cv::imshow("1", img);
+//     // cv::waitKey(0);
+//     // cv::imwrite("3.jpg", img);
+//     cv::Mat croped = img(cv::Rect(640, 300, 640, 480)).clone();
+//     cv::Mat  rsimg;
+//     cv::resize(img, rsimg, cv::Size(640,360));
+//     std::vector<int> detret;
+//     std::vector<std::vector<int>> detrets;
+//     std::vector<cv::Mat> imgs;
+//     imgs.push_back(croped);
+//     imgs.push_back(rsimg);
+//     int cnt = 0;
+//     StopWatchInterface *timer = NULL;
+//     sdkCreateTimer(&timer);
+//     sdkResetTimer(&timer);
+//     sdkStartTimer(&timer);
 
-    while(1)
-    {
-        sdkResetTimer(&timer);
-        cv::Mat ret = nvProcessor.ImageDetect(croped, detret);
-        spdlog::info("detect takes:{} ms", sdkGetTimerValue(&timer));
-    }
-    // nvProcessor.ImageDetect(imgs, detrets);
-    // cnt++;
-    // cv::imshow("1", ret);
-    // cv::waitKey(1);
+//     while(1)
+//     {
+//         sdkResetTimer(&timer);
+//         cv::Mat ret = nvProcessor.ImageDetect(croped, detret);
+//         spdlog::info("detect takes:{} ms", sdkGetTimerValue(&timer));
+//     }
+//     // nvProcessor.ImageDetect(imgs, detrets);
+//     // cnt++;
+//     // cv::imshow("1", ret);
+//     // cv::waitKey(1);
 
-    cv::imwrite("det1.png", imgs[0]);
-    cv::imwrite("det2.png", imgs[1]);
-    // cv::waitKey(0);
+//     cv::imwrite("det1.png", imgs[0]);
+//     cv::imwrite("det2.png", imgs[1]);
+//     // cv::waitKey(0);
 
-    return 0;
+//     return 0;
 
-}
+// }
 
 
 /********* test binding mac address *********/
 
-// #include<stdio.h>
-// #include<stdlib.h>
-// #include<errno.h>
-// #include<sys/utsname.h>
-// int main()
-// {
-//    struct utsname buf1;
-//    errno =0;
-//    if(uname(&buf1)!=0)
-//    {
-//       perror("uname doesn't return 0, so there is an error");
-//       exit(EXIT_FAILURE);
-//    }
-//    printf("System Name = %s\n", buf1.sysname);
-//    printf("Node Name = %s\n", buf1.nodename);
-//    printf("Version = %s\n", buf1.version);
-//    printf("Release = %s\n", buf1.release);
-//    printf("Machine = %s\n", buf1.machine);
-// }
+// // #include<stdio.h>
+// // #include<stdlib.h>
+// // #include<errno.h>
+// // #include<sys/utsname.h>
+// // int main()
+// // {
+// //    struct utsname buf1;
+// //    errno =0;
+// //    if(uname(&buf1)!=0)
+// //    {
+// //       perror("uname doesn't return 0, so there is an error");
+// //       exit(EXIT_FAILURE);
+// //    }
+// //    printf("System Name = %s\n", buf1.sysname);
+// //    printf("Node Name = %s\n", buf1.nodename);
+// //    printf("Version = %s\n", buf1.version);
+// //    printf("Release = %s\n", buf1.release);
+// //    printf("Machine = %s\n", buf1.machine);
+// // }
 
 
 // #include <string>
@@ -166,7 +169,7 @@ int main()
 //     if (ioctl(sockfd, SIOCGIFHWADDR, &ifr) == 0) {  //SIOCGIFHWADDR 获取hardware address
 //         memcpy(buf, ifr.ifr_hwaddr.sa_data, 6);
 //     }
-//     // printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
+//     printf("mac:%02x:%02x:%02x:%02x:%02x:%02x\n", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
 
     
 //     char gt[] = "00:54:5a:19:03:5f";
@@ -331,7 +334,7 @@ int main()
 // #include "nvcam.hpp"
 // #include "PracticalSocket.h"
 // // #include "ocvstitcher.hpp"
-// #include "stitcherconfig.h"
+// #include "stitcherglobal.h"
 // #include "imageProcess.h"
 // #include "helper_timer.h"
 
@@ -580,7 +583,7 @@ int main()
 /********* test nvrender *********/
 
 // #include <opencv2/opencv.hpp>
-// #include "nvrender.hpp"
+// #include "nvrender.h"
 
 // int main()
 // {
@@ -697,3 +700,234 @@ int main()
 
 //     return 0;
 // }
+
+/********* test rotation R to euler angle *********/
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+
+// using namespace cv;
+// // Checks if a matrix is a valid rotation matrix.
+// bool isRotationMatrix(Mat &R)
+// {
+//     Mat Rt;
+//     transpose(R, Rt);
+//     Mat shouldBeIdentity = Rt * R;
+//     Mat I = Mat::eye(3,3, shouldBeIdentity.type());
+
+//     std::cout << shouldBeIdentity << std::endl;
+//     std::cout << norm(I, shouldBeIdentity) << std::endl;
+//     return  norm(I, shouldBeIdentity) < 1e-6;
+     
+// }
+
+// float radian2degree(float x)
+// {
+//     return x*180/M_PI;
+// }
+ 
+// // Calculates rotation matrix to euler angles
+// // The result is the same as MATLAB except the order
+// // of the euler angles ( x and z are swapped ).
+// Vec3f rotationMatrixToEulerAngles(Mat &R)
+// {
+ 
+//     // assert(isRotationMatrix(R));
+     
+//     float sy = sqrt(R.at<double>(0,0) * R.at<double>(0,0) +  R.at<double>(1,0) * R.at<double>(1,0) );
+ 
+//     bool singular = sy < 1e-6; // If
+ 
+//     float x, y, z;
+//     if (!singular)
+//     {
+//         x = atan2(R.at<double>(2,1) , R.at<double>(2,2));
+//         y = atan2(-R.at<double>(2,0), sy);
+//         z = atan2(R.at<double>(1,0), R.at<double>(0,0));
+//     }
+//     else
+//     {
+//         x = atan2(-R.at<double>(1,2), R.at<double>(1,1));
+//         y = atan2(-R.at<double>(2,0), sy);
+//         z = 0;
+//     }
+//     return Vec3f(radian2degree(x), radian2degree(y), radian2degree(z));
+// }
+
+// int main()
+// {
+//     cv::Mat R = (cv::Mat_<double>(3,3) <<0.504408, -0.0382247 , 0.862619, 
+//                                     0.00677822, 0.999164, 0.0403119,
+//                                     -0.863438, -0.0144866, 0.504246);
+//     Vec3f angles = rotationMatrixToEulerAngles(R);
+
+//     std::cout << R << std::endl;
+//     std::cout << angles << std::endl;
+//     return 0;
+// }
+
+/********* test string 2 matrix *********/
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+// #include <string>
+
+// using namespace std;
+
+// std::string s = "487.808,0,320,0,487.808,180,0,0,1,0.358901,-0.00255477,-0.933372,-0.00515675,0.999976,-0.00471995,0.933361,0.00650716,0.358879,\
+// 533.62,0,320,0,533.62,180,0,0,1,0.927762,-0.00397522,-0.373152,0.0130791,0.999675,0.0218688,0.372944,-0.0251695,0.927512,\
+// 566.215,0,320,0,566.215,180,0,0,1,0.920505,0.0103068,0.390594,-0.0137577,0.999887,0.00603792,-0.390488,-0.0109316,0.920543,\
+// 595.578,0,320,0,595.578,180,0,0,1,0.401075,0.014492,0.915931,0.00593535,0.999813,-0.0184182,-0.916026,0.0128234,0.400914,\
+// 549.917";
+
+// static void Stringsplit(string str, const char split, vector<string>& res)
+// {
+//     istringstream iss(str);	// 输入流
+//     string token;			// 接收缓冲区
+//     res.clear();
+//     while (getline(iss, token, split))	// 以split为分隔符
+//     {
+//         res.push_back(token);
+//     }
+// }
+
+// int main()
+// {
+//     std::vector<cv::Mat> R;
+//     std::vector<cv::Mat> K;
+
+//     for(int i=0;i<4;i++)
+//     {
+//         R.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
+//         K.push_back(cv::Mat(cv::Size(3,3), CV_32FC1));
+//     }
+
+//     for(int i=0;i<4;i++)
+//     {
+//         vector<string> res;
+//         Stringsplit(s, ',', res);
+//         cout<<"res size:"<<res.size()<<endl;
+
+//         for(int mi=0;mi<3;mi++)
+//         {
+//             for(int mj=0;mj<3;mj++)
+//             {
+//                 K[i].at<float>(mi,mj) = stof(res[18*i+mi*3+mj]);
+//                 R[i].at<float>(mi,mj) = stof(res[18*i+9+mi*3+mj]);
+//             }
+//         }
+
+//         cout<<K[i]<<endl;
+//         cout<<R[i]<<endl;
+//     }
+// }
+/********* draw indicator *********/
+// #include <opencv2/opencv.hpp>
+// #include <iostream>
+
+// using namespace cv;
+// int main()
+// {
+//     cv::Mat mt = cv::Mat(1080, 1920, CV_8UC3);
+
+
+//     int longStartX = 0;
+//     int uplongStartY = 230;
+//     int uplongEndY = uplongStartY+30;
+//     int upshortEndY = uplongStartY+15;
+//     for(int i=0;i<19;i++)
+//     {
+//         longStartX = 40+i*100;
+//         line(mt, Point(longStartX, uplongStartY), Point(longStartX, uplongEndY), Scalar(0, 255, 0), 3);
+//         if(i==0)
+//             cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         else
+//             cv::putText(mt, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         if(i == 18)
+//             continue;
+//         for(int j=0;j<4;j++)
+//             line(mt, Point(longStartX+20*(1+j), uplongStartY), Point(longStartX+20*(1+j), upshortEndY), Scalar(0, 255, 0), 3);
+//     }
+
+//     int downlongStartY = 830;
+//     int downlongEndY = downlongStartY+30;
+//     int downshortEndY = downlongStartY+15;
+//     for(int i=0;i<19;i++)
+//     {
+//         longStartX = 40+i*100;
+//         line(mt, Point(longStartX, downlongStartY), Point(longStartX, downlongEndY), Scalar(0, 255, 0), 3);
+//         if(i==0)
+//             cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         else
+//             cv::putText(mt, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0, 255, 0), 2);
+//         if(i == 18)
+//             continue;
+//         for(int j=0;j<4;j++)
+//             line(mt, Point(longStartX+20*(1+j), downlongStartY), Point(longStartX+20*(1+j), downshortEndY), Scalar(0, 255, 0), 3);
+//     }
+
+//     // imshow("1", mt);
+//     // waitKey(0);
+//     imwrite("aa.png", mt);
+
+//     return 0;
+// }
+/********* test keyboard listener *********/
+#include <termio.h>
+#include <stdio.h>
+#include <unistd.h>
+int scanKeyboard()
+{
+  //  struct termios
+  //    {
+  //      tcflag_t c_iflag;		/* input mode flags */
+  //      tcflag_t c_oflag;		/* output mode flags */
+  //      tcflag_t c_cflag;		/* control mode flags */
+  //      tcflag_t c_lflag;		/* local mode flags */
+  //      cc_t c_line;			/* line discipline */
+  //      cc_t c_cc[NCCS];		/* control characters */
+  //      speed_t c_ispeed;		/* input speed */
+  //      speed_t c_ospeed;		/* output speed */
+  //  #define _HAVE_STRUCT_TERMIOS_C_ISPEED 1
+  //  #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
+  //    };
+  int in;
+  struct termios new_settings;
+  struct termios stored_settings;
+  tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+  new_settings = stored_settings;           //
+  new_settings.c_lflag &= (~ICANON);        //
+  new_settings.c_cc[VTIME] = 0;
+  tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+  new_settings.c_cc[VMIN] = 1;
+  tcsetattr(STDIN_FILENO,TCSANOW,&new_settings); //
+
+  in = getchar();
+
+  tcsetattr(STDIN_FILENO,TCSANOW,&stored_settings);
+  return in;
+}
+
+
+
+int main(int argc, char *argv[]) {
+
+  while(1){
+    printf(":%d\r\n",scanKeyboard());
+    //    int input_id = scanKeyboard();
+    //    switch(input_id) {
+    //      case 119:  //w or can set as case 'w':
+    //      case 87:   //W case 'W':
+    //        break;
+    //      case 115: //s
+    //      case 83:  //S
+    //        break;
+    //      case 97:  //a
+    //      case 67:  //A
+    //        break;
+    //      case 100: //d
+    //      case 68:  //D
+    //        break;
+    //      default:
+    //        break;
+    //    }
+  }
+}

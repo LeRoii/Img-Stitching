@@ -1,162 +1,157 @@
 #include <opencv2/opencv.hpp>
 #include <thread>
-// #include "stitcher.hpp"
 #include <string>
-#include "ocvstitcher.hpp"
+// #include "ocvstitcher.hpp"
 #include "PracticalSocket.h"
-#include "stitcherconfig.h"
+#include "nvcam.hpp"
+#include "stitcherglobal.h"
 
-#define USED_CAMERA_NUM 2
+#define USED_CAMERA_NUM 1
+#define CAMERA_NUM 2
 #define BUF_LEN 65540 
 
 UDPSocket sock;
-char buffer[BUF_LEN]; // Buffer for echo string
-
 string servAddress = "192.168.44.100"; // First arg: server address
 unsigned short servPort = Socket::resolveService("10001", "udp");
 
-int jpegqual =  80;
+int jpegqual =  70;
 
 int main(int argc, char *argv[])
 {
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7", vendor}};
-    // gmslCamera cameras[CAMERA_NUM] = {gmslCamera{camcfgs[0]},
-    //                                 gmslCamera{camcfgs[1]},
-    //                                 gmslCamera{camcfgs[2]},
-    //                                 gmslCamera{camcfgs[3]},
-    //                                 gmslCamera{camcfgs[4]},
-    //                                 gmslCamera{camcfgs[5]},
-    //                                 gmslCamera{camcfgs[6]}};
-    cv::Mat ret;// = cv::Mat(2160, 3840, CV_8UC3);
+                                    };
 
-    // stitcherCfg stitchercfg;
-    // stitchercfg.imgHeight = camcfgs[0].retHeight;
-    // stitchercfg.imgWidth = camcfgs[0].retWidth;
+    std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        cameras[i].reset(new nvCam(camcfgs[i]));
 
-    // stitcher imgstither(stitchercfg, 1);
+    std::vector<std::thread> threads;
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    for(auto& th:threads)
+        th.detach();
 
-    // cv::Ptr<cv::Stitcher> stitcher = cv::Stitcher::create(cv::Stitcher::PANORAMA, true);
+    cv::Mat send;
 
-    // ocvStitcher ostitcher(960/2, 540/2);
-
-    vector<Mat> imgs;
-    Mat send;
-
-    // do{
-    //     imgs.clear();
-    //     for(int i=0;i<USED_CAMERA_NUM;i++)
-    //     {
-    //         cameras[i].read_frame();
-    //         imgs.push_back(cameras[i].m_ret);
-    //     }   
-    // }
-    // while(ostitcher.init(imgs) != 0);
-    
-    // ostitcher.process(imgs, ret);
-
-    // unsigned short servPort = 10000;
-    // UDPSocket sock(servPort);
-    // char buffer[BUF_LEN]; // Buffer for echo string
-    // int recvMsgSize; // Size of received message
-    // string sourceAddress; // Address of datagram source
-    // unsigned short sourcePort; // Port of datagram source
     vector < uchar > encoded;
-    Mat up,down;
-    // while(1)
-    for(int i=0;i<1;i++)
+    cv::Mat img7, img8, ret;
+    encoded.resize(SLAVE_PCIE_UDP_PACK_SIZE);
+    while(1)
     {
-        // cam0.read_frame();
-        // cam1.read_frame();
-        // cameras[0].read_frame();
-		// std::vector<std::thread> threads;
-		// for(int i=0;i<USED_CAMERA_NUM;i++)
-		// 	threads.push_back(std::thread(&gmslCamera::read_frame, std::ref(cameras[i])));
-		// for(auto& th:threads)
-		// 	th.join();
+        cameras[0]->getFrame(img7);
 
-        cv::Mat im1 = cv::imread("2-0.png");
-
+        // cv::hconcat(vector<Mat>{img7, img8}, ret);
+        // cout << "7 s:" << img7.size()<<",8 s:"<<img8.size()<<".ret s:"<<ret.size()<<endl;
+        // cv::imshow("1", img7);
+        // cv::waitKey(1);
+        // cv::imwrite("1.png", img7);
         
-        cv::hconcat(vector<Mat>{im1, im1}, up);
-
         //send to master
         vector < int > compression_params;
-        compression_params.push_back(IMWRITE_JPEG_QUALITY);
+        compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
         compression_params.push_back(jpegqual);
 
-        send = up.clone();
-        // send = imread("final.png");
+        send = img7.clone();
+        // send = cv::imread("1.png");
 
-        imencode(".jpg", send, encoded, compression_params);
-        // imshow("send", send);
+        cv::imencode(".jpg", send, encoded, compression_params);
+
+        cout << "encodedssssssssssss:" << encoded.size()<<endl;
+        // cv::imwrite("send.png", send);
         int total_pack = 1 + (encoded.size() - 1) / SLAVE_PCIE_UDP_PACK_SIZE;
         cout << "encodeed size:" << encoded.size() << "total_pack:" << total_pack << endl;
 
         int ibuf[1];
         ibuf[0] = total_pack;
         sock.sendTo(ibuf, sizeof(int), servAddress, servPort);
-        cout << "before send data:" << endl;
+        cout << "before send data, send:" << total_pack << endl;
         for (int i = 0; i < total_pack; i++)
+        {
             sock.sendTo( & encoded[i * SLAVE_PCIE_UDP_PACK_SIZE], SLAVE_PCIE_UDP_PACK_SIZE, servAddress, servPort);
-
-        waitKey(1);
-        
-
-        // Mat rett;
-        // vector<Mat> imgss(4);
-        // imgss[0] = cameras[0].m_ret.clone();
-        // imgss[1] = cameras[1].m_ret.clone();
-        // imgss[2] = cameras[2].m_ret.clone();
-        // imgss[3] = cameras[3].m_ret.clone();
-        // ostitcher.process(imgss, rett);
-            
-
-        // std::thread th1(&gmslCamera::read_frame, std::ref(cameras[0]));
-        // th1.join();
-        // std::thread th2(&gmslCamera::read_frame, std::ref(cameras[1]));
-        // th2.join();
-        // imgstither.processnodet(cameras[1].m_ret, cameras[2].m_ret, ret);
-
-		// printf("%p\n", cameras);
-		// imgstither.processall(cameras, CAMERA_NUM, ret);
-        
-        // cv::hconcat(vector<Mat>{cameras[3].m_ret, cameras[4].m_ret, cameras[5].m_ret}, down);
-        // cv::vconcat(up, down, ret);
-        // cv::imshow("m_dev_name", cameras[0].m_ret);
-        // ret = cameras[0].m_ret;
-
-        // imgstither.stitcherProcess(cameras, USED_CAMERA_NUM, ret);
-
-        // std::vector<cv::Mat> imgs;
-        // for(int i=0;i<USED_CAMERA_NUM;i++)
-        //     imgs.push_back(cameras[i].m_ret);
-
-        // // cv::Stitcher cvStitcher = cv::Stitcher::createDefault(false);
-        // cv::Stitcher::Status status = stitcher->stitch(imgs, ret);
-
-        // if (status != cv::Stitcher::OK) 
-        // {   
-        //     std::cout << "Can't stitch images, error code = " << int(status) << std::endl;   
-        //     return -1;   
-        // }   
-        
-        if(argc > 1)
-        {
-            cv::imwrite("final.png", ret);
-            return 0;
-        }
-        else
-        {
-            // cv::imshow("m_dev_name", up);
-            cv::waitKey(1);
+            cout << "send  to :" << SLAVE_PCIE_UDP_PACK_SIZE << endl;
         }
     }
     return 0;
 }
+
+// #include <opencv2/opencv.hpp>
+// #include <thread>
+// #include <string>
+// // #include "ocvstitcher.hpp"
+// #include "PracticalSocket.h"
+// #include "nvcam.hpp"
+// #include "stitcherglobal.h"
+
+// #define USED_CAMERA_NUM 2
+// #define CAMERA_NUM 2
+
+// UDPSocket sock;
+// string servAddress = "192.168.44.100"; // First arg: server address
+// unsigned short servPort = Socket::resolveService("10001", "udp");
+
+// int jpegqual =  70;
+
+// int main(int argc, char *argv[])
+// {
+//     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
+//                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
+//                                     };
+
+//     std::shared_ptr<nvCam> cameras[USED_CAMERA_NUM];
+//     for(int i=0;i<USED_CAMERA_NUM;i++)
+//         cameras[i].reset(new nvCam(camcfgs[i]));
+
+//     std::vector<std::thread> threads;
+//     for(int i=0;i<USED_CAMERA_NUM;i++)
+//         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+//     for(auto& th:threads)
+//         th.detach();
+
+//     vector<cv::Mat> imgs;
+//     cv::Mat send;
+
+//     vector < uchar > encoded;
+//     cv::Mat img7, img8, ret;
+//     while(1)
+//     {
+//         cameras[0]->getFrame(img7);
+//         cameras[1]->getFrame(img8);
+
+//         cv::hconcat(vector<cv::Mat>{img7, img8}, ret);
+//         // cout << "7 s:" << img7.size()<<",8 s:"<<img8.size()<<".ret s:"<<ret.size()<<endl;
+//         // cv::imshow("1", img7);
+//         // cv::waitKey(1);
+
+//         //send to master
+//         vector < int > compression_params;
+//         compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
+//         compression_params.push_back(jpegqual);
+
+//         send = ret.clone();
+//         // send = imread("final.png");
+
+//         imencode(".jpg", send, encoded, compression_params);
+//         // cv::imwrite("send.png", send);
+//         int total_pack = 1 + (encoded.size() - 1) / SLAVE_PCIE_UDP_PACK_SIZE;
+//         cout << "encodeed size:" << encoded.size() << "total_pack:" << total_pack << endl;
+
+//         int ibuf[1];
+//         ibuf[0] = total_pack;
+//         sock.sendTo(ibuf, sizeof(int), servAddress, servPort);
+//         cout << "before send data, send:" << total_pack << endl;
+//         for (int i = 0; i < total_pack; i++)
+//         {
+//             sock.sendTo( & encoded[i * SLAVE_PCIE_UDP_PACK_SIZE], SLAVE_PCIE_UDP_PACK_SIZE, servAddress, servPort);
+//             cout << "send  to :" << SLAVE_PCIE_UDP_PACK_SIZE << endl;
+//         }
+
+//         // waitKey(1);
+        
+//         if(argc > 1)
+//         {
+//             cv::imwrite("final.png", ret);
+//             return 0;
+//         }
+//     }
+//     return 0;
+// }

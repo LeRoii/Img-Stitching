@@ -288,18 +288,15 @@ int main(int argc, char *argv[])
     // downImgs.push_back(imread("./3.png"));
     // downImgs.push_back(imread("./4.png"));
 
-    for(int i=0;i<4;i++)
+    for(int i=0;i<2;i++)
     {
         cv::resize(upImgs[i], upImgs[i], cv::Size(stitcherinputWidth, stitcherinputHeight));
-        cv::resize(downImgs[i], downImgs[i], cv::Size(stitcherinputWidth, stitcherinputHeight));
     }
 
 
     while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
-    while(ostitcherDown.init(downImgs, initMode) != 0);
-    spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!11 ");
 
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;
@@ -318,49 +315,14 @@ int main(int argc, char *argv[])
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
         /* parallel*/
-        std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
-        std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
-        t1.join();
-        t2.join();
+        ostitcherUp.process(upImgs, ret);
 
-        int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
-        upRet = stitcherOut[0](Rect(0,finalcut,width,height));
-        downRet = stitcherOut[1](Rect(0,finalcut,width,height));
-
-        cv::Mat up,down,ori;
-        if(displayori)
-        {
-            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-            cv::vconcat(up, down, ori);
-        }
-
-        cv::vconcat(upRet, downRet, ret);
-        cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
 
         spdlog::info("stitching takes:{} ms", sdkGetTimerValue(&timer));
 
-        // if(saveret)
-        // {
-        //     imwrite("1.png", upImgs[0]);
-        //     imwrite("2.png", upImgs[1]);
-        //     imwrite("3.png", upImgs[2]);
-        //     imwrite("4.png", upImgs[3]);
-        //     imwrite("5.png", downImgs[0]);
-        //     imwrite("6.png", downImgs[1]);
-        //     imwrite("7.png", downImgs[2]);
-        //     imwrite("8.png", downImgs[3]);
-        // }
-#if CAM_IMX424
-        controlData ctl_command;
-        ctl_command = nvProcessor->getCtlCommand();
-        spdlog::info("***********get command: ");
-        spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
-#endif
 
         // if(ctl_command.use_ssr || start_ssr) 
         if(start_ssr)
@@ -385,31 +347,6 @@ int main(int argc, char *argv[])
             spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
         }
 
-        if(!writerInit && savevideo)
-        {
-            std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-            struct std::tm * ptm = std::localtime(&tt);
-            stringstream sstr;
-            sstr << std::put_time(ptm,"%F-%H-%M-%S");
-            Size panoSize(ret.size().width, ret.size().height);
-            Size oriSize(ori.size().width, ori.size().height);
-            panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, panoSize);
-            oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
-
-            //检查是否成功创建
-            if (!panoWriter->isOpened() || !oriWriter->isOpened())
-            {
-                spdlog::critical("Can not create video file.");
-                return -1;
-            }
-
-            writerInit = true;
-        }
-        if(savevideo)
-        {
-            *panoWriter << ret;
-            *oriWriter << ori;
-        }
 
         // cv::imshow("ret", ret);
         // cv::imshow("ret", final);
@@ -432,9 +369,6 @@ int main(int argc, char *argv[])
             // croped = nvProcessor->ProcessOnce(croped);
             // cv::imshow("det", croped);
         }
-
-        if(displayori)
-            cv::imshow("ori", ori);
 
         if(saveret)
         {

@@ -26,7 +26,7 @@
 
 #include "opencv2/opencv.hpp"
 using namespace cv;
-#include "stitcherconfig.h"
+#include "stitcherglobal.h"
 
 int main(int argc, char * argv[]) {
 

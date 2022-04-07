@@ -7,7 +7,7 @@
 #include "PracticalSocket.h"
 #include "ocvstitcher.hpp"
 #include "helper_timer.h"
-#include "nvrender.hpp"
+#include "nvrender.h"
 
 
 // #define CAMERA_NUM 8
@@ -71,6 +71,50 @@ void serverCap()
     free(longbuf);
 }
 
+void serverCap2()
+{
+    downImgs.clear();
+    int recvMsgSize; // Size of received message
+    string sourceAddress; // Address of datagram source
+    unsigned short sourcePort; // Port of datagram source
+    Mat recvedFrame;
+
+    do {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+    } while (recvMsgSize > sizeof(int));
+    int total_pack = ((int * ) buffer)[0];
+
+    spdlog::info("expecting length of packs: {}", total_pack);
+    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
+    for (int i = 0; i < total_pack; i++) {
+        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
+        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
+            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
+            free(longbuf);
+            return;
+        }
+        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
+    }
+
+    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
+
+    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
+    recvedFrame = imdecode(rawData, IMREAD_COLOR);
+    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
+    if (recvedFrame.size().width == 0) {
+        spdlog::warn("decode failure!");
+        // continue;
+    }
+    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
+    downImgs[3] = recvedFrame.clone();
+    // imwrite("7.png", downImgs[2]);
+    // imwrite("8.png", downImgs[3]);
+    // imshow("recv", recvedFrame);
+    // waitKey(1);
+    free(longbuf);
+}
+
 #endif
 
 bool saveret = false;
@@ -81,7 +125,12 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
+
+#if CAM_IMX390
 std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
+#else if CAM_IMX424
+std::string stitchercfgpath = "../cfg/stitcher-imx424cfg.yaml";
+#endif
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -181,6 +230,9 @@ imageProcessor *nvProcessor = nullptr;
 
 int main(int argc, char *argv[])
 {
+    if(RET_ERR == parse_cmdline(argc, argv))
+        return RET_ERR;
+
     YAML::Node config = YAML::LoadFile(stitchercfgpath);
     vendor = config["vendor"].as<int>();
     camSrcWidth = config["camsrcwidth"].as<int>();
@@ -209,8 +261,11 @@ int main(int argc, char *argv[])
     stitcherMatchConf = config["stitcherMatchConf"].as<float>();
     stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
     stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+    stitcherCameraExThres = config["stitcherCameraExThres"].as<float>();
+    stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
 
     batchSize = config["batchSize"].as<int>();
+    initMode = config["initMode"].as<int>();
 
     std::string loglvl = config["loglvl"].as<string>();
     if(loglvl == "critical")
@@ -228,13 +283,12 @@ int main(int argc, char *argv[])
     if(stitcherinputWidth == 480)
         finalcut = 15;
     else if(stitcherinputWidth == 640)
-        finalcut = 30;
+        finalcut = 40;
+    else if(stitcherinputWidth == 720)
+        finalcut = 35;
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
-
-    if(RET_ERR == parse_cmdline(argc, argv))
-        return RET_ERR;
 
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
@@ -336,12 +390,13 @@ int main(int argc, char *argv[])
     // }
     /************************************stitch all end*****************************************/
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);
 
+    int failnum = 0;
     do{
         upImgs.clear();
         for(int i=0;i<4;i++)
@@ -349,10 +404,19 @@ int main(int argc, char *argv[])
             cameras[i]->read_frame();
             upImgs.push_back(cameras[i]->m_ret);
             
-        }   
+        }
+
+        failnum++;
+        if(failnum > 5)
+        {
+            spdlog::warn("initalization failed due to environment, use default parameters");
+            initMode = 2;
+        }
     }
-    while(ostitcherUp.init(upImgs, initonline) != 0);
+    while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
+
+    // return 0;
 
     do{
 #if CAM_IMX390
@@ -370,7 +434,7 @@ int main(int argc, char *argv[])
         downImgs[1] = cameras[5]->m_ret;
 #endif
     }
-    while(ostitcherDown.init(downImgs, initonline) != 0);
+    while(ostitcherDown.init(downImgs, initMode) != 0);
 
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
@@ -587,7 +651,7 @@ int main(int argc, char *argv[])
                 detCamNum = 0;
                 break;
             case 's':
-                cv::imwrite("final.png", ret);
+                cv::imwrite("final.png", final);
                 break;
             default:
                 break;

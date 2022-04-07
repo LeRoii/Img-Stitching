@@ -22,7 +22,7 @@
 #include "opencv2/stitching/warpers.hpp"
 
 #include "spdlog/spdlog.h"
-#include "stitcherconfig.h"
+#include "stitcherglobal.h"
 
 using namespace std;
 using namespace cv;
@@ -35,6 +35,19 @@ static int num_images = 4;
 
 std::mutex stmtx;
 
+std::string camParams[2] = {"487.808,0,320,0,487.808,180,0,0,1,0.358901,-0.00255477,-0.933372,-0.00515675,0.999976,-0.00471995,0.933361,0.00650716,0.358879,\
+533.62,0,320,0,533.62,180,0,0,1,0.927762,-0.00397522,-0.373152,0.0130791,0.999675,0.0218688,0.372944,-0.0251695,0.927512,\
+566.215,0,320,0,566.215,180,0,0,1,0.920505,0.0103068,0.390594,-0.0137577,0.999887,0.00603792,-0.390488,-0.0109316,0.920543,\
+595.578,0,320,0,595.578,180,0,0,1,0.401075,0.014492,0.915931,0.00593535,0.999813,-0.0184182,-0.916026,0.0128234,0.400914,\
+549.917",
+"492.936,0,320,0,492.936,180,0,0,1,0.333934,0.00376102,-0.942589,-0.00390736,0.999989,0.00260578,0.942588,0.00281288,0.333945,\
+531.666,0,320,0,531.666,180,0,0,1,0.920266,-0.00331873,-0.391279,-0.00138152,0.99993,-0.0117304,0.391291,0.0113356,0.920197,\
+563.184,0,320,0,563.184,180,0,0,1,0.91131,0.00169592,0.411716,0.00588441,0.999836,-0.0171433,-0.411678,0.0180456,0.911151,\
+605.804,0,320,0,605.804,180,0,0,1,0.386633,0.0122536,0.922152,-0.00720674,0.999921,-0.0102654,-0.922205,-0.00267676,0.386691,\
+547.425"
+};
+
+
 static void Stringsplit(string str, const char split, vector<string>& res)
 {
     istringstream iss(str);	// 输入流
@@ -45,12 +58,47 @@ static void Stringsplit(string str, const char split, vector<string>& res)
         res.push_back(token);
     }
 }
+
+static float radian2degree(float x)
+{
+    return x*180/M_PI;
+}
+ 
+// Calculates rotation matrix to euler angles
+// The result is the same as MATLAB except the order
+// of the euler angles ( x and z are swapped ).
+static Vec3f rotationMatrixToEulerAngles(Mat &m)
+{
+ 
+    // assert(isRotationMatrix(R));
+     Mat R;
+     m.convertTo(R, CV_64FC1);
+    float sy = sqrt(R.at<double>(0,0) * R.at<double>(0,0) +  R.at<double>(1,0) * R.at<double>(1,0) );
+ 
+    bool singular = sy < 1e-6; // If
+ 
+    float x, y, z;
+    if (!singular)
+    {
+        x = atan2(R.at<double>(2,1) , R.at<double>(2,2));
+        y = atan2(-R.at<double>(2,0), sy);
+        z = atan2(R.at<double>(1,0), R.at<double>(0,0));
+    }
+    else
+    {
+        x = atan2(-R.at<double>(1,2), R.at<double>(1,1));
+        y = atan2(-R.at<double>(2,0), sy);
+        z = 0;
+    }
+    return Vec3f(radian2degree(x), radian2degree(y), radian2degree(z));
+}
 class ocvStitcher
 {
     public:
     ocvStitcher(stStitcherCfg cfg):
     m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id), m_cfgpath(cfg.cfgPath), 
-    match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength)
+    match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
+    cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres)
     {
         // auto gpu = cuda::getCudaEnabledDeviceCount();
         // if (gpu > 0)
@@ -73,14 +121,102 @@ class ocvStitcher
             cameraR.push_back(Mat(Size(3,3), CV_32FC1));
             camK.push_back(Mat(Size(3,3), CV_32FC1));
         }
-        
-        (initCamParams(m_cfgpath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
 
+        useDefaultCamParams();
+// #ifdef GENERATE_SO
+//         useDefaultCamParams();
+//         presetParaOk = true;
+// #else
+//         (initCamParams(m_cfgpath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
+// #endif
+        spdlog::debug("stitcher {} constructor completed!", m_id);
     }
 
     ~ocvStitcher()
     {
 
+    }
+
+    int verifyCamParams()
+    {
+        //compare cameras and camK & cameraR
+        // for(int i=0;i<4;i++)
+        // {
+        //     spdlog::debug("stitcher[{}], cameras[{}] R:",m_id, i);
+        //     std::cout<<cameras[i].R<<endl;
+        // }
+
+        // for(int i=0;i<4;i++)
+        // {
+        //     spdlog::debug("stitcher[{}], cameras[{}] angles:",m_id, i);
+        //     Vec3f angles = rotationMatrixToEulerAngles(cameras[i].R);
+        //     std::cout<<angles<<endl;
+        // }
+        
+        // for(int i=0;i<4;i++)
+        // {
+        //     spdlog::debug("stitcher[{}], cameraR[{}] matrix:",m_id, i);
+        //     std::cout<<cameraR[i]<<endl;
+        // }
+
+        // for(int i=0;i<4;i++)
+        // {
+        //     spdlog::debug("stitcher[{}], cameraR[{}] angles:",m_id, i);
+        //     Vec3f angles = rotationMatrixToEulerAngles(cameraR[i]);
+        //     std::cout<<angles<<endl;
+        // }
+
+        for(int i=0;i<num_images;i++)
+        {
+            Vec3f defaultAngle = rotationMatrixToEulerAngles(cameraR[i]);
+            Vec3f estimatedAngle = rotationMatrixToEulerAngles(cameras[i].R);
+            double diff = norm(defaultAngle, estimatedAngle);
+            spdlog::debug("camera[{}] extrinsic diff:{}", i, diff);
+            // std::cout<<"angle:"<<endl<<defaultAngle<<endl<<estimatedAngle<<endl;
+            if(diff > cameraExThres)
+            {
+                spdlog::warn("environment is not suitable for calibration, init failed");
+                return RET_ERR;
+            }
+            
+            Vec2f defaultIntrinsic = Vec2f{camK[i].at<float>(0,0), camK[i].at<float>(1,1)};
+            Vec2f estimatedIntrinsic = Vec2f{cameras[i].K().at<double>(0,0), cameras[i].K().at<double>(1,1)};
+            // cout<<"instrinsic:"<<endl<<defaultIntrinsic<<endl<<estimatedIntrinsic<<endl;
+            diff = norm(defaultIntrinsic, estimatedIntrinsic);
+            spdlog::debug("camera[{}] intrinsic diff:{}", i, diff);
+            if(diff > cameraInThres)
+            {
+                spdlog::warn("environment is not suitable for calibration, init failed");
+                return RET_ERR;
+            }
+        }
+
+        return RET_OK; 
+        
+    }
+
+    int useDefaultCamParams()
+    {
+        vector<string> res;
+        Stringsplit(camParams[m_id-1], ',', res);
+        spdlog::debug("useDefaultCamParams,res size:{}", res.size());
+        for(int i=0;i<num_images;i++)
+        {
+            for(int mi=0;mi<3;mi++)
+            {
+                for(int mj=0;mj<3;mj++)
+                {
+                    camK[i].at<float>(mi,mj) = stof(res[18*i+mi*3+mj]);
+                    cameraR[i].at<float>(mi,mj) = stof(res[18*i+9+mi*3+mj]);
+                }
+            }
+
+            // cout<<K[i]<<endl;
+            // cout<<R[i]<<endl;
+        }
+        warped_image_scale = stof(res.back());
+
+        return RET_OK;
     }
 
     int initCamParams(std::string cfgpath)
@@ -124,7 +260,7 @@ class ocvStitcher
         // cout << "params time:" << str << endl;
         spdlog::debug("params timestamp:{}", str);
 
-        for(int i=0;i<4;i++)
+        for(int i=0;i<num_images;i++)
         {
             fin >> str;
             Stringsplit(str, ',', res);
@@ -176,16 +312,16 @@ class ocvStitcher
             {
                 for(int mj=0;mj<3;mj++)
                 {
-                    fout << cameras[idx].K().at<double>(mi,mj) << ",";
-                    cameraK.at<float>(mi,mj) = cameras[idx].K().at<double>(mi,mj);
+                    fout << camK[idx].at<float>(mi,mj) << ",";
+                    // cameraK.at<float>(mi,mj) = cameras[idx].K().at<double>(mi,mj);
                 }
             }  
             for(int mi=0;mi<3;mi++)
             {
                 for(int mj=0;mj<3;mj++)
                 {
-                    fout << cameras[idx].R.at<float>(mi,mj) << ",";
-                    cameraR[idx].at<float>(mi,mj) = cameras[idx].R.at<float>(mi,mj);
+                    fout << cameraR[idx].at<float>(mi,mj) << ",";
+                    // cameraR[idx].at<float>(mi,mj) = cameraR[idx].at<float>(mi,mj);
                 }
             }
             fout << "\n";
@@ -195,17 +331,40 @@ class ocvStitcher
         return RET_OK;
     }
 
-    int init(vector<Mat> &imgs, bool initMode)
+    // init mode, 1:initall, 2:use default, init seam, 3:read cfg, init seam
+    int init(vector<Mat> &imgs, int initMode)
     {
-        if(initMode || !presetParaOk)
+        // if(initMode || !presetParaOk)
+        //     return initAll(imgs);
+        // else
+        //     return initSeam(imgs);
+
+        if(enInitALL == initMode)
             return initAll(imgs);
-        else
+        else if(enInitByDefault)
+        {
+            useDefaultCamParams();
             return initSeam(imgs);
+        }
+        else if(enInitByCfg)
+        {
+            if(RET_OK ==initCamParams(m_cfgpath))
+                return initSeam(imgs);
+            else
+                return initAll(imgs);
+        }
+        else
+        {
+            spdlog::critical("invalid init mode, exit");
+            return RET_ERR;
+        }
+
+
     }
 
     int initAll(vector<Mat> &imgs)
     {
-        spdlog::info("***********stitcher {} init start**************", m_id);
+        spdlog::debug("***********stitcher {} init start**************", m_id);
         auto t = getTickCount();
         auto app_start_time = getTickCount();
         vector<ImageFeatures> features(num_images);
@@ -286,6 +445,7 @@ class ocvStitcher
         spdlog::debug("***********after Camera parameters adjusting Find median focal length**************");
 
         vector<double> focals;
+
         for (size_t i = 0; i < cameras.size(); ++i)
         {
             // LOGLN("Camera #" << i+1 << ":\nK:\n" << cameras[i].K() << "\nR:\n" << cameras[i].R);
@@ -294,11 +454,12 @@ class ocvStitcher
         }
 
         sort(focals.begin(), focals.end());
+        float estimated_warped_image_scale;
         // float warped_image_scale;
         if (focals.size() % 2 == 1)
-            warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
+            estimated_warped_image_scale = static_cast<float>(focals[focals.size() / 2]);
         else
-            warped_image_scale = static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) * 0.5f;
+            estimated_warped_image_scale = static_cast<float>(focals[focals.size() / 2 - 1] + focals[focals.size() / 2]) * 0.5f;
         
         // warped_image_scale = static_cast<float>(cameras[2].focal);
 
@@ -325,11 +486,24 @@ class ocvStitcher
         //     // cameras[i].R = rmats[i];
         //     LOGLN("camera R:" << i << "\n" << cameras[i].R);
         //     LOGLN("after set Initial camera intrinsics #" << i+1 << ":\nK:\n" << cameras[i].K());
+        //     LOGLN("default camera intrinsics #" << i+1 << ":\nK:\n" << camK[i]);
         //     // fout << "camera " << i << ":\n";
         // }
 
+        // verify camera parameters
+       if(RET_OK == verifyCamParams())
+       {
+           for(int i=0;i<num_images;i++)
+           {
+            cameraR[i] = cameras[i].R.clone();
+            camK[i] = cameras[i].K().clone();
+            warped_image_scale = estimated_warped_image_scale;
+           }
+       }
+#ifdef DEV_MODE
         /*save camera parsms*/
         saveCameraParams();
+#endif
 
         vector<UMat> masks(num_images);
         // Preapre images masks
@@ -351,7 +525,7 @@ class ocvStitcher
         for (int i = 0; i < num_images; ++i)
         {
             // Mat_<float> K;
-            cameras[i].K().convertTo(camK[i], CV_32F);
+            camK[i].convertTo(camK[i], CV_32F);
 
             // LOGLN("cameras[i] for sephere warp #" << i << "\n" << cameras[i].K());
             // LOGLN("cam K for sephere warp #" << i << "\n" << camK[i]);
@@ -363,15 +537,15 @@ class ocvStitcher
             K(0,0) *= swa; K(0,2) *= swa;
             K(1,1) *= swa; K(1,2) *= swa;
 
-            corners[i] = seamfinder_warper->warp(seamSizedImgs[i], K, cameras[i].R, INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
+            corners[i] = seamfinder_warper->warp(seamSizedImgs[i], K, cameraR[i], INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
             // corners[i] = warper->warp(seamSizedImgs[i], camK[i], cameras[i].R, INTER_LINEAR, BORDER_REFLECT, images_warped[i]);
             sizes[i] = images_warped[i].size();
 
-            seamfinder_warper->warp(masks[i], K, cameras[i].R, INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
-
+            seamfinder_warper->warp(masks[i], K, cameraR[i], INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
+#ifdef DEV_MODE
             imwrite(std::to_string(i)+"-images_warped.png", images_warped[i]);
             imwrite(std::to_string(i)+"-masks_warped.png", masks_warped[i]);
-
+#endif
             // LOGLN("****first warp:" << i << ":\n corners  " << corners[i] << "\n size:" << sizes[i]);
         }
 
@@ -387,9 +561,9 @@ class ocvStitcher
         for (int i = 0; i < num_images; ++i)
             images_warped[i].convertTo(images_warped_f[i], CV_32F);
         
-        compensator = ExposureCompensator::createDefault(ExposureCompensator::GAIN_BLOCKS);
+        // compensator = ExposureCompensator::createDefault(ExposureCompensator::GAIN_BLOCKS);
 
-        compensator->feed(corners, images_warped, masks_warped);
+        // compensator->feed(corners, images_warped, masks_warped);
         seam_finder = makePtr<detail::GraphCutSeamFinder>(GraphCutSeamFinderBase::COST_COLOR);
         // seam_finder = makePtr<detail::NoSeamFinder>();
         seam_finder->find(images_warped_f, corners, masks_warped);
@@ -415,7 +589,7 @@ class ocvStitcher
         for (int i = 0; i < num_images; ++i)
         {
             // LOGLN("Update corners and sizes camK i #" << i << ":\nK:\n" << camK[i]);
-            Rect roi = blender_warper->warpRoi(Size(m_imgWidth,m_imgHeight), camK[i], cameras[i].R);
+            Rect roi = blender_warper->warpRoi(Size(m_imgWidth,m_imgHeight), camK[i], cameraR[i]);
             // Rect roi = warper->warpRoi(sz, K, cameras[i].R);
             corners[i] = roi.tl();
             sizes[i] = roi.size();
@@ -438,12 +612,12 @@ class ocvStitcher
             Size img_size = img.size();
 
             // Warp the current image
-            blender_warper->warp(img, camK[img_idx], cameras[img_idx].R, INTER_LINEAR, BORDER_REFLECT, img_warped);
+            blender_warper->warp(img, camK[img_idx], cameraR[img_idx], INTER_LINEAR, BORDER_REFLECT, img_warped);
 
             // // Warp the current image mask
             mask.create(img_size, CV_8U);
             mask.setTo(Scalar::all(255));
-            blender_warper->warp(mask, camK[img_idx], cameras[img_idx].R, INTER_NEAREST, BORDER_CONSTANT, compensatorMaskWarped[img_idx]);
+            blender_warper->warp(mask, camK[img_idx], cameraR[img_idx], INTER_NEAREST, BORDER_CONSTANT, compensatorMaskWarped[img_idx]);
 
             // Compensate exposure
             // compensator->apply(img_idx, corners[img_idx], img_warped, maskwarped);
@@ -490,7 +664,9 @@ class ocvStitcher
         blender->blend(result, result_mask);
 
         spdlog::debug("init ok takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+#ifdef DEV_MODE
         imwrite(to_string(m_id)+"_ocv.png", result);
+#endif
 
         return 0;
     }
@@ -651,7 +827,9 @@ class ocvStitcher
         blender->blend(result, result_mask);
 
         spdlog::debug("init ok takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+#ifdef DEV_MODE
         imwrite(to_string(m_id)+"_ocv.png", result);
+#endif
 
         return 0;
     }
@@ -808,7 +986,7 @@ class ocvStitcher
     bool presetParaOk;
     std::string m_cfgpath;
 
-    float match_conf, conf_thresh, blend_strength;
+    float match_conf, conf_thresh, blend_strength, cameraExThres, cameraInThres;
 
     // Ptr<Blender> blender;
 

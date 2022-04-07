@@ -30,7 +30,7 @@
 
 #include "spdlog/spdlog.h"
 
-typedef struct
+struct canCmd
 {
     bool use_dehaze; //电子去雾开关
     bool use_ssr; //图像增强开关
@@ -39,14 +39,21 @@ typedef struct
     bool contrast_method; //对比度调节摸索，1为手动，0为自动
     unsigned char contrast; 
     bool use_flip;  //图像翻转开关
-    bool use_detect; //图像十八开关
+    bool use_detect; //图像识别开关
     bool use_cross; //电十字加载/消隐，1为加载，0为消隐
     bool video_save;    //视频存储开关
     bool self_check;    //自检开关
     bool open_window; //开窗局部放大开关
     bool turn_ctl;  //转台控制开关
     int turn_ctl_angle;
-} canCmd;
+};
+
+struct stObject
+{
+    int cls;
+    float x,y,w,h;
+    float conf;
+};
 
 class imageProcessor
 {

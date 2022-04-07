@@ -1,7 +1,6 @@
-camwidth: 1920
-camheight: 1080
-netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16.rt"
-camcfgpath: "/home/nvidia/ssd/code/0209is/cfg/390camcfg/"
+camwidth: 3840
+camheight: 2160
+netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"
 canname: "can0" 
 
 # parameters for display window, should be fixed
@@ -13,3 +12,5 @@ renderY: 0
 loglvl: "info"
 # image stitching quality, 0:the wrost and fastest, 5:the best and slowest
 quality: 0
+# init mode, 1:init by environment, 2:init by default parameters
+initMode: 2

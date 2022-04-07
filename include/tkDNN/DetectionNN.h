@@ -158,7 +158,9 @@ class DetectionNN {
             for(int bi=0; bi<frames.size(); ++bi){
                 // draw dets
                 for(int i=0; i<batchDetected[bi].size(); i++) { 
+#if DEV_MODE
                     printf("new frame!!!\n");
+#endif
                     // if(b.cl >= 4)
                     // {
                     //     printf("bcl:%d\n",b.cl);
@@ -178,7 +180,9 @@ class DetectionNN {
                     detret.push_back(b.cl);
                     detret.push_back(b.prob*100);
                     classesnames = classesNames;
+#if DEV_MODE
                     b.print();
+#endif
                     // draw rectangle
                     // if(b.cl >= 4)
                     // {
@@ -191,7 +195,9 @@ class DetectionNN {
                     cv::rectangle(frames[bi], cv::Point(x0, y0), cv::Point((x0 + text_size.width - 2), (y0 - text_size.height - 2)), colors[b.cl], -1);                      
                     cv::putText(frames[bi], det_class, cv::Point(x0, (y0 - (baseline / 2))), cv::FONT_HERSHEY_SIMPLEX, font_scale, cv::Scalar(255, 255, 255), thickness);
                 }
+#if DEV_MODE
                 printf("****!!!!!!!!!!detret size:::%d\n", detret.size());
+#endif
             }
             
         }
@@ -248,7 +254,9 @@ class DetectionNN {
                     // cv::putText(frames[bi], det_class, cv::Point(x0, (y0 - (baseline / 2))), cv::FONT_HERSHEY_SIMPLEX, font_scale, cv::Scalar(255, 255, 255), thickness);
                 }
                 detret.push_back(retInOneFrame);
+#if DEV_MODE
                 printf("****!!!!!!!!!!detret size:::%d\n", detret.size());
+#endif
             }
             
         }

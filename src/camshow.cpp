@@ -9,7 +9,6 @@
 #include "imageProcess.h"
 #include "helper_timer.h"
 
-
 using namespace cv;
 
 vector<Mat> upImgs(4);
@@ -196,10 +195,8 @@ int main(int argc, char *argv[])
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
 
-
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
-
     
     vendor = config["vendor"].as<int>();
     camSrcWidth = config["camsrcwidth"].as<int>();

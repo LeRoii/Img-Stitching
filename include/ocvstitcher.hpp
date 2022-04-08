@@ -100,11 +100,6 @@ class ocvStitcher
     match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
     cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres)
     {
-        // auto gpu = cuda::getCudaEnabledDeviceCount();
-        // if (gpu > 0)
-        //     finder = makePtr<SurfFeaturesFinderGpu>();
-        // else
-        //     finder = makePtr<SurfFeaturesFinder>();
 
         finder = makePtr<SurfFeaturesFinder>();
 

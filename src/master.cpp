@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
                 if(savevideo)
                 {
                     panoWriter->release();
-                    oriWriter->release();
+                    // oriWriter->release();
                     writerInit = false;
                 }
                 savevideo = !savevideo;

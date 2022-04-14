@@ -12,6 +12,10 @@ const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
 const int RET_OK = 0;
 const int RET_ERR = -1;
 
+const unsigned char STATUS_OK = 0;
+const unsigned char STATUS_VERIFICATION_FAILED = 0xE0;
+const unsigned char STATUS_INITALIZATION_FAILED = 0xE1;
+
 extern int vendor;
 extern int camSrcWidth;
 extern int camSrcHeight;
@@ -46,6 +50,7 @@ extern float stitcherCameraInThres;
 
 extern int batchSize;
 extern int initMode;
+
 
 struct stCamCfg
 {

@@ -14,10 +14,10 @@
 
 #include "spdlog/spdlog.h"
 
-class cansender
+class canmessenger
 {
 public:
-    cansender(const char *canname)
+    canmessenger(const char *canname)
     {
         struct sockaddr_can addr;
         struct ifreq ifr;
@@ -28,9 +28,11 @@ public:
         addr.can_family = AF_CAN;
         addr.can_ifindex = ifr.ifr_ifindex;
         bind(can_socket_fd, (struct sockaddr *)&addr, sizeof(addr));//将套接字与 can0 绑定
+        std::thread receivedTh = std::thread(&canmessenger::receiveCANMsg, this);
+        receivedTh.detach();
 
     }
-    ~cansender(){}
+    ~canmessenger(){}
     void sendObjDetRet(std::vector<int> &msg)
     {
         if(msg.size() == 0)
@@ -78,8 +80,39 @@ public:
 
         }
     }
+
+    void receiveCANMsg()
+    {
+        while(1)
+        {
+		    int nbytes = read(can_socket_fd, &reveivedMsg, sizeof(can_frame));
+            spdlog::info("received {} byte", nbytes);
+            for(int i=0;i<8;i++)
+            {
+                spdlog::info("date[{}]:{}", i, reveivedMsg.data[i]);
+            }
+        }
+    }
+
+    void  sendTest()
+    {
+        struct can_frame canmsg;
+        canmsg.can_id = 0x421;
+        canmsg.can_dlc = 8;
+        canmsg.data[0] = 0xff;
+        canmsg.data[1] = 0xff;
+        canmsg.data[2] = 0xff;
+        canmsg.data[3] = 0xff;
+        canmsg.data[4] = 0xff;
+        canmsg.data[5] = 0xff;
+        canmsg.data[6] = 0xff;
+        canmsg.data[7] = 0xff;
+        unsigned char nbytes = write(can_socket_fd, &canmsg, sizeof(can_frame));        
+    }
 private:
     int can_socket_fd;
+    unsigned char reveivedData[CAN_MAX_DLEN];
+    struct can_frame reveivedMsg;
     
 };
 

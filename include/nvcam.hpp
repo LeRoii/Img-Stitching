@@ -65,15 +65,15 @@
 
 static bool quit = false;
 
-std::vector<std::vector<int>> rectPara(2);// = {65,105,1788,886};
-cv::Mat intrinsic_matrix[2];
-cv::Mat distortion_coeffs[2];
+static std::vector<std::vector<int>> rectPara(2);// = {65,105,1788,886};
+static cv::Mat intrinsic_matrix[2];
+static cv::Mat distortion_coeffs[2];
 
 using namespace std;
 
-std::mutex m_mtx[8];
-std::condition_variable con[8];
-std::mutex changeszmtx;
+static std::mutex m_mtx[8];
+static std::condition_variable con[8];
+static std::mutex changeszmtx;
 
 static void
 set_defaults(camcontext_t * ctx)

@@ -6,29 +6,15 @@ std::string strPts[3] = {".","..","..."};
 
 namespace panoAPP{
 
-    std::chrono::steady_clock::time_point fsmstate::m_startTimepoint = std::chrono::steady_clock::now();
+    
 
     fsmstate::fsmstate()
     {
-        heartbeat = 0;
     }
 
     fsmstate::~fsmstate()
     {
         
-    }
-
-    void fsmstate::ticktok()
-    {
-        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-        std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimepoint);
-        spdlog::trace("state:{}, ms:{}, diff:{}", m_enStateName, time_span.count(), (time_span-std::chrono::milliseconds{3000}).count());
-        if(time_span > std::chrono::milliseconds{1000})
-        {
-            spdlog::debug("heartbeat");
-            m_startTimepoint = std::chrono::steady_clock::now();
-            heartbeat++;
-        }
     }
 
     fsmstateStart::fsmstateStart()
@@ -48,9 +34,9 @@ namespace panoAPP{
         // pRenderer->showImg(screen);
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateStart::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateStart::update(panocamimpl *pPanocam, int heartbeat)
     {
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
@@ -92,10 +78,10 @@ namespace panoAPP{
         spdlog::debug("state [{}] start", m_enStateName);
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateVerify::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateVerify::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
+        static int initHeartbeat = heartbeat;
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
@@ -110,9 +96,9 @@ namespace panoAPP{
         cv::putText(screen, dispFinalStr, textpos, cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         pRenderer->showImg(screen);
 
-        if(heartbeat > 3)
+        if(heartbeat > initHeartbeat+3)
         {
-            if(pPanocam->verify())
+            if(!pPanocam->verify())
             {
                 spdlog::debug("verify failed");
                 return PANOAPP_STATE_FINISH;
@@ -142,10 +128,9 @@ namespace panoAPP{
 
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateInit::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateInit::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
@@ -169,7 +154,7 @@ namespace panoAPP{
         else
         {
             spdlog::debug("init failed");
-            return PANOAPP_STATE_RUN;
+            return PANOAPP_STATE_FINISH;
         }
     }
 
@@ -185,9 +170,9 @@ namespace panoAPP{
         spdlog::info("app started");
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateRun::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateRun::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat frame;
         pPanocam->getPanoFrame(frame);
 
@@ -257,20 +242,24 @@ namespace panoAPP{
         spdlog::debug("state [{}] start", m_enStateName);
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateFinish::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateFinish::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
         int lineSickness = 2;
         int fontSickness = 2;
         cv::Scalar color = cv::Scalar(5, 217, 82 );
-        std::string dispInitStr = "verification";
         std::string dispFinalStr;// = "initialization"
-        dispFinalStr = dispInitStr+strPts[heartbeat%3];
-        cv::putText(screen, "verification failed!", cv::Point(850, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+
+        uint8_t status = pPanocam->getStatus();
+        if(status == STATUS_VERIFICATION_FAILED)
+            dispFinalStr = "verification failed!";
+        else if(status == STATUS_INITALIZATION_FAILED)
+            dispFinalStr = "initialization failed!";
+
+        cv::putText(screen, dispFinalStr, cv::Point(850, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         pRenderer->showImg(screen);
     }
 

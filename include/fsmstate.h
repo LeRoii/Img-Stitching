@@ -1,9 +1,10 @@
 #ifndef _FSMSTATE_H_
 #define _FSMSTATE_H_
+#include "panocamimpl.h"
 #include "nvrender.h"
 #include "spdlog/spdlog.h"
 #include <chrono>
-#include "panocam.h"
+
 
 #define reversebit(x,y)  x^=(1<<y)
 #define getbit(x,y)   ((x) >> (y)&1)
@@ -42,14 +43,13 @@ namespace panoAPP{
             ~fsmstate();
 
             virtual void start()=0;
-            virtual panoAPP::enAPPFSMSTATE update(panocam *pPanocam)=0;
+            virtual panoAPP::enAPPFSMSTATE update(panocamimpl *pPanocam, int heartbeat)=0;
             virtual void stop()=0;
-            void ticktok();
 
         protected:
            panoAPP::enAPPFSMSTATE m_enStateName; 
-           static std::chrono::steady_clock::time_point m_startTimepoint;
-           int heartbeat;
+        //    static std::chrono::steady_clock::time_point m_startTimepoint;
+        //    int heartbeat;
            stSystemStatus m_stSysStatus;
     };
 
@@ -58,7 +58,7 @@ namespace panoAPP{
         public:
         fsmstateStart();
         void start();
-        panoAPP::enAPPFSMSTATE update(panocam *pPanocam);
+        panoAPP::enAPPFSMSTATE update(panocamimpl *pPanocam, int heartbeat);
         void stop();
     };
 
@@ -67,7 +67,7 @@ namespace panoAPP{
         public:
         fsmstateVerify();
         void start();
-        panoAPP::enAPPFSMSTATE update(panocam *pPanocam);
+        panoAPP::enAPPFSMSTATE update(panocamimpl *pPanocam, int heartbeat);
         void stop();
     };
 
@@ -76,14 +76,14 @@ namespace panoAPP{
         public:
         fsmstateInit();
         void start();
-        panoAPP::enAPPFSMSTATE update(panocam *pPanocam);
+        panoAPP::enAPPFSMSTATE update(panocamimpl *pPanocam, int heartbeat);
         void stop();
     };
 
     class fsmstateRun : public fsmstate
     {
         void start();
-        panoAPP::enAPPFSMSTATE update(panocam *pPanocam);
+        panoAPP::enAPPFSMSTATE update(panocamimpl *pPanocam, int heartbeat);
         void stop();
     };
 
@@ -92,7 +92,7 @@ namespace panoAPP{
         public:
         fsmstateFinish();
         void start();
-        panoAPP::enAPPFSMSTATE update(panocam *pPanocam);
+        panoAPP::enAPPFSMSTATE update(panocamimpl *pPanocam, int heartbeat);
         void stop();
     };
 }

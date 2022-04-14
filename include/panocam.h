@@ -4,6 +4,7 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 
+class panocamimpl;
 class __attribute__((visibility("default"))) panocam
 {
 public:
@@ -19,11 +20,13 @@ public:
     int imgEnhancement(cv::Mat &img);
     int render(cv::Mat &img);
     int drawCross(cv::Mat &img);
-    int verify();
+    bool verify();
     int saveAndSend(cv::Mat &img);
+    uint8_t getStatus();
+    
 
 private:
-    class panocamimpl;
+    
     std::unique_ptr<panocamimpl> pimpl;
 };
 

@@ -287,7 +287,7 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> &ceil_img) {
     detret_all.insert(detret_all.end(),detret_left.begin(),detret_left.end());
     detret_all.insert(detret_all.end(),detret_right.begin(),detret_right.end());
 
-    pCanSender->sendObjDetRet(detret_all);
+    // pCanSender->sendObjDetRet(detret_all);
     // canSend(detret_all);
     // canRecv();
 
@@ -346,7 +346,7 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
 
     nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
     // canSend(detret_all);
-    pCanSender->sendObjDetRet(detret_all);
+    // pCanSender->sendObjDetRet(detret_all);
 
     if(detret_all.size()>=6){
         cv::Point p = cv::Point(detret_all[0]+detret_all[2]/2,detret_all[1]+detret_all[3]/2);
@@ -385,7 +385,7 @@ imageProcessor::imageProcessor(std::string net, std::string canname, int batchsi
     float conf_thresh=0.8;
     detNN.init(net, n_classes, n_batch, conf_thresh);
 
-    pCanSender = new cansender(canname.c_str());
+    // pCanSender = new cansender(canname.c_str());
 
     // int ret = pthread_create(&tid, NULL, canRecv, NULL);  //为can接收程序创建线程
     // if (ret != 0)

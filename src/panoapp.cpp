@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     while(1 && g_keyboardinput!=113)
     {
         appctx->update();
-        spdlog::debug("g_keyboardinput:{}", g_keyboardinput);
+        // spdlog::debug("g_keyboardinput:{}", g_keyboardinput);
     }
     if(pRenderer != nullptr)
         delete pRenderer;

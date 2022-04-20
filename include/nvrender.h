@@ -23,6 +23,8 @@ public:
     void render(cv::Mat &img, cv::Mat &final);
     void showImg(cv::Mat &img);
     void showImg();
+    void renderimgs(cv::Mat &img, cv::Mat &inner, int x, int y);
+
 
 private:
     NvEglRenderer *renderer;

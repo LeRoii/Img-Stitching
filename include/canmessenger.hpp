@@ -102,6 +102,11 @@ public:
                 m_pstSysStatus->detectionTrigger = receivedMsg.data[3];
                 m_pstSysStatus->zoomTrigger = receivedMsg.data[2];
                 m_pstSysStatus->displayMode = receivedMsg.data[5];
+                // m_pstSysStatus->zoomPointX = receivedMsg.data[6];
+                int x = receivedMsg.data[0];
+                m_pstSysStatus->zoomPointX = (x << 8) + receivedMsg.data[1];
+                int y = receivedMsg.data[6];
+                m_pstSysStatus->zoomPointY = (y << 8) + receivedMsg.data[7];
             }
         }
     }

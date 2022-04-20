@@ -209,3 +209,10 @@ void nvrender::render(cv::Mat &img, cv::Mat &final)
     else if(m_mode == RENDER_OCV)
         renderocv(img, final);
 }
+
+void nvrender::renderimgs(cv::Mat &img, cv::Mat &inner, int x, int y)
+{
+    inner.copyTo(img(cv::Rect(x, y, 300, 300)));
+    render(img);
+}
+

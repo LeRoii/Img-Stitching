@@ -218,7 +218,70 @@ namespace panoAPP{
         if(lastDisplayMode != displaymode && displaymode == 0xCA)
             pRenderer->drawIndicator();
         lastDisplayMode = displaymode;
-        pRenderer->render(frame);
+
+        
+
+
+        if(pPanocam->sysStatus().zoomTrigger)
+        {
+            cv::Mat innerFrame;
+            int x = pPanocam->sysStatus().zoomPointX;
+            int y = pPanocam->sysStatus().zoomPointY;
+            int maxX = frame.cols - 300;
+            int minX = 150;
+            int maxY = frame.rows - 300;
+            int minY = 150;
+            int w = frame.cols;
+            int h = frame.rows;
+            int camIdx = 0;
+           
+
+            if(y<h/2)
+            {
+                if(x < w/4)
+                    camIdx =  1;
+                else if(x < w/2)
+                    camIdx =  2;
+                else if(x < w *3/4)
+                    camIdx =  3;
+                else
+                    camIdx =  4;
+            }
+            else
+            {
+                if(x < w/4)
+                    camIdx =  5;
+                else if(x < w/2)
+                    camIdx =  6;
+                else if(x < w *3/4)
+                    camIdx =  7;
+                else
+                    camIdx =  8;
+            }
+
+            int cropX, cropY;
+            if(x%(w/4) < (w/4))
+                cropX = 0;
+            else
+                cropX = 960;
+
+            if(y%(h/4) < (h/4))
+                cropY = 0;
+            else
+                cropY = 540;
+
+            // x = (x >= minX ? x : minX);
+            x = (x <= maxX ? x : maxX);
+            // y = (y >= minY ? x : minY);
+            y = (y <= maxY ? y : maxY);
+
+            pPanocam->getCamFrame(camIdx, innerFrame);
+            innerFrame = innerFrame(cv::Rect(cropX,cropY,960,540));
+            cv::resize(innerFrame, innerFrame, cv::Size(300,300));
+            pRenderer->renderimgs(frame, innerFrame, x, y);
+        }
+        else
+            pRenderer->render(frame);
 
         return PANOAPP_STATE_RUN;
     }

@@ -102,6 +102,8 @@ struct stSysStatus
     bool crossTrigger;
     bool saveTrigger;
     uint8_t displayMode;
+    int zoomPointX;
+    int zoomPointY;
     stSysStatus():deviceStatus(0),cameraStatus(0xff),zoomTrigger(false),crossTrigger(false), \
         saveTrigger(false),detectionTrigger(false),enhancementTrigger(false),displayMode(0xCA){}
 };

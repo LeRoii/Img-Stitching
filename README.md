@@ -22,7 +22,7 @@ make
 - [ ] 是否要加qt？？  
 - [ ] 增加方位指示    
 - [x] 原始图像crop, crop之后的检测效果比原图的好 
-- [ ] 修改cansender为canmanager  
+- [x] 修改cansender为canmanager  
 8个一起拼无法初始化，bundle adjustment的时候会报错，因为第8张图和第1张，第7张都有公共区域  
 7个一起拼效果不好，接缝明显  
 暂时还是4个一起拼  
@@ -121,3 +121,7 @@ make
 
 04.18.
 - app不再依赖so，so只用作二次开发使用
+
+04.20.
+- cansender升级为canmessenger，可以收发
+- 可以通过can控制输出全景或单个画面

@@ -67,7 +67,7 @@ namespace panoAPP{
         }
         if(lastheartbeat != m_heartbeat)
         {
-            // m_pPanocam->sendStatus();
+            m_pPanocam->sendStatus();
             lastheartbeat = m_heartbeat;
         }
 

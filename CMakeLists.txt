@@ -111,7 +111,7 @@ add_executable(camshow-2 src/camshow-2.cpp src/imageProcess.cpp src/PracticalSoc
 add_library(panocam SHARED src/panocam.cpp src/panocamimpl.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
 add_executable(demo src/demo.cpp)
-add_executable(panoapp src/panoapp.cpp src/nvrender.cpp src/context.cpp src/fsmstate.cpp src/panocamimpl.cpp )
+add_executable(panoapp src/panoapp.cpp src/nvrender.cpp src/imageProcess.cpp src/context.cpp src/PracticalSocket.cpp src/fsmstate.cpp src/panocamimpl.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
 
 add_executable(slave src/slave.cpp  src/PracticalSocket.cpp src/stitcherglobal.cpp )
 add_executable(slaveshow src/slaveshow.cpp  src/nvrender.cpp src/imageProcess.cpp src/PracticalSocket.cpp  src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES}  )
@@ -205,8 +205,15 @@ target_link_libraries(panocam
 target_link_libraries(demo
     panocam)
     
+# target_link_libraries(panoapp
+#     panocam -lpthread)
 target_link_libraries(panoapp
-    panocam -lpthread)
+    ${OPENGL_LIBRARY} ${OpenCV_LIBS}  ${CUDA_LIBRARIES}
+    -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+    -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+    -lyaml-cpp
+    -lpthread)
 
 # target_link_libraries(server 
 #     ${OpenCV_LIBS})

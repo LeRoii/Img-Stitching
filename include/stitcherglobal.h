@@ -92,6 +92,20 @@ struct stStitcherCfg
     std::string cfgPath;
 };
 
+struct stSysStatus
+{
+    uint8_t deviceStatus;
+    uint8_t cameraStatus;
+    bool zoomTrigger;
+    bool detectionTrigger;
+    bool enhancementTrigger;
+    bool crossTrigger;
+    bool saveTrigger;
+    uint8_t displayMode;
+    stSysStatus():deviceStatus(0),cameraStatus(0xff),zoomTrigger(false),crossTrigger(false), \
+        saveTrigger(false),detectionTrigger(false),enhancementTrigger(false),displayMode(0xCA){}
+};
+
 enum enStitcherInitMode
 {
     enInitALL = 1,

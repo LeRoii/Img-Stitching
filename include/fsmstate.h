@@ -8,11 +8,14 @@
 
 #define reversebit(x,y)  x^=(1<<y)
 #define getbit(x,y)   ((x) >> (y)&1)
+#define setbit(x,y) x|=(1<<y)
+#define clrbit(x,y) x&=~(1<<y)
 
 const int SETTING_IMGENHANCE = 0;
 const int SETTING_DETECTION = 1;
 const int SETTING_CROSS = 2;
 const int SETTING_SAVE = 3;
+const int SETTING_ON = 31;
 
 extern nvrender *pRenderer;
 
@@ -25,15 +28,6 @@ namespace panoAPP{
         PANOAPP_STATE_INIT = 3,
         PANOAPP_STATE_RUN = 4,
         PANOAPP_STATE_FINISH = 5
-    };
-
-    struct stSystemStatus
-    {
-        bool imgEnhance;
-        bool detection;
-        bool cross;
-        bool save;
-        stSystemStatus():imgEnhance(false), detection(false), cross(false), save(false){}
     };
 
     class fsmstate
@@ -50,7 +44,6 @@ namespace panoAPP{
            panoAPP::enAPPFSMSTATE m_enStateName; 
         //    static std::chrono::steady_clock::time_point m_startTimepoint;
         //    int heartbeat;
-           stSystemStatus m_stSysStatus;
     };
 
     class fsmstateStart : public fsmstate

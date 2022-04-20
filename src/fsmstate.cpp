@@ -174,54 +174,50 @@ namespace panoAPP{
     {
         spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat frame;
-        pPanocam->getPanoFrame(frame);
-
-        // getbit(g_usrcmd, SETTING_IMGENHANCE) ? m_stSysStatus.imgEnhance = true : m_stSysStatus.imgEnhance = false;
-        // getbit(g_usrcmd, SETTING_DETECTION) ? m_stSysStatus.detection = true : m_stSysStatus.detection = false;
-        // getbit(g_usrcmd, SETTING_CROSS) ? m_stSysStatus.cross = true : m_stSysStatus.cross = false;
-
-        if(getbit(g_usrcmd, SETTING_IMGENHANCE) != m_stSysStatus.imgEnhance)
+        uint8_t displaymode = pPanocam->sysStatus().displayMode;
+        static uint8_t lastDisplayMode = displaymode;
+        switch(displaymode)
         {
-            spdlog::info("image enhancement switch to [{}]", !m_stSysStatus.imgEnhance);
-            m_stSysStatus.imgEnhance = getbit(g_usrcmd, SETTING_IMGENHANCE);
-        }
-        if(getbit(g_usrcmd, SETTING_DETECTION) != m_stSysStatus.detection)
-        {
-            spdlog::info("image detection switch to [{}]", !m_stSysStatus.detection);
-            m_stSysStatus.detection = getbit(g_usrcmd, SETTING_DETECTION);
-        }
-        if(getbit(g_usrcmd, SETTING_CROSS) != m_stSysStatus.cross)
-        {
-            spdlog::info("image cross switch to [{}]", !m_stSysStatus.cross);
-            m_stSysStatus.cross = getbit(g_usrcmd, SETTING_CROSS);
-        }
-        if(getbit(g_usrcmd, SETTING_SAVE) != m_stSysStatus.save)
-        {
-            spdlog::info("image save switch to [{}]", !m_stSysStatus.save);
-            m_stSysStatus.save = getbit(g_usrcmd, SETTING_SAVE);
+            case 0xC1:
+            case 0xC2:
+            case 0xC3:
+            case 0xC4:
+            case 0xC5:
+            case 0xC6:
+            case 0xC7:
+            case 0xC8:pPanocam->getCamFrame(displaymode & 0xf, frame);break;
+            case 0xCA:
+            default:pPanocam->getPanoFrame(frame);break;
         }
 
-        if(m_stSysStatus.imgEnhance)
+        if(getbit(g_usrcmd, SETTING_ON))
+        {
+            if(getbit(g_usrcmd, SETTING_IMGENHANCE))
+                pPanocam->sysStatus().enhancementTrigger = !pPanocam->sysStatus().enhancementTrigger;
+            if(getbit(g_usrcmd, SETTING_DETECTION))
+                pPanocam->sysStatus().detectionTrigger = !pPanocam->sysStatus().detectionTrigger; 
+            if(getbit(g_usrcmd, SETTING_CROSS))
+                pPanocam->sysStatus().crossTrigger = !pPanocam->sysStatus().crossTrigger;
+            if(getbit(g_usrcmd, SETTING_SAVE))
+                pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
+            g_usrcmd = 0;
+        }
+
+        if(pPanocam->sysStatus().enhancementTrigger)
             pPanocam->imgEnhancement(frame);
-        if(m_stSysStatus.detection)
+        if(pPanocam->sysStatus().detectionTrigger)
             pPanocam->detect(frame);
-        if(m_stSysStatus.cross)
+        if(pPanocam->sysStatus().crossTrigger)
             pPanocam->drawCross(frame);
-        if(m_stSysStatus.save)
+        if(pPanocam->sysStatus().saveTrigger)
+        {
+            // cv::resize(frame, frame, cv::Size(1280, 720));
             pPanocam->saveAndSend(frame);
-        
-        // if(getbit(g_usrcmd, SETTING_IMGENHANCE))
-        // {
-        //     pPanocam->imgEnhancement(frame);
-        //     m_stSysStatus.imgEnhance = true;
-        // }
-        // if(getbit(g_usrcmd, SETTING_DETECTION))
-        // {
-        //     pPanocam->detect(frame);
-        //     m_stSysStatus.detection = true;
-        // }
-        // if(getbit(g_usrcmd, SETTING_CROSS))
-        //     pPanocam->drawCross(frame);
+            pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
+        }
+        if(lastDisplayMode != displaymode && displaymode == 0xCA)
+            pRenderer->drawIndicator();
+        lastDisplayMode = displaymode;
         pRenderer->render(frame);
 
         return PANOAPP_STATE_RUN;

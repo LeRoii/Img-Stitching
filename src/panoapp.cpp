@@ -42,8 +42,9 @@ int scanKeyboard()
 
     tcsetattr(STDIN_FILENO,TCSANOW,&stored_settings);
 
+    setbit(g_usrcmd, SETTING_ON);
     if(g_keyboardinput == 101)  //e
-        reversebit(g_usrcmd, SETTING_IMGENHANCE);
+        setbit(g_usrcmd, SETTING_IMGENHANCE);
     else if(g_keyboardinput == 100) //d
         reversebit(g_usrcmd, SETTING_DETECTION);
     else if(g_keyboardinput == 99)  //c
@@ -77,6 +78,8 @@ int main(int argc, char *argv[])
     
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
+    renderX = config["renderX"].as<int>();
+    renderY = config["renderY"].as<int>();
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     pRenderer = new nvrender(rendercfg);
 
@@ -110,6 +113,7 @@ int main(int argc, char *argv[])
 
     while(1 && g_keyboardinput!=113)
     {
+        
         appctx->update();
         // spdlog::debug("g_keyboardinput:{}", g_keyboardinput);
     }

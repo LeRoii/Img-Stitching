@@ -27,6 +27,8 @@ public:
     int saveAndSend(cv::Mat &img);
     bool verify();
     uint8_t getStatus();
+    int sendStatus();
+    stSysStatus& sysStatus();
 
 private:
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
@@ -37,6 +39,7 @@ private:
     int framecnt;
     unsigned char m_StatusCode;
     canmessenger *pCANMessenger;
+    stSysStatus m_stSysStatus;
 };
 
 

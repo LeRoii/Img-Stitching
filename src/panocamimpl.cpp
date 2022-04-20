@@ -98,7 +98,7 @@ void serverCap2()
 }
 #endif
 
-panocamimpl::panocamimpl(std::string yamlpath):framecnt(0),m_StatusCode(0x0)
+panocamimpl::panocamimpl(std::string yamlpath):framecnt(0)
 {
     YAML::Node config = YAML::LoadFile(yamlpath);
     int camw = config["camwidth"].as<int>();
@@ -157,6 +157,7 @@ panocamimpl::panocamimpl(std::string yamlpath):framecnt(0),m_StatusCode(0x0)
 
     pCANMessenger = new canmessenger("can0");
     pCANMessenger->sendTest();
+    pCANMessenger->setStatusPtr(&m_stSysStatus);
 
         
     if(stitcherinputWidth == 480)
@@ -164,15 +165,21 @@ panocamimpl::panocamimpl(std::string yamlpath):framecnt(0),m_StatusCode(0x0)
     else if(stitcherinputWidth == 640)
         finalcut = 40;
 
+    std::vector<std::thread> threads;
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    for(auto& th:threads)
+        th.detach();
+
     spdlog::debug("panocam ctor complete");
 }
 
 int panocamimpl::init()
 {
     spdlog::info("panocam init start");
-    m_StatusCode = 0xE1;
+    m_stSysStatus.deviceStatus = 0xE1;
 
-    if(!(initMode == 1 || initMode == 2))
+    if(!(initMode == enInitALL || initMode == enInitByDefault))
     {
         spdlog::critical("invalid init mode, exit");
         return RET_ERR;
@@ -184,14 +191,18 @@ int panocamimpl::init()
         upImgs.clear();
         for(int i=0;i<4;i++)
         {
-            cameras[i]->read_frame();
-            upImgs.push_back(cameras[i]->m_ret);
+            // cameras[i]->read_frame();
+            // upImgs.push_back(cameras[i]->m_ret);
+            cv::Mat frame;
+            cameras[i]->getFrame(frame, false);
+            upImgs.push_back(frame);
         }
         failnum++;
         if(failnum > 5)
         {
             spdlog::critical("initalization failed due to environment");
-            return RET_ERR;
+            // return RET_ERR;
+            initMode = enInitByDefault;
         }
     }
     while(stitchers[0]->init(upImgs, initMode) != 0); 
@@ -203,8 +214,11 @@ int panocamimpl::init()
         downImgs.clear();
         for(int i=0;i<4;i++)
         {
-            cameras[i+4]->read_frame();
-            downImgs.push_back(cameras[i+4]->m_ret);
+            // cameras[i+4]->read_frame();
+            // downImgs.push_back(cameras[i+4]->m_ret);
+            cv::Mat frame;
+            cameras[i+4]->getFrame(frame, false);
+            downImgs.push_back(frame);
         }
 #elif CAM_IMX424
         // serverCap();
@@ -224,20 +238,22 @@ int panocamimpl::init()
         if(failnum > 5)
         {
             spdlog::critical("initalization failed due to environment");
-            return RET_ERR;
+            // return RET_ERR;
+            initMode = enInitByDefault;
         }
     }
     while(stitchers[1]->init(downImgs, initMode) != 0);
 
     spdlog::info("init completed!");
 
-    std::vector<std::thread> threads;
-    for(int i=0;i<USED_CAMERA_NUM;i++)
-        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    for(auto& th:threads)
-        th.detach();
+    // std::vector<std::thread> threads;
+    // for(int i=0;i<USED_CAMERA_NUM;i++)
+    //     threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    // for(auto& th:threads)
+    //     th.detach();
     
-    m_StatusCode = 0;
+    // m_StatusCode = 0;
+    m_stSysStatus.deviceStatus = 0;
     return RET_OK;
 }
 
@@ -260,7 +276,10 @@ int panocamimpl::getCamFrame(int id, cv::Mat &frame)
     }
     return RET_OK;
 #elif CAM_IMX390
-    return cameras[id-1]->getSrcFrame(frame);
+    return cameras[id-1]->getFrame(frame);
+    // frame = cameras[id-1]->m_undistoredImg.clone();
+    // cv::cvtColor(frame, frame, cv::COLOR_RGBA2RGB);
+    return 0;
 #endif
     
 }
@@ -269,23 +288,31 @@ int panocamimpl::getPanoFrame(cv::Mat &ret)
 {
 #if CAM_IMX424
     std::thread server(serverCap2);
-    cameras[0]->getFrame(upImgs[0]);
-    cameras[1]->getFrame(upImgs[1]);
-    cameras[2]->getFrame(upImgs[2]);
-    cameras[3]->getFrame(upImgs[3]);
-    cameras[4]->getFrame(downImgs[0]);
-    cameras[5]->getFrame(downImgs[1]);
-    cameras[6]->getFrame(downImgs[2]);
+    cameras[0]->getFrame(upImgs[0], false);
+    cameras[1]->getFrame(upImgs[1], false);
+    cameras[2]->getFrame(upImgs[2], false);
+    cameras[3]->getFrame(upImgs[3], false);
+    cameras[4]->getFrame(downImgs[0], false);
+    cameras[5]->getFrame(downImgs[1], false);
+    cameras[6]->getFrame(downImgs[2], false);
     server.join();
 #elif CAM_IMX390
-    cameras[0]->getFrame(upImgs[0]);
-    cameras[1]->getFrame(upImgs[1]);
-    cameras[2]->getFrame(upImgs[2]);
-    cameras[3]->getFrame(upImgs[3]);
-    cameras[4]->getFrame(downImgs[0]);
-    cameras[5]->getFrame(downImgs[1]);
-    cameras[6]->getFrame(downImgs[2]);
-    cameras[7]->getFrame(downImgs[3]);
+    cameras[0]->getFrame(upImgs[0], false);
+    cameras[1]->getFrame(upImgs[1], false);
+    cameras[2]->getFrame(upImgs[2], false);
+    cameras[3]->getFrame(upImgs[3], false);
+    cameras[4]->getFrame(downImgs[0], false);
+    cameras[5]->getFrame(downImgs[1], false);
+    cameras[6]->getFrame(downImgs[2], false);
+    cameras[7]->getFrame(downImgs[3], false);
+    // cameras[0]->getFrame(upImgs[0]);
+    // cameras[1]->getFrame(upImgs[1]);
+    // cameras[2]->getFrame(upImgs[2]);
+    // cameras[3]->getFrame(upImgs[3]);
+    // cameras[4]->getFrame(downImgs[0]);
+    // cameras[5]->getFrame(downImgs[1]);
+    // cameras[6]->getFrame(downImgs[2]);
+    // cameras[7]->getFrame(downImgs[3]);
 #endif
 
     spdlog::debug("imgs cap fini");
@@ -387,7 +414,8 @@ int panocamimpl::saveAndSend(cv::Mat &img)
 
 bool panocamimpl::verify()
 {
-    m_StatusCode = STATUS_VERIFICATION_FAILED;
+    // m_StatusCode = STATUS_VERIFICATION_FAILED;
+    m_stSysStatus.deviceStatus = STATUS_VERIFICATION_FAILED;
     int                 sockfd;
     struct ifreq        ifr;
 
@@ -412,12 +440,17 @@ bool panocamimpl::verify()
     // char gt[] = "00:54:5a:1b:01:a5";//91v-258-2nd
     
     char p[50];
+#if DEV_MODE
+    strcpy(p, gt);
+#else
     sprintf(p, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0]&0xff, buf[1]&0xff, buf[2]&0xff, buf[3]&0xff, buf[4]&0xff, buf[5]&0xff);
-    // printf("p::%s\n", p);
+#endif
+    printf("p::%s\n", p);
 
     if(strcmp(gt, p) == 0)
     {
-        m_StatusCode = STATUS_OK;
+        // m_StatusCode = STATUS_OK;
+        m_stSysStatus.deviceStatus = STATUS_OK;
         return true;
     }
 
@@ -426,6 +459,20 @@ bool panocamimpl::verify()
 
 uint8_t panocamimpl::getStatus()
 {
-    return m_StatusCode;
+    return m_stSysStatus.deviceStatus;
 }
 
+int panocamimpl::sendStatus()
+{
+    vector<uint8_t> msg = {m_stSysStatus.deviceStatus,m_stSysStatus.cameraStatus,
+    m_stSysStatus.zoomTrigger,m_stSysStatus.detectionTrigger,m_stSysStatus.enhancementTrigger,
+    m_stSysStatus.displayMode,0xff,0xff};
+    pCANMessenger->sendMsg(0x420, msg);
+
+    return RET_OK;
+}
+
+stSysStatus& panocamimpl::sysStatus()
+{
+    return m_stSysStatus;
+}

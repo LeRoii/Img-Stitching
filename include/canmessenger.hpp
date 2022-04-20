@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #include <linux/can.h>
 #include <net/if.h>
-
+#include "stitcherglobal.h"
 #include "spdlog/spdlog.h"
 
 class canmessenger
@@ -33,6 +33,11 @@ public:
 
     }
     ~canmessenger(){}
+
+    void setStatusPtr(stSysStatus *p)
+    {
+        m_pstSysStatus = p;
+    }
     void sendObjDetRet(std::vector<int> &msg)
     {
         if(msg.size() == 0)
@@ -85,11 +90,18 @@ public:
     {
         while(1)
         {
-		    int nbytes = read(can_socket_fd, &reveivedMsg, sizeof(can_frame));
+		    int nbytes = read(can_socket_fd, &receivedMsg, sizeof(can_frame));
             spdlog::info("received {} byte", nbytes);
             for(int i=0;i<8;i++)
             {
-                spdlog::info("date[{}]:{}", i, reveivedMsg.data[i]);
+                spdlog::info("date[{}]:{}", i, receivedMsg.data[i]);
+            }
+            if(receivedMsg.can_id == 0x422)
+            {
+                m_pstSysStatus->enhancementTrigger = receivedMsg.data[4];
+                m_pstSysStatus->detectionTrigger = receivedMsg.data[3];
+                m_pstSysStatus->zoomTrigger = receivedMsg.data[2];
+                m_pstSysStatus->displayMode = receivedMsg.data[5];
             }
         }
     }
@@ -109,10 +121,22 @@ public:
         canmsg.data[7] = 0xff;
         unsigned char nbytes = write(can_socket_fd, &canmsg, sizeof(can_frame));        
     }
+
+    void sendMsg(unsigned int id, std::vector<uint8_t> &msg)
+    {
+        struct can_frame canmsg;
+        canmsg.can_id = id;
+        canmsg.can_dlc = 8;
+        for(int i=0;i<8;i++)
+            canmsg.data[i] = msg[i];
+        unsigned char nbytes = write(can_socket_fd, &canmsg, sizeof(can_frame));        
+
+    }
 private:
     int can_socket_fd;
     unsigned char reveivedData[CAN_MAX_DLEN];
-    struct can_frame reveivedMsg;
+    struct can_frame receivedMsg;
+    stSysStatus *m_pstSysStatus;
     
 };
 

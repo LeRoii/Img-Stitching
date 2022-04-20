@@ -8,8 +8,8 @@ int camSrcHeight = 2160;
 int distorWidth =  1920;
 int distorHeight = 1080;
 
-int undistorWidth =  960;
-int undistorHeight = 540;
+int undistorWidth =  1920;
+int undistorHeight = 1080;
 
 int stitcherinputWidth = 640;
 int stitcherinputHeight = 360;

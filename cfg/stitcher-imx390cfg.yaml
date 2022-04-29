@@ -9,8 +9,8 @@ distorWidth: 1920
 distorHeight: 1080
 # undistor size can only be 960x540 or 1920x1080
 undistor: true
-undistorWidth: 960
-undistorHeight: 540
+undistorWidth: 1920
+undistorHeight: 1080
 stitcherinputWidth: 640
 stitcherinputHeight: 360
 
@@ -24,7 +24,7 @@ renderBufHeight: 1080
 # 0 for egl, 1 for opencv
 renderMode: 1
 
-USED_CAMERA_NUM: 8
+USED_CAMERA_NUM: 1
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1_new.rt"
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"

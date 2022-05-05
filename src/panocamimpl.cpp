@@ -458,9 +458,9 @@ bool panocamimpl::verify()
     
     // char gt[] = "00:54:5a:19:03:5f";//91v-dev
     // char gt[] = "00:54:5a:1b:02:7b";//91s-dev
-    // char gt[] = "00:54:5a:1c:00:bd";//91s-207
+    char gt[] = "00:54:5a:1c:00:bd";//91s-207
     // char gt[] = "00:54:5a:1b:01:a5";//91v-258-2nd
-    char gt[] = "00:54:5a:22:03:69";//91v-258-1st
+    // char gt[] = "00:54:5a:22:03:69";//91v-258-1st
     
     char p[50];
 #if DEV_MODE

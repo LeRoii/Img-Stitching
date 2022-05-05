@@ -344,7 +344,7 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img, std::vector<int> &detr){
         }
     }
 
-    nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
+    // nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
     // canSend(detret_all);
     // pCanSender->sendObjDetRet(detret_all);
 

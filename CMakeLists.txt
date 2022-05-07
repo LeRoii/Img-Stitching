@@ -54,15 +54,12 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
 add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
 # add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
-add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
+# add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DDEV_MODE -DDISTRIBUTED_STRUCT)
 # add_definitions(-DCAM_IMX424 -DDEV_MODE -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX424 -DCENTRIC_STRUCT)
-# add_definitions(-DCAM_IMX424 -DYUYVCAM  -DCENTRIC_STRUCT)
-# add_definitions(-DCAM_IMX424)
-# add_definitions(-DYUYVCAM -DCAM_IMX424 -DDEV_MODE)
-# add_definitions(-DYUYVCAM -DCAM_IMX424)
-# add_definitions(-DCAM_IMX390)
+# add_definitions(-DCAM_IMX424 -DYUYVCAM -DDEV_MODE  -DCENTRIC_STRUCT)
+add_definitions(-DCAM_IMX424 -DYUYVCAM  -DCENTRIC_STRUCT)
 
 cuda_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${CUDA_INCLUDE_DIRS} )
 
@@ -86,6 +83,7 @@ include_directories(
     include
     include/nvencoder 
     include/tkDNN/
+    include/usbctrl
     /usr/src/jetson_multimedia_api/include
     /usr/src/jetson_multimedia_api/samples/common/algorithm/cuda/
     )
@@ -214,7 +212,7 @@ target_link_libraries(panoapp
     ${OPENGL_LIBRARY} ${OpenCV_LIBS}  ${CUDA_LIBRARIES}
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
-    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN  -lUSB2XXX
     -lyaml-cpp
     -lpthread)
 

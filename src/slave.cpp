@@ -114,12 +114,15 @@ int main(int argc, char *argv[])
     cv::Mat img7, img8, ret;
     while(1)
     {
-        cameras[0]->getFrame(img7);
-        cameras[1]->getFrame(img8);
+        cameras[0]->getFrame(img7, false);
+        cameras[1]->getFrame(img8, false);
+
+        spdlog::info("imgs[7] channel:{}, imgs[8]:{}", img7.channels(), img8.channels());
+
 
         cv::hconcat(vector<cv::Mat>{img7, img8}, ret);
         // cout << "7 s:" << img7.size()<<",8 s:"<<img8.size()<<".ret s:"<<ret.size()<<endl;
-        // cv::imshow("1", img7);
+        // cv::imshow("1", ret);
         // cv::waitKey(1);
 
         //send to master
@@ -146,12 +149,8 @@ int main(int argc, char *argv[])
         }
 
         // waitKey(1);
+        // cv::imwrite("final.png", ret);
         
-        if(argc > 1)
-        {
-            cv::imwrite("final.png", ret);
-            return 0;
-        }
     }
     return 0;
 }

@@ -163,10 +163,19 @@ namespace panoAPP{
 
     }
 
+    fsmstateRun::fsmstateRun()
+    {
+        m_enStateName = PANOAPP_STATE_RUN;
+    }
+
     void fsmstateRun::start()
     {
         pRenderer->drawIndicator();
-        m_enStateName = PANOAPP_STATE_RUN;
+        int ret = m_usbctrler.init();
+        if(ret == RET_OK)
+            spdlog::debug("usb ctrler init ok");
+        else
+            spdlog::debug("usb ctrler init failed");
         spdlog::info("app started");
     }
 
@@ -186,6 +195,7 @@ namespace panoAPP{
             case 0xC6:
             case 0xC7:
             case 0xC8:pPanocam->getCamFrame(displaymode & 0xf, frame);break;
+            case 0xCB:m_usbctrler.trigger();displaymode = pPanocam->sysStatus().displayMode = 0xCA;
             case 0xCA:
             default:pPanocam->getPanoFrame(frame);break;
         }

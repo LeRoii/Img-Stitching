@@ -944,7 +944,7 @@ void SendAcc()
 	struct ifreq ifrr;
 
 	socket_fd = socket(PF_CAN,SOCK_RAW,CAN_RAW);
-	strcpy(ifrr.ifr_name,"can0");
+	strcpy(ifrr.ifr_name,"can1");
 	ioctl(socket_fd,SIOCGIFINDEX,&ifrr);
 	addr.can_family = AF_CAN;
 	addr.can_ifindex = ifrr.ifr_ifindex;
@@ -971,7 +971,7 @@ void SendAcc()
 int main()
 {
 	// SendAcc();
-	// cansender *psender = new cansender("can0");
+	// cansender *psender = new cansender("can");
 	// psender->sendTest();
 	while(1)
 	{

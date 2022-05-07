@@ -5,8 +5,8 @@ camsrcwidth: 3840
 camsrcheight: 2160
 # in general the distor img size should be the same with camera img origin size, otherwise there will be a high latency,
 # this parameter is kept only for 4k camera
-distorWidth: 3840
-distorHeight: 2160
+distorWidth: 1920
+distorHeight: 1080
 # undistor size can only be 960x540 or 1920x1080
 undistor: true
 undistorWidth: 1920
@@ -22,9 +22,9 @@ renderY: 0
 renderBufWidth: 1920
 renderBufHeight: 1080
 # 0 for egl, 1 for opencv
-renderMode: 1   
+renderMode: 0   
 
-USED_CAMERA_NUM: 6
+USED_CAMERA_NUM: 7
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1_new.rt"
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"

@@ -4,6 +4,7 @@
 #include "nvrender.h"
 #include "spdlog/spdlog.h"
 #include <chrono>
+#include "usb2gpio.hpp"
 
 
 #define reversebit(x,y)  x^=(1<<y)
@@ -75,9 +76,14 @@ namespace panoAPP{
 
     class fsmstateRun : public fsmstate
     {
+        public:
+        fsmstateRun();
         void start();
         panoAPP::enAPPFSMSTATE update(panocamimpl *pPanocam, int heartbeat);
         void stop();
+
+        private:
+        usb2gpio m_usbctrler;
     };
 
     class fsmstateFinish : public fsmstate

@@ -55,7 +55,7 @@ int  serverCap()
     return RET_OK;
 }
 
-void serverCap2()
+int serverCap2()
 {
     downImgs.clear();
     int recvMsgSize; // Size of received message
@@ -75,7 +75,7 @@ void serverCap2()
         if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
             spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
             free(longbuf);
-            return;
+            return RET_ERR;
         }
         memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
     }
@@ -97,6 +97,8 @@ void serverCap2()
     // imshow("recv", recvedFrame);
     // waitKey(1);
     free(longbuf);
+
+    return RET_OK;
 }
 #endif
 
@@ -227,15 +229,17 @@ int panocamimpl::init()
             downImgs.push_back(frame);
         }
 #elif CAM_IMX424
-        serverCap();
-        cv::resize(downImgs[2], downImgs[2], cv::Size(stitcherinputWidth, stitcherinputHeight));
-        cv::resize(downImgs[3], downImgs[3], cv::Size(stitcherinputWidth, stitcherinputHeight));
+        // serverCap();
+        // cv::resize(downImgs[2], downImgs[2], cv::Size(stitcherinputWidth, stitcherinputHeight));
+        // cv::resize(downImgs[3], downImgs[3], cv::Size(stitcherinputWidth, stitcherinputHeight));
+        // cameras[4]->getFrame(downImgs[0], false);
+        // cameras[5]->getFrame(downImgs[1], false);
+
+
+        serverCap2();
         cameras[4]->getFrame(downImgs[0], false);
         cameras[5]->getFrame(downImgs[1], false);
-
-
-        // serverCap2();
-        // cameras[4]->read_frame();
+        cameras[6]->getFrame(downImgs[2], false); 
         // cameras[5]->read_frame();
         // cameras[6]->read_frame();
         // downImgs[0] = cameras[4]->m_ret;
@@ -273,13 +277,23 @@ int panocamimpl::getCamFrame(int id, cv::Mat &frame)
         return RET_ERR;
     }
 #if CAM_IMX424
-    if(id < 7)
+    // if(id < 7)
+    // {
+    //     return cameras[id-1]->getFrame(frame);
+    // }
+    // else
+    // {
+    //     while(serverCap() != RET_OK);
+    //     frame = downImgs[id-5].clone();
+    //     cv::resize(frame, frame, cv::Size(1920,1080));
+    // }
+    if(id < 8)
     {
         return cameras[id-1]->getFrame(frame);
     }
     else
     {
-        while(serverCap() != RET_OK);
+        while(serverCap2() != RET_OK);
         frame = downImgs[id-5].clone();
         cv::resize(frame, frame, cv::Size(1920,1080));
     }
@@ -296,24 +310,28 @@ int panocamimpl::getCamFrame(int id, cv::Mat &frame)
 int panocamimpl::getPanoFrame(cv::Mat &ret)
 {
 #if CAM_IMX424
-    // std::thread server(serverCap2);
-    // cameras[0]->getFrame(upImgs[0], false);
-    // cameras[1]->getFrame(upImgs[1], false);
-    // cameras[2]->getFrame(upImgs[2], false);
-    // cameras[3]->getFrame(upImgs[3], false);
-    // cameras[4]->getFrame(downImgs[0], false);
-    // cameras[5]->getFrame(downImgs[1], false);
-    // cameras[6]->getFrame(downImgs[2], false);
-    // server.join();
-    std::thread server(serverCap);
+    std::thread server(serverCap2);
     cameras[0]->getFrame(upImgs[0], false);
     cameras[1]->getFrame(upImgs[1], false);
     cameras[2]->getFrame(upImgs[2], false);
     cameras[3]->getFrame(upImgs[3], false);
     cameras[4]->getFrame(downImgs[0], false);
     cameras[5]->getFrame(downImgs[1], false);
+    cameras[6]->getFrame(downImgs[2], false);
     server.join();
-    cv::resize(downImgs[2], downImgs[2], cv::Size(stitcherinputWidth, stitcherinputHeight));
+
+
+    // std::thread server(serverCap);
+    // cameras[0]->getFrame(upImgs[0], false);
+    // cameras[1]->getFrame(upImgs[1], false);
+    // cameras[2]->getFrame(upImgs[2], false);
+    // cameras[3]->getFrame(upImgs[3], false);
+    // cameras[4]->getFrame(downImgs[0], false);
+    // cameras[5]->getFrame(downImgs[1], false);
+    // server.join();
+
+
+    // cv::resize(downImgs[2], downImgs[2], cv::Size(stitcherinputWidth, stitcherinputHeight));
     cv::resize(downImgs[3], downImgs[3], cv::Size(stitcherinputWidth, stitcherinputHeight));
 
 #elif CAM_IMX390
@@ -458,8 +476,8 @@ bool panocamimpl::verify()
     
     // char gt[] = "00:54:5a:19:03:5f";//91v-dev
     // char gt[] = "00:54:5a:1b:02:7b";//91s-dev
-    char gt[] = "00:54:5a:1c:00:bd";//91s-207
-    // char gt[] = "00:54:5a:1b:01:a5";//91v-258-2nd
+    // char gt[] = "00:54:5a:1c:00:bd";//91s-207
+    char gt[] = "00:54:5a:1b:01:a5";//91v-258-2nd
     // char gt[] = "00:54:5a:22:03:69";//91v-258-1st
     
     char p[50];

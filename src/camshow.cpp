@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
         {
 #if CAM_IMX424
             spdlog::info("wait for slave");
-            std::thread server(serverCap);
+            std::thread server(serverCap2);
             server.join();
             spdlog::info("wait for slave end");
             // cv::resize(imgs[6], imgs[6], cv::Size(stitcherinputWidth, stitcherinputHeight));
@@ -364,8 +364,9 @@ int main(int argc, char *argv[])
             else
             {          
                 cv::Mat up,down;
-                spdlog::info("imgs[4] channel:{}, imgs[6]:{}", imgs[4].channels(), imgs[6].channels());
                 cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
+                spdlog::info("imgs[7] channel:{}, imgs[6]:{}", imgs[7].channels(), imgs[6].channels());
+
                 cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
                 cv::vconcat(up, down, ret);
             }

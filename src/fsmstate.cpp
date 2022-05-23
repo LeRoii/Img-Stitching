@@ -185,6 +185,7 @@ namespace panoAPP{
         cv::Mat frame;
         uint8_t displaymode = pPanocam->sysStatus().displayMode;
         static uint8_t lastDisplayMode = displaymode;
+        
         switch(displaymode)
         {
             case 0xC1:
@@ -219,6 +220,10 @@ namespace panoAPP{
             pPanocam->detect(frame);
         if(pPanocam->sysStatus().crossTrigger)
             pPanocam->drawCross(frame);
+        if(displaymode == 0xCA)
+            pPanocam->drawCross(frame);
+        else
+            pPanocam->drawCamCross(frame);
         // if(pPanocam->sysStatus().saveTrigger)
         if(1)
         {

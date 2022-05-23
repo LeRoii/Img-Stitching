@@ -107,11 +107,11 @@ int main(int argc, char *argv[])
         }
 
         cv::vconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2]}, hret);
-        cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2]}, vret);
+        // cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2]}, vret);
 
         
-        hret.copyTo(ret(cv::Rect(0,135, 480, 810)));
-        vret.copyTo(ret(cv::Rect(480,405, 1440, 270)));
+        // hret.copyTo(ret(cv::Rect(0,135, 480, 810)));
+        // vret.copyTo(ret(cv::Rect(480,405, 1440, 270)));
 
         spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         

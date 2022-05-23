@@ -24,6 +24,7 @@ public:
     int imgEnhancement(cv::Mat &img);
     int render(cv::Mat &img);
     int drawCross(cv::Mat &img);
+    int drawCamCross(cv::Mat &img);
     int saveAndSend(cv::Mat &img);
     bool verify();
     uint8_t getStatus();

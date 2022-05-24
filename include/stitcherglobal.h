@@ -3,6 +3,11 @@
 
 #include <string>
 
+#define reversebit(x,y)  x^=(1<<y)
+#define getbit(x,y)   ((x) >> (y)&1)
+#define setbit(x,y) x|=(1<<y)
+#define clrbit(x,y) x&=~(1<<y)
+
 const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 // const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
 const int RENDER_EGL = 0;

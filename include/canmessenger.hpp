@@ -98,8 +98,11 @@ public:
             }
             if(receivedMsg.can_id == 0x422)
             {
-                m_pstSysStatus->enhancementTrigger = receivedMsg.data[4];
-                m_pstSysStatus->detectionTrigger = receivedMsg.data[3];
+                m_pstSysStatus->enhancementTrigger = getbit(receivedMsg.data[3], 0);
+                m_pstSysStatus->detectionTrigger = getbit(receivedMsg.data[3], 1);
+                m_pstSysStatus->saveTrigger = getbit(receivedMsg.data[3], 2);
+                m_pstSysStatus->crossTrigger = getbit(receivedMsg.data[3], 3)
+                ;
                 m_pstSysStatus->zoomTrigger = receivedMsg.data[2];
                 m_pstSysStatus->displayMode = receivedMsg.data[5];
                 // m_pstSysStatus->zoomPointX = receivedMsg.data[6];

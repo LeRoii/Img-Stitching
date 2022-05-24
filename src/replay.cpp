@@ -325,7 +325,8 @@ int main(int argc, char *argv[])
         /* parallel*/
         std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
         std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
-
+        pthread_setname_np(t1.native_handle(), "stitcher1");
+        pthread_setname_np(t2.native_handle(), "stitcher2");
         t1.join();
         t2.join();
 

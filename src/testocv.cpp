@@ -975,7 +975,8 @@ int main()
 	// psender->sendTest();
 	while(1)
 	{
-		SendAcc();
+		// SendAcc();
+		printf("SendAcc()\n");
 	}
 	return 0;
 }

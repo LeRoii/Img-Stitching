@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <thread>
-#include "udp_publisher.h"
+// #include "udp_publisher.h"
 
 
 nvrender *pRenderer;

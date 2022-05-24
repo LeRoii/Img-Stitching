@@ -9,8 +9,8 @@ distorWidth: 1920
 distorHeight: 1080
 # undistor size can only be 960x540 or 1920x1080
 undistor: true
-undistorWidth: 1920
-undistorHeight: 1080
+undistorWidth: 960
+undistorHeight: 540
 stitcherinputWidth: 640
 stitcherinputHeight: 360
 

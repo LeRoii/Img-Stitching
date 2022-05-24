@@ -571,7 +571,7 @@ int main(int argc, char *argv[])
             // yoloRet = nvProcessor.Process(ret);
             ret = nvProcessor->ProcessOnce(ret);
         //    if(ctl_command.use_detect || detect){
-                nvProcessor->publishImage(ret);
+                // nvProcessor->publishImage(ret);
                 // detect = !detect;
         //     } else{
                 // nvProcessor.publishImage(ret);

@@ -17,10 +17,13 @@ namespace panoAPP{
             void start(panoAPP::enAPPFSMSTATE statename);
 
         private:
+            void ticktok();
             std::unordered_map<panoAPP::enAPPFSMSTATE, fsmstate*> m_states;
             panoAPP::enAPPFSMSTATE m_enCurStateName;
             fsmstate *m_pCurState;
-            panocam *m_pPanocam;
+            panocamimpl *m_pPanocam;
+            static std::chrono::steady_clock::time_point m_startTimepoint;
+            int m_heartbeat;
             
 
     };

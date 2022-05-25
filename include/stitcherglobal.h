@@ -12,6 +12,10 @@ const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
 const int RET_OK = 0;
 const int RET_ERR = -1;
 
+const unsigned char STATUS_OK = 0;
+const unsigned char STATUS_VERIFICATION_FAILED = 0xE0;
+const unsigned char STATUS_INITALIZATION_FAILED = 0xE1;
+
 extern int vendor;
 extern int camSrcWidth;
 extern int camSrcHeight;
@@ -31,6 +35,9 @@ extern int renderX;
 extern int renderY;
 extern int renderMode;
 
+extern std::string UDP_PORT;
+extern std::string UDP_SERVADD;
+
 // output render buffer, in general it's fixed
 extern int renderBufWidth; 
 extern int renderBufHeight;
@@ -46,6 +53,7 @@ extern float stitcherCameraInThres;
 
 extern int batchSize;
 extern int initMode;
+
 
 struct stCamCfg
 {
@@ -85,6 +93,22 @@ struct stStitcherCfg
     float stitchercameraExThres;
     float stitchercameraInThres;
     std::string cfgPath;
+};
+
+struct stSysStatus
+{
+    uint8_t deviceStatus;
+    uint8_t cameraStatus;
+    bool zoomTrigger;
+    bool detectionTrigger;
+    bool enhancementTrigger;
+    bool crossTrigger;
+    bool saveTrigger;
+    uint8_t displayMode;
+    int zoomPointX;
+    int zoomPointY;
+    stSysStatus():deviceStatus(0),cameraStatus(0xff),zoomTrigger(false),crossTrigger(false), \
+        saveTrigger(false),detectionTrigger(false),enhancementTrigger(false),displayMode(0xCA){}
 };
 
 enum enStitcherInitMode

@@ -15,8 +15,8 @@ stitcherinputWidth: 640
 stitcherinputHeight: 360
 
 # parameters for renderer
-renderWidth: 960
-renderHeight: 540
+renderWidth: 1920
+renderHeight: 1080
 renderX: 0
 renderY: 0
 renderBufWidth: 1920
@@ -41,8 +41,10 @@ loglvl: "debug"
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
 stitcherBlenderStrength: 0
-stitcherCameraExThres: 30e3
-stitcherCameraInThres: 100e3
+stitcherCameraExThres: 30
+stitcherCameraInThres: 100
+
+# init mode, 1:initall, 2:use default, init seam, 3:read cfg, init seam
 initMode: 1
 
 # parameters for detector

@@ -4,14 +4,13 @@
 #include <memory>
 #include <opencv2/opencv.hpp>
 
+class panocamimpl;
 class __attribute__((visibility("default"))) panocam
 {
 public:
     panocam(std::string yamlpath);
     ~panocam();
     int init();
-    // int captureFrames();
-    int getCamFrame(int id, unsigned char *pData, unsigned int nDataSize);
     int getCamFrame(int id, cv::Mat &frame);
     int getPanoFrame(cv::Mat &ret);
     int detect(cv::Mat &img, std::vector<int> &ret);
@@ -19,11 +18,12 @@ public:
     int imgEnhancement(cv::Mat &img);
     int render(cv::Mat &img);
     int drawCross(cv::Mat &img);
-    int verify();
     int saveAndSend(cv::Mat &img);
+    uint8_t getStatus();
+    
 
 private:
-    class panocamimpl;
+    
     std::unique_ptr<panocamimpl> pimpl;
 };
 

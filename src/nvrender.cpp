@@ -64,6 +64,7 @@ void nvrender::render(unsigned char *data)
 
 void nvrender::drawIndicator()
 {
+    canvas.setTo(0);
     indicatorStartX = 30;
     longStartX = 0;
     uplongStartY = 200;
@@ -110,6 +111,11 @@ void nvrender::drawIndicator()
 
 void nvrender::fit2final(cv::Mat &input, cv::Mat &output)
 {
+    if(input.cols == 1920 && input.rows == 1080)
+    {
+        input.copyTo(output); 
+        return;
+    }
     // int offsetX, offsetY, h, w; 
     static bool fitsizeok = false;
     cv::Mat tmp;
@@ -203,3 +209,10 @@ void nvrender::render(cv::Mat &img, cv::Mat &final)
     else if(m_mode == RENDER_OCV)
         renderocv(img, final);
 }
+
+void nvrender::renderimgs(cv::Mat &img, cv::Mat &inner, int x, int y)
+{
+    inner.copyTo(img(cv::Rect(x, y, 300, 300)));
+    render(img);
+}
+

@@ -1,11 +1,11 @@
 #include "context.h"
 
 namespace panoAPP{
-    
-    context::context(std::string yamlpath):m_pCurState(nullptr)
+    std::chrono::steady_clock::time_point context::m_startTimepoint = std::chrono::steady_clock::now();
+    context::context(std::string yamlpath):m_pCurState(nullptr),m_heartbeat(0)
     {
         // m_startTimapoint = std::chrono::steady_clock::now();
-        m_pPanocam = new panocam(yamlpath);
+        m_pPanocam = new panocamimpl(yamlpath);
     }
 
     context::~context()
@@ -37,11 +37,26 @@ namespace panoAPP{
 		}
     }
 
+    void context::ticktok()
+    {
+        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+        std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimepoint);
+        spdlog::trace("ms:{}, diff:{}", time_span.count(), (time_span-std::chrono::milliseconds{3000}).count());
+        if(time_span > std::chrono::milliseconds{1000})
+        {
+            spdlog::debug("heartbeat");
+            m_startTimepoint = std::chrono::steady_clock::now();
+            m_heartbeat++;
+        }
+    }
+
     void context::update()
     {
+        static int lastheartbeat = 0;
+        ticktok();
         auto next = m_enCurStateName;
         if(m_pCurState != nullptr)
-            next = m_pCurState->update(m_pPanocam);
+            next = m_pCurState->update(m_pPanocam, m_heartbeat);
 
         if(next != m_enCurStateName)
         {
@@ -50,6 +65,13 @@ namespace panoAPP{
             start(next);
             m_enCurStateName = next;
         }
+        if(lastheartbeat != m_heartbeat)
+        {
+            m_pPanocam->sendStatus();
+            lastheartbeat = m_heartbeat;
+        }
+
+
 
         // std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
         // std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimapoint);

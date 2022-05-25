@@ -6,29 +6,15 @@ std::string strPts[3] = {".","..","..."};
 
 namespace panoAPP{
 
-    std::chrono::steady_clock::time_point fsmstate::m_startTimepoint = std::chrono::steady_clock::now();
+    
 
     fsmstate::fsmstate()
     {
-        heartbeat = 0;
     }
 
     fsmstate::~fsmstate()
     {
         
-    }
-
-    void fsmstate::ticktok()
-    {
-        std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-        std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - m_startTimepoint);
-        spdlog::trace("state:{}, ms:{}, diff:{}", m_enStateName, time_span.count(), (time_span-std::chrono::milliseconds{3000}).count());
-        if(time_span > std::chrono::milliseconds{1000})
-        {
-            spdlog::debug("heartbeat");
-            m_startTimepoint = std::chrono::steady_clock::now();
-            heartbeat++;
-        }
     }
 
     fsmstateStart::fsmstateStart()
@@ -48,9 +34,9 @@ namespace panoAPP{
         // pRenderer->showImg(screen);
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateStart::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateStart::update(panocamimpl *pPanocam, int heartbeat)
     {
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
@@ -92,10 +78,10 @@ namespace panoAPP{
         spdlog::debug("state [{}] start", m_enStateName);
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateVerify::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateVerify::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
+        static int initHeartbeat = heartbeat;
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
@@ -110,9 +96,9 @@ namespace panoAPP{
         cv::putText(screen, dispFinalStr, textpos, cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         pRenderer->showImg(screen);
 
-        if(heartbeat > 3)
+        if(heartbeat > initHeartbeat+3)
         {
-            if(pPanocam->verify())
+            if(!pPanocam->verify())
             {
                 spdlog::debug("verify failed");
                 return PANOAPP_STATE_FINISH;
@@ -142,10 +128,9 @@ namespace panoAPP{
 
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateInit::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateInit::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
@@ -169,7 +154,7 @@ namespace panoAPP{
         else
         {
             spdlog::debug("init failed");
-            return PANOAPP_STATE_RUN;
+            return PANOAPP_STATE_FINISH;
         }
     }
 
@@ -185,59 +170,115 @@ namespace panoAPP{
         spdlog::info("app started");
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateRun::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateRun::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat frame;
-        pPanocam->getPanoFrame(frame);
-
-        // getbit(g_usrcmd, SETTING_IMGENHANCE) ? m_stSysStatus.imgEnhance = true : m_stSysStatus.imgEnhance = false;
-        // getbit(g_usrcmd, SETTING_DETECTION) ? m_stSysStatus.detection = true : m_stSysStatus.detection = false;
-        // getbit(g_usrcmd, SETTING_CROSS) ? m_stSysStatus.cross = true : m_stSysStatus.cross = false;
-
-        if(getbit(g_usrcmd, SETTING_IMGENHANCE) != m_stSysStatus.imgEnhance)
+        uint8_t displaymode = pPanocam->sysStatus().displayMode;
+        static uint8_t lastDisplayMode = displaymode;
+        switch(displaymode)
         {
-            spdlog::info("image enhancement switch to [{}]", !m_stSysStatus.imgEnhance);
-            m_stSysStatus.imgEnhance = getbit(g_usrcmd, SETTING_IMGENHANCE);
-        }
-        if(getbit(g_usrcmd, SETTING_DETECTION) != m_stSysStatus.detection)
-        {
-            spdlog::info("image detection switch to [{}]", !m_stSysStatus.detection);
-            m_stSysStatus.detection = getbit(g_usrcmd, SETTING_DETECTION);
-        }
-        if(getbit(g_usrcmd, SETTING_CROSS) != m_stSysStatus.cross)
-        {
-            spdlog::info("image cross switch to [{}]", !m_stSysStatus.cross);
-            m_stSysStatus.cross = getbit(g_usrcmd, SETTING_CROSS);
-        }
-        if(getbit(g_usrcmd, SETTING_SAVE) != m_stSysStatus.save)
-        {
-            spdlog::info("image save switch to [{}]", !m_stSysStatus.save);
-            m_stSysStatus.save = getbit(g_usrcmd, SETTING_SAVE);
+            case 0xC1:
+            case 0xC2:
+            case 0xC3:
+            case 0xC4:
+            case 0xC5:
+            case 0xC6:
+            case 0xC7:
+            case 0xC8:pPanocam->getCamFrame(displaymode & 0xf, frame);break;
+            case 0xCA:
+            default:pPanocam->getPanoFrame(frame);break;
         }
 
-        if(m_stSysStatus.imgEnhance)
+        if(getbit(g_usrcmd, SETTING_ON))
+        {
+            if(getbit(g_usrcmd, SETTING_IMGENHANCE))
+                pPanocam->sysStatus().enhancementTrigger = !pPanocam->sysStatus().enhancementTrigger;
+            if(getbit(g_usrcmd, SETTING_DETECTION))
+                pPanocam->sysStatus().detectionTrigger = !pPanocam->sysStatus().detectionTrigger; 
+            if(getbit(g_usrcmd, SETTING_CROSS))
+                pPanocam->sysStatus().crossTrigger = !pPanocam->sysStatus().crossTrigger;
+            if(getbit(g_usrcmd, SETTING_SAVE))
+                pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
+            g_usrcmd = 0;
+        }
+
+        if(pPanocam->sysStatus().enhancementTrigger)
             pPanocam->imgEnhancement(frame);
-        if(m_stSysStatus.detection)
+        if(pPanocam->sysStatus().detectionTrigger)
             pPanocam->detect(frame);
-        if(m_stSysStatus.cross)
+        if(pPanocam->sysStatus().crossTrigger)
             pPanocam->drawCross(frame);
-        if(m_stSysStatus.save)
+        if(pPanocam->sysStatus().saveTrigger)
+        {
+            // cv::resize(frame, frame, cv::Size(1280, 720));
             pPanocam->saveAndSend(frame);
-        
-        // if(getbit(g_usrcmd, SETTING_IMGENHANCE))
-        // {
-        //     pPanocam->imgEnhancement(frame);
-        //     m_stSysStatus.imgEnhance = true;
-        // }
-        // if(getbit(g_usrcmd, SETTING_DETECTION))
-        // {
-        //     pPanocam->detect(frame);
-        //     m_stSysStatus.detection = true;
-        // }
-        // if(getbit(g_usrcmd, SETTING_CROSS))
-        //     pPanocam->drawCross(frame);
-        pRenderer->render(frame);
+            // pPanocam->sysStatus().saveTrigger = !pPanocam->sysStatus().saveTrigger;
+        }
+        if(lastDisplayMode != displaymode && displaymode == 0xCA)
+            pRenderer->drawIndicator();
+        lastDisplayMode = displaymode;
+
+        if(pPanocam->sysStatus().zoomTrigger)
+        {
+            cv::Mat innerFrame;
+            int x = pPanocam->sysStatus().zoomPointX;
+            int y = pPanocam->sysStatus().zoomPointY;
+            int maxX = frame.cols - 300;
+            int minX = 150;
+            int maxY = frame.rows - 300;
+            int minY = 150;
+            int w = frame.cols;
+            int h = frame.rows;
+            int camIdx = 0;
+           
+
+            if(y<h/2)
+            {
+                if(x < w/4)
+                    camIdx =  1;
+                else if(x < w/2)
+                    camIdx =  2;
+                else if(x < w *3/4)
+                    camIdx =  3;
+                else
+                    camIdx =  4;
+            }
+            else
+            {
+                if(x < w/4)
+                    camIdx =  5;
+                else if(x < w/2)
+                    camIdx =  6;
+                else if(x < w *3/4)
+                    camIdx =  7;
+                else
+                    camIdx =  8;
+            }
+
+            int cropX, cropY;
+            if(x%(w/4) < (w/4))
+                cropX = 0;
+            else
+                cropX = 960;
+
+            if(y%(h/4) < (h/4))
+                cropY = 0;
+            else
+                cropY = 540;
+
+            // x = (x >= minX ? x : minX);
+            x = (x <= maxX ? x : maxX);
+            // y = (y >= minY ? x : minY);
+            y = (y <= maxY ? y : maxY);
+
+            pPanocam->getCamFrame(camIdx, innerFrame);
+            innerFrame = innerFrame(cv::Rect(cropX,cropY,960,540));
+            cv::resize(innerFrame, innerFrame, cv::Size(300,300));
+            pRenderer->renderimgs(frame, innerFrame, x, y);
+        }
+        else
+            pRenderer->render(frame);
 
         return PANOAPP_STATE_RUN;
     }
@@ -257,20 +298,24 @@ namespace panoAPP{
         spdlog::debug("state [{}] start", m_enStateName);
     }
 
-    panoAPP::enAPPFSMSTATE fsmstateFinish::update(panocam *pPanocam)
+    panoAPP::enAPPFSMSTATE fsmstateFinish::update(panocamimpl *pPanocam, int heartbeat)
     {
-        spdlog::debug("state [{}] update", m_enStateName);
-        ticktok();
+        spdlog::debug("state [{}] update, heartbeat:[{}]", m_enStateName, heartbeat);
         cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);
         screen.setTo(0);
         double fontScale = 1.2;
         int lineSickness = 2;
         int fontSickness = 2;
         cv::Scalar color = cv::Scalar(5, 217, 82 );
-        std::string dispInitStr = "verification";
         std::string dispFinalStr;// = "initialization"
-        dispFinalStr = dispInitStr+strPts[heartbeat%3];
-        cv::putText(screen, "verification failed!", cv::Point(850, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+
+        uint8_t status = pPanocam->getStatus();
+        if(status == STATUS_VERIFICATION_FAILED)
+            dispFinalStr = "verification failed!";
+        else if(status == STATUS_INITALIZATION_FAILED)
+            dispFinalStr = "initialization failed!";
+
+        cv::putText(screen, dispFinalStr, cv::Point(850, 700), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         pRenderer->showImg(screen);
     }
 

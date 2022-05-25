@@ -65,15 +65,15 @@
 
 static bool quit = false;
 
-std::vector<std::vector<int>> rectPara(2);// = {65,105,1788,886};
-cv::Mat intrinsic_matrix[2];
-cv::Mat distortion_coeffs[2];
+static std::vector<std::vector<int>> rectPara(2);// = {65,105,1788,886};
+static cv::Mat intrinsic_matrix[2];
+static cv::Mat distortion_coeffs[2];
 
 using namespace std;
 
-std::mutex m_mtx[8];
-std::condition_variable con[8];
-std::mutex changeszmtx;
+static std::mutex m_mtx[8];
+static std::condition_variable con[8];
+static std::mutex changeszmtx;
 
 static void
 set_defaults(camcontext_t * ctx)
@@ -453,7 +453,7 @@ class nvCam
 {
 public:
     nvCam(stCamCfg &camcfg):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
-	m_retWidth(camcfg.retWidth),m_retHeight(camcfg.retHeight),
+	m_stitcherInputWidth(camcfg.retWidth),m_stitcherInputHeight(camcfg.retHeight),
 	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), 
 	m_undistoredWidth(camcfg.undistoredWidth),m_undistoredHeight(camcfg.undistoredHeight), 
     m_id(camcfg.id),m_undistor(camcfg.undistor)
@@ -569,12 +569,12 @@ public:
         if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
                 spdlog::critical("Failed to create NvBuffer 1920");
 
-        m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+        m_argb = cv::Mat(m_camSrcHeight, m_camSrcWidth, CV_8UC4);
         // m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
-        m_ret = cv::Mat(m_retHeight, m_retWidth, CV_8UC3);
+        m_ret = cv::Mat(m_stitcherInputHeight, m_stitcherInputWidth, CV_8UC3);
 
-        bufparams.width = m_retWidth;
-        bufparams.height = m_retHeight;
+        bufparams.width = m_stitcherInputWidth;
+        bufparams.height = m_stitcherInputHeight;
         if (-1 == NvBufferCreateEx(&ctx.render_dmabuf_fd, &bufparams))
                 spdlog::critical("Failed to create NvBuffer ctx->render_dmabuf_fd");
 
@@ -587,7 +587,7 @@ public:
 
         // m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
         // m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
-        // m_gpuret = cv::cuda::GpuMat(m_retHeight, m_retWidth, CV_8UC4);
+        // m_gpuret = cv::cuda::GpuMat(m_stitcherInputHeight, m_stitcherInputWidth, CV_8UC4);
 
         /* Init the NvBufferTransformParams */
         memset(&transParams, 0, sizeof(transParams));
@@ -723,7 +723,7 @@ public:
             /***** cpu undistor *****/
             // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
             cv::Mat tmp;
-            cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
+            cv::resize(m_argb, tmp, cv::Size(m_distoredWidth, m_distoredHeight));
             cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
             // m_distoredImg = tmp.clone();
             // // /*undistored*********/
@@ -733,7 +733,8 @@ public:
 
             // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
             m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-            cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+            // cv::resize(m_undistoredImg, m_ret, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
+            cv::resize(m_undistoredImg, m_ret, cv::Size(m_undistoredWidth, m_undistoredHeight));
             
             /***** cpu undistor end*****/
         }
@@ -741,7 +742,9 @@ public:
         {
             cv::Mat tmp;
             cv::cvtColor(m_argb, tmp, cv::COLOR_RGBA2RGB);
-            cv::resize(tmp, m_ret, cv::Size(m_retWidth, m_retHeight));
+            // cv::imwrite("b.png", tmp);
+            cv::resize(tmp, m_ret, cv::Size(m_undistoredWidth, m_undistoredHeight));
+            // cv::imwrite("a.png", m_ret);
         }
 
 
@@ -752,7 +755,7 @@ public:
         // // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
         // cv::cuda::remap(m_gpuDistoredImg, m_gpuUndistoredImg, gpuMapx[distoredszIdx], gpuMapy[distoredszIdx], cv::INTER_CUBIC);
         // m_gpuUndistoredImg = m_gpuDistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-        // cv::cuda::resize(m_gpuUndistoredImg, m_gpuret, cv::Size(m_retWidth, m_retHeight));
+        // cv::cuda::resize(m_gpuUndistoredImg, m_gpuret, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
         // m_gpuret.download(m_ret);
 
         // cv::imshow("img"+std::to_string(m_id), m_argb);
@@ -761,15 +764,15 @@ public:
 
         // /***** gpu undistor end *****/
 
-        // // cv::cuda::resize(m_gpuargb, m_gpuret, cv::Size(m_retWidth, m_retHeight));
+        // // cv::cuda::resize(m_gpuargb, m_gpuret, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
         // // m_gpuret.download(m_ret);
         /***** gpu undistor end*****/
 
         // spdlog::trace("undistor takes :{} ms", sdkGetTimerValue(&timer));
 
-        // cv::resize(m_argb, m_ret, cv::Size(m_retWidth, m_retHeight));
-        // Raw2NvBuffer(m_ret.data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
-        // Raw2NvBuffer(m_argb[distoredszIdx].data, 0, m_retWidth, m_retHeight, ctx.render_dmabuf_fd);
+        // cv::resize(m_argb, m_ret, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
+        // Raw2NvBuffer(m_ret.data, 0, m_stitcherInputWidth, m_stitcherInputHeight, ctx.render_dmabuf_fd);
+        // Raw2NvBuffer(m_argb[distoredszIdx].data, 0, m_stitcherInputWidth, m_stitcherInputHeight, ctx.render_dmabuf_fd);
 
         /******* render_dmabuf_fd to argb ok *******/
         // cv::Mat mtargb(1080,1920,CV_8UC4);
@@ -830,7 +833,7 @@ public:
             
             // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
             // m_gpuUndistoredImg = m_gpuUndistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-            // cv::cuda::resize(m_gpuUndistoredImg, m_gpuUndistoredImg, cv::Size(m_retWidth, m_retHeight));
+            // cv::cuda::resize(m_gpuUndistoredImg, m_gpuUndistoredImg, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
             // m_gpuUndistoredImg.download(m_ret);
             /***** gpu undistor end *****/
 
@@ -848,7 +851,7 @@ public:
 
             // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
             // m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-            // cv::resize(m_undistoredImg, m_ret, cv::Size(m_retWidth, m_retHeight));
+            // cv::resize(m_undistoredImg, m_ret, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
             
             /***** cpu undistor end*****/
 
@@ -866,17 +869,10 @@ public:
         
     }
     
-    int getSrcFrame(cv::Mat &frame)
+    int getStitcherInputFrame(cv::Mat &frame)
     {
-        // if(getFrame())
-        // {
-        //     frame = m_distoredImg.clone();
-        //     return RET_OK;
-        // }
-        // else
-        //     return RET_ERR;
-    
-        return getFrame(frame);
+        getFrame(frame);
+        cv::resize(frame, frame, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
     }
 
     void run()
@@ -909,7 +905,7 @@ public:
 		}
 	}
 
-    int getFrame(cv::Mat &mat)
+    int getFrame(cv::Mat &mat, bool src = true)
 	{
         std::unique_lock<std::mutex> lock(m_mtx[m_id]);
         while(m_queue.empty())
@@ -919,17 +915,21 @@ public:
             con[m_id].wait(lock);
         }
         mat = m_queue.front().clone();
+        if(!src)
+            cv::resize(mat, mat, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
         m_queue.pop();
         con[m_id].notify_all();
 
         return 1;
 	}
 
+    
+
 public:
     camcontext_t ctx;
 
     int m_camSrcWidth, m_camSrcHeight;
-	int m_retWidth, m_retHeight;
+	int m_stitcherInputWidth, m_stitcherInputHeight;
 	int m_distoredWidth, m_distoredHeight;
 	int m_undistoredWidth, m_undistoredHeight;
     int m_fd_video;

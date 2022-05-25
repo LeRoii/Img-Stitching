@@ -11,13 +11,13 @@
 #include <sys/socket.h>
 #include <linux/can.h>
 #include <net/if.h>
-
+#include "stitcherglobal.h"
 #include "spdlog/spdlog.h"
 
-class cansender
+class canmessenger
 {
 public:
-    cansender(const char *canname)
+    canmessenger(const char *canname)
     {
         struct sockaddr_can addr;
         struct ifreq ifr;
@@ -28,9 +28,16 @@ public:
         addr.can_family = AF_CAN;
         addr.can_ifindex = ifr.ifr_ifindex;
         bind(can_socket_fd, (struct sockaddr *)&addr, sizeof(addr));//将套接字与 can0 绑定
+        std::thread receivedTh = std::thread(&canmessenger::receiveCANMsg, this);
+        receivedTh.detach();
 
     }
-    ~cansender(){}
+    ~canmessenger(){}
+
+    void setStatusPtr(stSysStatus *p)
+    {
+        m_pstSysStatus = p;
+    }
     void sendObjDetRet(std::vector<int> &msg)
     {
         if(msg.size() == 0)
@@ -78,8 +85,63 @@ public:
 
         }
     }
+
+    void receiveCANMsg()
+    {
+        while(1)
+        {
+		    int nbytes = read(can_socket_fd, &receivedMsg, sizeof(can_frame));
+            spdlog::info("received {} byte", nbytes);
+            for(int i=0;i<8;i++)
+            {
+                spdlog::info("date[{}]:{}", i, receivedMsg.data[i]);
+            }
+            if(receivedMsg.can_id == 0x422)
+            {
+                m_pstSysStatus->enhancementTrigger = receivedMsg.data[4];
+                m_pstSysStatus->detectionTrigger = receivedMsg.data[3];
+                m_pstSysStatus->zoomTrigger = receivedMsg.data[2];
+                m_pstSysStatus->displayMode = receivedMsg.data[5];
+                // m_pstSysStatus->zoomPointX = receivedMsg.data[6];
+                int x = receivedMsg.data[0];
+                m_pstSysStatus->zoomPointX = (x << 8) + receivedMsg.data[1];
+                int y = receivedMsg.data[6];
+                m_pstSysStatus->zoomPointY = (y << 8) + receivedMsg.data[7];
+            }
+        }
+    }
+
+    void  sendTest()
+    {
+        struct can_frame canmsg;
+        canmsg.can_id = 0x421;
+        canmsg.can_dlc = 8;
+        canmsg.data[0] = 0xff;
+        canmsg.data[1] = 0xff;
+        canmsg.data[2] = 0xff;
+        canmsg.data[3] = 0xff;
+        canmsg.data[4] = 0xff;
+        canmsg.data[5] = 0xff;
+        canmsg.data[6] = 0xff;
+        canmsg.data[7] = 0xff;
+        unsigned char nbytes = write(can_socket_fd, &canmsg, sizeof(can_frame));        
+    }
+
+    void sendMsg(unsigned int id, std::vector<uint8_t> &msg)
+    {
+        struct can_frame canmsg;
+        canmsg.can_id = id;
+        canmsg.can_dlc = 8;
+        for(int i=0;i<8;i++)
+            canmsg.data[i] = msg[i];
+        unsigned char nbytes = write(can_socket_fd, &canmsg, sizeof(can_frame));        
+
+    }
 private:
     int can_socket_fd;
+    unsigned char reveivedData[CAN_MAX_DLEN];
+    struct can_frame receivedMsg;
+    stSysStatus *m_pstSysStatus;
     
 };
 

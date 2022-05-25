@@ -3,7 +3,7 @@
 
 int main(int argc, char *argv[])
 {
-    std::string yamlpath = "/home/nvidia/ssd/code/0209is/cfg/pamocfg.yaml";
+    std::string yamlpath = "../cfg/pamocfg.yaml";
     if(argc > 1)
         yamlpath = argv[1];
 

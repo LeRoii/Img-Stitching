@@ -215,11 +215,11 @@ void jetsonEncoder::set_defaults(context_t * ctx)
 {
     memset(ctx, 0, sizeof(context_t));
 
-    ctx->bitrate = 4 * 1024* 1024;
+    ctx->bitrate = 2 * 1024* 1024;
     ctx->fps_n = 30;
     ctx->fps_d = 1;
     ctx->width = 1920;
-    ctx->height = 720;
+    ctx->height = 400;
     ctx->out_file_path = new char[256];
 }
 
@@ -247,6 +247,7 @@ void jetsonEncoder::copyYuvToBuffer(uint8_t *yuv_bytes, NvBuffer &buffer)
             dst += (plane.fmt.stride - bytes_per_row);
         }
         plane.bytesused = plane.fmt.stride * plane.fmt.height;
+        // spdlog::warn("i:{},plane.bytesused:{}", i, plane.bytesused);
     }
 }
 

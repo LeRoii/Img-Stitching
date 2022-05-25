@@ -118,7 +118,7 @@ void serverCap2()
 #endif
 
 bool saveret = false;
-bool detect = false;
+bool detect = true;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
@@ -304,6 +304,12 @@ int main(int argc, char *argv[])
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
+    std::vector<std::thread> threads;
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    for(auto& th:threads)
+        th.detach();
+
     if (detect)
         nvProcessor = new imageProcessor(net, canname, batchSize);  
 
@@ -401,8 +407,9 @@ int main(int argc, char *argv[])
         upImgs.clear();
         for(int i=0;i<4;i++)
         {
-            cameras[i]->read_frame();
-            upImgs.push_back(cameras[i]->m_ret);
+            // cameras[i]->read_frame();
+            // upImgs.push_back(cameras[i]->m_ret);
+            cameras[i]->getFrame(upImgs[i], false);
             
         }
 
@@ -423,26 +430,30 @@ int main(int argc, char *argv[])
         downImgs.clear();
         for(int i=0;i<4;i++)
         {
-            cameras[i+4]->read_frame();
-            downImgs.push_back(cameras[i+4]->m_ret);
+            // cameras[i+4]->read_frame();
+            // downImgs.push_back(cameras[i+4]->m_ret);
+            cameras[i+4]->getFrame(downImgs[i], false);
         }
 #elif CAM_IMX424
         serverCap();
-        cameras[4]->read_frame();
-        cameras[5]->read_frame();
-        downImgs[0] = cameras[4]->m_ret;
-        downImgs[1] = cameras[5]->m_ret;
+        // cameras[4]->read_frame();
+        // cameras[5]->read_frame();
+        // downImgs[0] = cameras[4]->m_ret;
+        // downImgs[1] = cameras[5]->m_ret;
+
+        cameras[4]->getFrame(downImgs[0], false);
+        cameras[5]->getFrame(downImgs[1], false);
 #endif
     }
     while(ostitcherDown.init(downImgs, initMode) != 0);
 
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
-    std::vector<std::thread> threads;
-    for(int i=0;i<USED_CAMERA_NUM;i++)
-        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    for(auto& th:threads)
-        th.detach();
+    // std::vector<std::thread> threads;
+    // for(int i=0;i<USED_CAMERA_NUM;i++)
+    //     threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    // for(auto& th:threads)
+    //     th.detach();
 
     // imageProcessor nvProcessor(net);     //图像处理类
 
@@ -478,15 +489,15 @@ int main(int argc, char *argv[])
         std::thread server(serverCap);
 #endif
         
-        cameras[0]->getFrame(upImgs[0]);
-        cameras[1]->getFrame(upImgs[1]);
-        cameras[2]->getFrame(upImgs[2]);
-        cameras[3]->getFrame(upImgs[3]);
-        cameras[4]->getFrame(downImgs[0]);
-        cameras[5]->getFrame(downImgs[1]);
+        cameras[0]->getFrame(upImgs[0], false);
+        cameras[1]->getFrame(upImgs[1], false);
+        cameras[2]->getFrame(upImgs[2], false);
+        cameras[3]->getFrame(upImgs[3], false);
+        cameras[4]->getFrame(downImgs[0], false);
+        cameras[5]->getFrame(downImgs[1], false);
 #if CAM_IMX390
-        cameras[6]->getFrame(downImgs[2]);
-        cameras[7]->getFrame(downImgs[3]);
+        cameras[6]->getFrame(downImgs[2], false);
+        cameras[7]->getFrame(downImgs[3], false);
 #endif
         
 #if CAM_IMX424
@@ -560,7 +571,8 @@ int main(int argc, char *argv[])
             // yoloRet = nvProcessor.Process(ret);
             ret = nvProcessor->ProcessOnce(ret);
         //    if(ctl_command.use_detect || detect){
-        //         nvProcessor.publishImage(yoloRet);
+                // nvProcessor->publishImage(ret);
+                // detect = !detect;
         //     } else{
                 // nvProcessor.publishImage(ret);
             // }
@@ -639,7 +651,7 @@ int main(int argc, char *argv[])
                 if(savevideo)
                 {
                     panoWriter->release();
-                    oriWriter->release();
+                    // oriWriter->release();
                     writerInit = false;
                 }
                 savevideo = !savevideo;

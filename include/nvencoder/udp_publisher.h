@@ -9,7 +9,9 @@
 #include <vector>
 #include <netinet/in.h>
 
-#define UP_UDP_PACK_SIZE 6000
+#include "PracticalSocket.h"
+
+#define UP_UDP_PACK_SIZE 1500
 
 namespace defaults
 {
@@ -26,6 +28,7 @@ namespace udp_publisher
       void sendimage(unsigned char* image, int length);
       void sendData(targetInfo data,int length);
       controlData recvData();
+      void setAddr();
 
     private:
     
@@ -40,6 +43,10 @@ namespace udp_publisher
       std::string m_device_ip_str;
     
       const char *m_node_name;
+
+      UDPSocket sock;
+      unsigned short servPort;
+      string servAddress;
   };
 
 } // namespace udp_publisher

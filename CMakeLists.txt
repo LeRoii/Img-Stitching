@@ -16,10 +16,10 @@ set(LIB_PANO_PATCH 0)
 #-------------------------------------------------------------------------------
 find_package(CUDA REQUIRED)
 SET(CUDA_SEPARABLE_COMPILATION ON)
-message(STATUS "CUDA版本: ${CUDA_VERSION}")
-message(STATUS "    头文件目录：${CUDA_INCLUDE_DIRS}")
-message(STATUS "    库文件列表：${CUDA_LIBRARIES}")
-message(STATUS "  CMAKE_CURRENT_SOURCE_DIR：${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "CUDA_VERSION: ${CUDA_VERSION}")
+message(STATUS "CUDA_INCLUDE_DIRS：${CUDA_INCLUDE_DIRS}")
+message(STATUS "CUDA_LIBRARIES：${CUDA_LIBRARIES}")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR：${CMAKE_CURRENT_SOURCE_DIR}")
 
 set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS} --maxrregcount=32; -G;-g;-std=c++11) # nvcc flags
 
@@ -39,9 +39,9 @@ if(NOT TARGET spdlog)
 endif()
 
 message(STATUS "OpenCV版本: ${OpenCV_VERSION}")
-message(STATUS "    头文件目录：${OpenCV_INCLUDE_DIRS}")
-message(STATUS "    库文件目录：${OpenCV_LIB_DIR}")
-message(STATUS "    库文件列表：${OpenCV_LIBS}")
+message(STATUS "OpenCV_INCLUDE_DIRS：${OpenCV_INCLUDE_DIRS}")
+message(STATUS "OpenCV_LIB_DIR：${OpenCV_LIB_DIR}")
+message(STATUS "OpenCV_LIBS：${OpenCV_LIBS}")
 message(STATUS "OPENGL_INCLUDE_DIR: ${OPENGL_INCLUDE_DIR}")
 message(STATUS "OpenGL lib: ${OPENGL_LIBRARY}")
 message(STATUS "GLUT_LIBRARY: ${GLUT_LIBRARY}")

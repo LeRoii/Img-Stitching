@@ -19,6 +19,8 @@ int Tracker::init(std::vector<int> &detret)
         spdlog::warn("detection result incomplete, tracker init failed");
         return RET_ERR;
     }
+
+    return RET_OK;
 }
 
 int Tracker::update()

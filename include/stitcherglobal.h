@@ -43,6 +43,7 @@ extern int renderBufWidth;
 extern int renderBufHeight;
 
 extern int USED_CAMERA_NUM;
+extern short int num_images;
 extern bool undistor;
 
 extern float stitcherMatchConf;
@@ -86,7 +87,8 @@ struct stStitcherCfg
 {
     int width;
     int height;
-    int id;
+    short int id;
+    short int num_images;
     float matchConf;
     float adjusterConf;
     float blendStrength;

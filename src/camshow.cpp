@@ -365,9 +365,10 @@ int main(int argc, char *argv[])
             {          
                 cv::Mat up,down;
                 spdlog::info("imgs[4] channel:{}, imgs[6]:{}", imgs[4].channels(), imgs[6].channels());
-                cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
-                cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
-                cv::vconcat(up, down, ret);
+               // cv::hconcat(vector<cv::Mat>{imgs[0], imgs[1], imgs[2], imgs[3]}, up);
+               // cv::hconcat(vector<cv::Mat>{imgs[4], imgs[5], imgs[6], imgs[7]}, down);
+               cv::hconcat(vector<cv::Mat>{imgs[6], imgs[7]},ret);
+                //cv::vconcat(up, down, ret);
             }
 
         }

@@ -238,6 +238,7 @@ int main(int argc, char *argv[])
     undistorHeight = config["undistorHeight"].as<int>();
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+    num_images = config["num_images"].as<short int>();
 
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
@@ -388,20 +389,31 @@ int main(int argc, char *argv[])
     // }
     /************************************stitch all end*****************************************/
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
+
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
+
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);
 
+
+std::vector<std::thread> threads;
+    for(int i=0;i<USED_CAMERA_NUM;i++)
+        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
+    for(auto& th:threads)
+        th.detach();
+
+
+    
     int failnum = 0;
     do{
         upImgs.clear();
         for(int i=0;i<2;i++)
         {
-            cameras[i]->read_frame();
-            upImgs.push_back(cameras[i]->m_ret);
-
+           // cameras[i]->read_frame();
+           // upImgs.push_back(cameras[i]->m_ret);
+            cameras[i]->getFrame(upImgs[i],false);
             
         }
 
@@ -414,17 +426,13 @@ int main(int argc, char *argv[])
     }
     while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
-    imwrite("1.png", upImgs[0]);
-    imwrite("2.png", upImgs[1]);
+    // imwrite("1.png", upImgs[0]);
+    // imwrite("2.png", upImgs[1]);
 
     // return 0;
 
 
-    std::vector<std::thread> threads;
-    for(int i=0;i<USED_CAMERA_NUM;i++)
-        threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    for(auto& th:threads)
-        th.detach();
+    
 
     // imageProcessor nvProcessor(net);     //图像处理类
 
@@ -460,8 +468,8 @@ int main(int argc, char *argv[])
         std::thread server(serverCap);
 #endif
         upImgs.clear();
-        cameras[0]->getFrame(upImgs[0]);
-        cameras[1]->getFrame(upImgs[1]);
+        cameras[0]->getFrame(upImgs[0],false);
+        cameras[1]->getFrame(upImgs[1],false);
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
         /* serial execute*/

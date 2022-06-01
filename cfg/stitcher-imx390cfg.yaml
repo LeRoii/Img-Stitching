@@ -24,6 +24,8 @@ renderBufHeight: 1080
 # 0 for egl, 1 for opencv
 renderMode: 1
 
+num_images: 2
+
 USED_CAMERA_NUM: 8
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1_new.rt"

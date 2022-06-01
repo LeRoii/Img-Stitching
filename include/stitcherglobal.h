@@ -28,6 +28,7 @@ extern int undistorHeight;
 
 extern int stitcherinputWidth;
 extern int stitcherinputHeight;
+extern short int num_images;
 
 extern int renderWidth;
 extern int renderHeight;
@@ -86,7 +87,8 @@ struct stStitcherCfg
 {
     int width;
     int height;
-    int id;
+    short int id;
+    short int num_images;
     float matchConf;
     float adjusterConf;
     float blendStrength;

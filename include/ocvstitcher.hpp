@@ -31,7 +31,7 @@ using namespace cv::detail;
 #define LOG(msg) std::cout << msg
 #define LOGLN(msg) std::cout << msg << std::endl
 
-static int num_images = 4;
+//static int num_images = 4;
 
 static std::mutex stmtx;
 
@@ -127,7 +127,7 @@ class ocvStitcher
 {
     public:
     ocvStitcher(stStitcherCfg cfg):
-    m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id), m_cfgpath(cfg.cfgPath), 
+    m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id),num_images(cfg.num_images), m_cfgpath(cfg.cfgPath), 
     match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
     cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres)
     {
@@ -984,6 +984,7 @@ class ocvStitcher
 
 
     public:
+    short int num_images;
     Ptr<FeaturesFinder> finder;
     Ptr<FeaturesMatcher> matcher;
     Ptr<Estimator> estimator;
@@ -1007,7 +1008,7 @@ class ocvStitcher
     vector<Size> sizes = vector<Size>(num_images);
 
     float warped_image_scale;
-    int m_id;
+    short int m_id;
 
     bool presetParaOk;
     std::string m_cfgpath;

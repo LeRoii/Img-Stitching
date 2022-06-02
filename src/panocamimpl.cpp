@@ -113,6 +113,8 @@ panocamimpl::panocamimpl(std::string yamlpath):framecnt(0)
     renderHeight = config["renderHeight"].as<int>();
     renderX = config["renderX"].as<int>();
     renderY = config["renderY"].as<int>();
+    num_images = config["num_images"].as<short int>();
+
 
     stitcherBlenderStrength = config["quality"].as<float>();
     initMode = config["initMode"].as<int>();
@@ -146,8 +148,8 @@ panocamimpl::panocamimpl(std::string yamlpath):framecnt(0)
     for(int i=0;i<USED_CAMERA_NUM;i++)
         cameras[i].reset(new nvCam(camcfgs[i]));
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, camcfg},
-                                stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, camcfg}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, camcfg},
+                                stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, camcfg}};
 
     stitchers[0].reset(new ocvStitcher(stitchercfg[0]));
     stitchers[1].reset(new ocvStitcher(stitchercfg[1]));

@@ -67,6 +67,7 @@ int renderBufWidth = 1920;
 int renderBufHeight = 1080;
 
 int USED_CAMERA_NUM = 8;
+short int num_images = 4;
 
 bool undistor = false;
 

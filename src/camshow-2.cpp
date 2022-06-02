@@ -18,101 +18,6 @@ Mat upRet, downRet;
 
 vector<Mat> imgs(CAMERA_NUM);
 
-#if CAM_IMX424
-unsigned short servPort = 10001;
-UDPSocket sock(servPort);
-char buffer[SLAVE_PCIE_UDP_BUF_LEN]; // Buffer for echo string
-
-void serverCap()
-{
-    downImgs.clear();
-    int recvMsgSize; // Size of received message
-    string sourceAddress; // Address of datagram source
-    unsigned short sourcePort; // Port of datagram source
-    Mat recvedFrame;
-
-    do {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-    } while (recvMsgSize > sizeof(int));
-    int total_pack = ((int * ) buffer)[0];
-
-    spdlog::debug("expecting length of packs: {}", total_pack);
-    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
-    for (int i = 0; i < total_pack; i++) {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
-            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
-            free(longbuf);
-            return;
-        }
-        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
-    }
-
-    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
-
-    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
-    recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
-    if (recvedFrame.size().width == 0) {
-        spdlog::warn("decode failure!");
-        // continue;
-    }
-    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    imgs[6] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    imgs[7] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    // imwrite("7.png", downImgs[2]);
-    // imwrite("8.png", downImgs[3]);
-    // imshow("recv", recvedFrame);
-    // waitKey(1);
-    free(longbuf);
-}
-
-void serverCap2()
-{
-    downImgs.clear();
-    int recvMsgSize; // Size of received message
-    string sourceAddress; // Address of datagram source
-    unsigned short sourcePort; // Port of datagram source
-    Mat recvedFrame;
-
-    do {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-    } while (recvMsgSize > sizeof(int));
-    int total_pack = ((int * ) buffer)[0];
-
-    spdlog::debug("expecting length of packs: {}", total_pack);
-    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
-    for (int i = 0; i < total_pack; i++) {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
-            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
-            free(longbuf);
-            return;
-        }
-        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
-    }
-
-    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
-
-    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
-    recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
-    if (recvedFrame.size().width == 0) {
-        spdlog::warn("decode failure!");
-        // continue;
-    }
-    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    imgs[7] = recvedFrame.clone();
-    // imwrite("7.png", downImgs[2]);
-    // imwrite("8.png", downImgs[3]);
-    // imshow("recv", recvedFrame);
-    // waitKey(1);
-    free(longbuf);
-}
-#endif
-
 std::string cfgpath;
 #if CAM_IMX390
 std::string defaultcfgpath = "../cfg/stitcher-imx390cfg.yaml";
@@ -272,23 +177,6 @@ int main(int argc, char *argv[])
                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7", vendor}};
 
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
-    // if(showall)
-    // {
-    //     for(int i=0;i<USED_CAMERA_NUM;i++)
-    //         cameras[i].reset(new nvCam(camcfgs[i]));
-
-    //     std::vector<std::thread> threads;
-    //     for(int i=0;i<USED_CAMERA_NUM;i++)
-    //         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    //     for(auto& th:threads)
-    //         th.detach();
-    // }
-    // else
-    // {
-    //     cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
-    //     // std::thread t(&nvCam::run, cameras[idx-1].get());
-    //     // t.detach();
-    // }
 
     for(int i=0;i<USED_CAMERA_NUM;i++)
             cameras[i].reset(new nvCam(camcfgs[i]));
@@ -306,52 +194,16 @@ int main(int argc, char *argv[])
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
 
-    // NvEglRenderer *nvrender  =  NvEglRenderer::createEglRenderer("renderer0", stitcherinputWidth/2, stitcherinputHeight/2, 0, 0);
-    // if(!nvrender)
-    //     spdlog::critical("Failed to create EGL renderer");
-    // nvrender->setFPS(30);
-
-    // Mat mmat(1080, 1920, CV_8UC4);
-    // Mat mmat = cv::Mat(1080, 1920, cv::CV_8UC4);
-    // NvBufferMemMap (cameras[idx-1]->ctx.render_dmabuf_fd, 0, NvBufferMem_Read_Write, &sBaseAddr[0]);
-    // NvBufferMemMap (cameras[idx-1]->retNvbuf->dmabuff_fd, 0, NvBufferMem_Read_Write, (void**)&mmat.data);
-    // mmat.data = (uchar*)sBaseAddr[0];
-
-    // cv::VideoCapture capture("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
-    // spdlog::warn("is open:{}", capture.isOpened());
-
     while(1)
     {
         sdkResetTimer(&timer);
-        // cameras[0]->read_frame();
-        // cameras[1]->read_frame();
-        // cameras[2]->read_frame();
-        // cameras[3]->read_frame();
-        // cameras[4]->read_frame();
-        // cameras[5]->read_frame();
-
-        // return 0;
-
-        /*slow */
-        // std::vector<std::thread> threads;
-        // for(int i=0;i<USED_CAMERA_NUM;i++)
-        //     threads.push_back(std::thread(&nvCam::read_frame, cameras[i].get()));
-        // for(auto& th:threads)
-        //     th.join();
-        
         cv::Mat ret;
 
         if(showall)
         {
-#if CAM_IMX424
-            spdlog::info("wait for slave");
-            std::thread server(serverCap2);
-            server.join();
-#endif
             spdlog::info("wait for slave end");
             for(int i=0;i<USED_CAMERA_NUM;i++)
             {
-                // cameras[i]->read_frame();
                 cameras[i]->getFrame(imgs[i]);
                 if(withnum)
                     cv::putText(imgs[i], std::to_string(i+1), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
@@ -373,36 +225,8 @@ int main(int argc, char *argv[])
         }
         else
         {
-#if CAM_IMX424
-            if(idx < 8)
-            {
-                cameras[idx-1]->getFrame(ret);
-            }
-            else
-            {
-                std::thread server(serverCap2);
-                // cameras[4]->getFrame(downImgs[0]);
-                // cameras[5]->getFrame(downImgs[1]);
-                server.join();
-                ret = imgs[7];
-            }
-#elif CAM_IMX390
             cameras[idx-1]->getFrame(ret);
             
-            // cameras[idx-1]->read_frame();
-            
-            // ret = cameras[idx-1]->m_ret;
-
-            // NvBufferMemSyncForCpu (cameras[idx-1]->ctx.render_dmabuf_fd, 0,&sBaseAddr[0]);
-            // cv::putText(mmat, std::to_string(100), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
-
-            // nvrender->render(cameras[idx-1]->ctx.render_dmabuf_fd);
-            // nvrender->render(cameras[idx-1]->retNvbuf->dmabuff_fd);
-            // cv::imshow("mmm", cameras[idx-1]->m_ret);
-            // cv::waitKey(1);
-            
-#endif
-
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
@@ -426,14 +250,6 @@ int main(int argc, char *argv[])
         {
             spdlog::info("render");
             renderer->render(ret);
-            // if(stitcherinputWidth==1920 && showall)
-            //     renderer->render(imgs[1]);
-            // else
-            //     renderer->render(ret);
-                // cv::imshow("m_dev_name", ret);
-            // else
-            //     cv::imshow("m_dev_name", ret);
-            //*writer[0] << ret;
         }
 
         

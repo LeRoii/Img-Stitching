@@ -314,6 +314,7 @@ int main(int argc, char *argv[])
         nvProcessor = new imageProcessor(net, canname, batchSize);  
 
     /************************************stitch all *****************************************/
+    {
     // vector<Mat> imgs(8);
 
     // ocvStitcher stitcherall(stitcherinputWidth, stitcherinputHeight, 3);
@@ -394,6 +395,7 @@ int main(int argc, char *argv[])
     //     waitKey(1);
     //     spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
     // }
+    }
     /************************************stitch all end*****************************************/
 
     stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
@@ -407,10 +409,7 @@ int main(int argc, char *argv[])
         upImgs.clear();
         for(int i=0;i<4;i++)
         {
-            // cameras[i]->read_frame();
-            // upImgs.push_back(cameras[i]->m_ret);
             cameras[i]->getFrame(upImgs[i], false);
-            
         }
 
         failnum++;
@@ -470,20 +469,6 @@ int main(int argc, char *argv[])
     {
         spdlog::debug("start loop");
         sdkResetTimer(&timer);
-        // cameras[0]->read_frame();
-        // cameras[1]->read_frame();
-        // cameras[2]->read_frame();
-        // cameras[3]->read_frame();
-        // cameras[4]->read_frame();
-        // cameras[5]->read_frame();
-
-        /*slow */
-        // std::vector<std::thread> threads;
-        // for(int i=0;i<USED_CAMERA_NUM;i++)
-        //     threads.push_back(std::thread(&nvCam::read_frame, cameras[i].get()));
-        // for(auto& th:threads)
-        //     th.join();
-        
 #if CAM_IMX424
         spdlog::debug("capture slave start");
         std::thread server(serverCap);

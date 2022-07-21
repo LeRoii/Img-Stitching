@@ -26,7 +26,7 @@ renderMode: 1
 
 num_images: 2
 
-USED_CAMERA_NUM: 8
+USED_CAMERA_NUM: 4
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1_new.rt"
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"

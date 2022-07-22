@@ -186,7 +186,14 @@ target_link_libraries(camshow  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES
   ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
   -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
   )
-
+  add_executable(camshow4cam src/camshow4cam.cpp src/PracticalSocket.cpp  src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
+  target_link_libraries(camshow4cam  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
+  -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+   -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+    ${CUDA_LIBRARIES} ${GLUT_LIBRARY}
+    ${OpenCV_LIBS}
+    )
+    
 #-------------------------------------------------------------------------------
 # Build camshow-2 
 #-------------------------------------------------------------------------------

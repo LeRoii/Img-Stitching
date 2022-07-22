@@ -1,5 +1,5 @@
 # camera vendor, 0:sensing, 1:lijing
-vendor: 1
+vendor: 0
 # camsrc is the origin size of camera, can only be 3840x2160(for imx424b) or 1920x1080(for imx390)
 camsrcwidth: 1920
 camsrcheight: 1080
@@ -11,8 +11,8 @@ distorHeight: 1080
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-stitcherinputWidth: 640
-stitcherinputHeight: 360
+stitcherinputWidth: 960
+stitcherinputHeight: 540
 
 # parameters for renderer
 renderWidth: 1920
@@ -35,7 +35,7 @@ netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"
 camcfgpath: "../cfg/390camcfg/"
 # camcfgpath: "/home/nvidia/ssd/code/Img-Stitching/cfg/390camcfg/"
 canname: "can0" 
-showall: true
+camDispIdx: "4"
 
 loglvl: "debug"
 

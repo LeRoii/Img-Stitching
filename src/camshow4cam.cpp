@@ -165,19 +165,7 @@ int main(int argc, char *argv[])
     {
         for(int i=0;i<USED_CAMERA_NUM;i++)
             writer[i] = new VideoWriter(std::to_string(i)+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[0] = new VideoWriter("0-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[1] = new VideoWriter("1-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[2] = new VideoWriter("2-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[3] = new VideoWriter("3-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[4] = new VideoWriter("4-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[5] = new VideoWriter("5-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[6] = new VideoWriter("6-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
-        // writer[7] = new VideoWriter("7-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
     }
-
-    // writer[0] = new VideoWriter("0-ori.mp4", CV_FOURCC('m', 'p', '4', 'v'), videoFps, Size(1920,1080));
-    //writer[0] = new VideoWriter("0-ori.avi", CV_FOURCC('I', '4', '2', '0'), videoFps, Size(1920,1080));
-
 
     stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
                                     stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
@@ -330,14 +318,6 @@ int main(int argc, char *argv[])
                 {
                     for(int i=0;i<USED_CAMERA_NUM;i++)
                         cv::imwrite(std::to_string(i)+".png", imgs[i]);
-                    // cv::imwrite("1.png", imgs[0]);
-                    // cv::imwrite("2.png", imgs[1]);
-                    // cv::imwrite("3.png", imgs[2]);
-                    // cv::imwrite("4.png", imgs[3]);
-                    // cv::imwrite("5.png", imgs[4]);
-                    // cv::imwrite("6.png", imgs[5]);
-                    // cv::imwrite("7.png", imgs[6]);
-                    // cv::imwrite("8.png", imgs[7]);
                 }
                 if (detect)
                 {
@@ -348,7 +328,6 @@ int main(int argc, char *argv[])
             default:
                 break;
         }
-
         spdlog::info("frame [{}], all takes:{} ms", framecnt++, sdkGetTimerValue(&timer));
 
     }

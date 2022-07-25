@@ -261,20 +261,3 @@ target_link_libraries(slaveshow
  -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -lkernels -ltkDNN
  ${OpenCV_LIBS} 
   )
-
-# target_link_libraries(testocv   ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
-# -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
-#  -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
-# -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
-# spdlog::spdlog)
-
-
-# target_link_libraries(panoapp
-#     panocam -lpthread)
-
-
-# target_link_libraries(slave 
-#     ${OpenCV_LIBS})
-
-
-# install(TARGETS testocv RUNTIME DESTINATION /home/nvidia/ssd/code/0929IS)

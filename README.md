@@ -137,3 +137,7 @@ make
 07.25.
 - 增加lijing 120fov相机参数
 - 增加4cam分支
+
+07.28.
+- cmakelist增加开关，支持对不同程序的编译
+- 增加基于trt8的tkdnn头文件和so

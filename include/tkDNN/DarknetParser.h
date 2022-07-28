@@ -24,7 +24,10 @@ namespace tk { namespace dnn {
         int num = 1;
         int pad = 0;
         int coords = 4;
+        int nms_kind = 0;
+        int new_coords= 0;
         float scale_xy = 1;
+        float nms_thresh = 0.45;
         std::vector<int> layers;
         std::string activation = "linear";
 
@@ -44,5 +47,8 @@ namespace tk { namespace dnn {
                          std::vector<tk::dnn::Layer*> &netLayers, const std::vector<std::string>& names);
     std::vector<std::string> darknetReadNames(const std::string& names_file);
     tk::dnn::Network* darknetParser(const std::string& cfg_file, const std::string& wgs_path, const std::string& names_file);
+    void loadYoloInfo(const std::string &cfg_file,int lineNo,std::vector<float> &mask,std::vector<float> &anchors,int &num,int &classes,float &nms_thresh,int &nms_kind,int &coords);
+    void loadYoloInitInfo(int &channels,int &width,int &height,const std::string &cfg_file);
+    std::vector<int> noYolosLine(const std::string &cfg_file);
 
 }}

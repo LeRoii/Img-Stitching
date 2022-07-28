@@ -9,25 +9,27 @@ set(LIB_PANO_MAJOR 1)
 set(LIB_PANO_MINOR 0)
 set(LIB_PANO_PATCH 0)
 
-option(BUILD_testocv "build testocv" ON)
-option(BUILD_cameracuda "build nvidia camera v4l2 cuda" ON)
-option(BUILD_master "build master, dev app for 8 cams panorama" ON)
-option(BUILD_master2 "build master2, dev app for 2 cams panorama" ON)
-option(BUILD_replay "build replay, debug app for 8 cams panorama" ON)
-option(BUILD_replay2 "build replay2, debug app for 2 cams panorama" ON)
-option(BUILD_camshow "build camshow, 8 camera disp app" ON)
-option(BUILD_camshow4cam "build camshow4cam, 4 camera disp app" ON)
-option(BUILD_camshow_2 "build camshow-2, 2 camera disp app" ON)
-option(BUILD_panocam "build panocam, panorama so" ON)
-option(BUILD_demo "build demo, panorama so test app" ON)
-option(BUILD_panoapp "build demo, panorama so test app" ON)
-option(BUILD_slave "build slave, 8 panorama slave app" OFF)
-option(BUILD_slaveshow "build BUILD_slaveshow, 11 panorama slaveshow app" OFF)
+set(BUILD_testocv ON CACHE BOOL "build testocv" FORCE)
+set(BUILD_cameracuda ON CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
+set(BUILD_master ON CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
+set(BUILD_master2 ON CACHE BOOL "build master2, dev app for 2 cams panorama" FORCE)
+set(BUILD_replay ON CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
+set(BUILD_replay2 ON CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
+set(BUILD_camshow ON CACHE BOOL "build camshow, 8 camera disp app" FORCE)
+set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
+set(BUILD_camshow_2 ON CACHE BOOL "build camshow-2, 2 camera disp app" FORCE)
+set(BUILD_panocam ON CACHE BOOL "build panocam, panorama so" FORCE)
+set(BUILD_demo ON CACHE BOOL "build demo, panorama so test app" FORCE)
+set(BUILD_panoapp ON CACHE BOOL "build panoapp, released panorama app" FORCE)
+set(BUILD_slave ON CACHE BOOL "build slave, 8 panorama slave app" FORCE)
+set(BUILD_slaveshow ON CACHE BOOL "build BUILD_slaveshow, 11 panorama slaveshow app" FORCE)
 
-option(BUILD_sti "build sti, opencv stitching test app" OFF)
-option(BUILD_sd "build sd, origin opencv stitching app" OFF)
-option(BUILD_mo "build mo, modified opencv stitching app" OFF)
-option(BUILD_server "build server, udp server" OFF)
+set(BUILD_sti ON CACHE BOOL "build sti, opencv stitching test app" FORCE)
+set(BUILD_sd ON CACHE BOOL "build sd, origin opencv stitching app" FORCE)
+set(BUILD_mo ON CACHE BOOL "build mo, modified opencv stitching app" FORCE)
+set(BUILD_server ON CACHE BOOL "build server, udp server" FORCE)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 #add -no-pie to generate executable files, otherwise generate shared library
 # set(CMAKE_CXX_FLAGS "-no-pie -g -Wall")
@@ -41,13 +43,13 @@ message(STATUS "CUDA_INCLUDE_DIRS：${CUDA_INCLUDE_DIRS}")
 message(STATUS "CUDA_LIBRARIES：${CUDA_LIBRARIES}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR：${CMAKE_CURRENT_SOURCE_DIR}")
 
+find_package(CUDNN REQUIRED)
+message(STATUS "CUDNN_LIBRARISE:::${CUDNN_LIBRARIES}")
+message("-- Found NVINFER: "  ${CUDNN_NVLIB})
 set(CUDA_NVCC_FLAGS  ${CUDA_NVCC_FLAGS} --maxrregcount=32; -G;-g;-std=c++11) # nvcc flags
 
 set(CUDIR /usr/src/jetson_multimedia_api/samples/common/algorithm/cuda)
 set(COMMONCLS /usr/src/jetson_multimedia_api/samples/common/classes)
-
-# add_subdirectory(cudasrc)
-# include_directories(cudasrc)
 
 set(OpenCV_DIR "/usr/local/share/OpenCV/OpenCVConfig.cmake")
 find_package(OpenCV 3 REQUIRED )
@@ -69,6 +71,8 @@ message(STATUS "GLUT_LIBRARY: ${GLUT_LIBRARY}")
 message(STATUS "CUDA_LIBRARIES:::${CUDA_LIBRARIES}")
 message(STATUS "CUDA_CUBLAS_LIBRARIES:::${CUDA_CUBLAS_LIBRARIES}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR:::${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "CUDNN_LIBRARISE:::${CUDNN_LIBRARIES}")
+
 
 # add_compile_options(-std=c++14 -g )
 add_compile_options(-std=c++14 -pthread)
@@ -177,13 +181,17 @@ endif()
 #-------------------------------------------------------------------------------
 # Build master 
 #-------------------------------------------------------------------------------
+message(STATUS "before BUILD_master:::::::::: ${BUILD_master}")
 if(BUILD_master)
+message(STATUS "BUILD_master:::::::::: ${BUILD_master}")
+
     add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
     target_link_libraries(master  -lyaml-cpp
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
-    ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
-    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+    ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS} ${CUDNN_LIBRARIES}
+    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN -lkernels 
+    
     )
 endif()
 

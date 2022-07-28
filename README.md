@@ -4,6 +4,7 @@
 - opencv >= 3.4.0  
 - opencv contrib >= 3.4.0  
 - cuda >= 10.2 (if you want real time stitching)  
+- tensorrt >= 7 (for object detection)
 
 ## USE
 ```

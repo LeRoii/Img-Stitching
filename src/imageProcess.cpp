@@ -382,7 +382,7 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
         }
     }
 
-    nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
+    // nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
     // canSend(detret_all);
     // pCanSender->sendObjDetRet(detret_all);
 

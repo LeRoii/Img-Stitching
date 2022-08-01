@@ -9,25 +9,27 @@ set(LIB_PANO_MAJOR 1)
 set(LIB_PANO_MINOR 0)
 set(LIB_PANO_PATCH 0)
 
-set(BUILD_testocv ON CACHE BOOL "build testocv" FORCE)
-set(BUILD_cameracuda ON CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
-set(BUILD_master ON CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
-set(BUILD_master2 ON CACHE BOOL "build master2, dev app for 2 cams panorama" FORCE)
-set(BUILD_replay ON CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
-set(BUILD_replay2 ON CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
-set(BUILD_camshow ON CACHE BOOL "build camshow, 8 camera disp app" FORCE)
-set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
-set(BUILD_camshow_2 ON CACHE BOOL "build camshow-2, 2 camera disp app" FORCE)
-set(BUILD_panocam ON CACHE BOOL "build panocam, panorama so" FORCE)
-set(BUILD_demo ON CACHE BOOL "build demo, panorama so test app" FORCE)
-set(BUILD_panoapp ON CACHE BOOL "build panoapp, released panorama app" FORCE)
-set(BUILD_slave ON CACHE BOOL "build slave, 8 panorama slave app" FORCE)
-set(BUILD_slaveshow ON CACHE BOOL "build BUILD_slaveshow, 11 panorama slaveshow app" FORCE)
+set(NVINFER_VERSION 7)
 
-set(BUILD_sti ON CACHE BOOL "build sti, opencv stitching test app" FORCE)
-set(BUILD_sd ON CACHE BOOL "build sd, origin opencv stitching app" FORCE)
-set(BUILD_mo ON CACHE BOOL "build mo, modified opencv stitching app" FORCE)
-set(BUILD_server ON CACHE BOOL "build server, udp server" FORCE)
+set(BUILD_testocv OFF CACHE BOOL "build testocv" FORCE)
+set(BUILD_cameracuda OFF CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
+set(BUILD_master ON CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
+set(BUILD_master2 OFF CACHE BOOL "build master2, dev app for 2 cams panorama" FORCE)
+set(BUILD_replay OFF CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
+set(BUILD_replay2 OFF CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
+set(BUILD_camshow OFF CACHE BOOL "build camshow, 8 camera disp app" FORCE)
+set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
+set(BUILD_camshow_2 OFF CACHE BOOL "build camshow-2, 2 camera disp app" FORCE)
+set(BUILD_panocam OFF CACHE BOOL "build panocam, panorama so" FORCE)
+set(BUILD_demo OFF CACHE BOOL "build demo, panorama so test app" FORCE)
+set(BUILD_panoapp OFF CACHE BOOL "build panoapp, released panorama app" FORCE)
+set(BUILD_slave OFF CACHE BOOL "build slave, 8 panorama slave app" FORCE)
+set(BUILD_slaveshow OFF CACHE BOOL "build BUILD_slaveshow, 11 panorama slaveshow app" FORCE)
+
+set(BUILD_sti OFF CACHE BOOL "build sti, opencv stitching test app" FORCE)
+set(BUILD_sd OFF CACHE BOOL "build sd, origin opencv stitching app" FORCE)
+set(BUILD_mo OFF CACHE BOOL "build mo, modified opencv stitching app" FORCE)
+set(BUILD_server OFF CACHE BOOL "build server, udp server" FORCE)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -110,10 +112,15 @@ include_directories(
     ${CUDA_INCLUDE_DIRS}
     include
     include/nvencoder 
-    include/tkDNN/
     /usr/src/jetson_multimedia_api/include
     /usr/src/jetson_multimedia_api/samples/common/algorithm/cuda/
     )
+
+if(${NVINFER_VERSION} EQUAL 7)
+    include_directories(include/tkDNN7/)
+elseif(${NVINFER_VERSION} EQUAL 8)
+    include_directories(include/tkDNN/)
+endif()
 
 #-------------------------------------------------------------------------------
 # Build Node 

@@ -228,12 +228,6 @@ int main(int argc, char *argv[])
     while(1)
     {
         sdkResetTimer(&timer);
-        /*slow */
-        // std::vector<std::thread> threads;
-        // for(int i=0;i<USED_CAMERA_NUM;i++)
-        //     threads.push_back(std::thread(&nvCam::read_frame, cameras[i].get()));
-        // for(auto& th:threads)
-        //     th.join();
         
         cv::Mat ret;
 

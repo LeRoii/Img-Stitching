@@ -27,98 +27,9 @@ vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
 int framecnt = 0;
 
-#if CAM_IMX424
-void serverCap()
-{
-    downImgs.clear();
-    int recvMsgSize; // Size of received message
-    string sourceAddress; // Address of datagram source
-    unsigned short sourcePort; // Port of datagram source
-    Mat recvedFrame;
-
-    do {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-    } while (recvMsgSize > sizeof(int));
-    int total_pack = ((int * ) buffer)[0];
-
-    spdlog::info("expecting length of packs: {}", total_pack);
-    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
-    for (int i = 0; i < total_pack; i++) {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
-            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
-            free(longbuf);
-            return;
-        }
-        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
-    }
-
-    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
-
-    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
-    recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
-    if (recvedFrame.size().width == 0) {
-        spdlog::warn("decode failure!");
-        // continue;
-    }
-    downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    // imwrite("7.png", downImgs[2]);
-    // imwrite("8.png", downImgs[3]);
-    // imshow("recv", recvedFrame);
-    // waitKey(1);
-    free(longbuf);
-}
-
-void serverCap2()
-{
-    downImgs.clear();
-    int recvMsgSize; // Size of received message
-    string sourceAddress; // Address of datagram source
-    unsigned short sourcePort; // Port of datagram source
-    Mat recvedFrame;
-
-    do {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-    } while (recvMsgSize > sizeof(int));
-    int total_pack = ((int * ) buffer)[0];
-
-    spdlog::info("expecting length of packs: {}", total_pack);
-    char * longbuf = new char[SLAVE_PCIE_UDP_PACK_SIZE * total_pack];
-    for (int i = 0; i < total_pack; i++) {
-        recvMsgSize = sock.recvFrom(buffer, SLAVE_PCIE_UDP_BUF_LEN, sourceAddress, sourcePort);
-        if (recvMsgSize != SLAVE_PCIE_UDP_PACK_SIZE) {
-            spdlog::warn("Received unexpected size pack: {}", recvMsgSize);
-            free(longbuf);
-            return;
-        }
-        memcpy( & longbuf[i * SLAVE_PCIE_UDP_PACK_SIZE], buffer, SLAVE_PCIE_UDP_PACK_SIZE);
-    }
-
-    spdlog::debug("Received packet from {}:{}", sourceAddress, sourcePort);
-
-    Mat rawData = Mat(1, SLAVE_PCIE_UDP_PACK_SIZE * total_pack, CV_8UC1, longbuf);
-    recvedFrame = imdecode(rawData, IMREAD_COLOR);
-    spdlog::debug("size:[{},{}]", recvedFrame.size().width, recvedFrame.size().height);
-    if (recvedFrame.size().width == 0) {
-        spdlog::warn("decode failure!");
-        // continue;
-    }
-    // downImgs[2] = recvedFrame(Rect(0,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    // downImgs[3] = recvedFrame(Rect(stitcherinputWidth,0,stitcherinputWidth, stitcherinputHeight)).clone();
-    downImgs[3] = recvedFrame.clone();
-    // imwrite("7.png", downImgs[2]);
-    // imwrite("8.png", downImgs[3]);
-    // imshow("recv", recvedFrame);
-    // waitKey(1);
-    free(longbuf);
-}
-
-#endif
 
 bool saveret = false;
-bool detect = true;
+bool detect = false;
 bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
@@ -126,11 +37,7 @@ bool displayori = false;
 int videoFps = 10;
 
 
-#if CAM_IMX390
 std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
-#else if CAM_IMX424
-std::string stitchercfgpath = "../cfg/stitcher-imx424cfg.yaml";
-#endif
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -311,8 +218,7 @@ int main(int argc, char *argv[])
     for(auto& th:threads)
         th.detach();
 
-    if (detect)
-        nvProcessor = new imageProcessor(net, canname, batchSize);  
+    nvProcessor = new imageProcessor(net, canname, batchSize);  
 
     /************************************stitch all *****************************************/
     {
@@ -425,29 +331,18 @@ int main(int argc, char *argv[])
 
     // return 0;
 
-    do{
-#if CAM_IMX390
-        downImgs.clear();
-        for(int i=0;i<4;i++)
-        {
-            // cameras[i+4]->read_frame();
-            // downImgs.push_back(cameras[i+4]->m_ret);
-            cameras[i+4]->getFrame(downImgs[i], false);
-        }
-#elif CAM_IMX424
-        serverCap();
-        // cameras[4]->read_frame();
-        // cameras[5]->read_frame();
-        // downImgs[0] = cameras[4]->m_ret;
-        // downImgs[1] = cameras[5]->m_ret;
+    // do{
+    //     downImgs.clear();
+    //     for(int i=0;i<4;i++)
+    //     {
+    //         // cameras[i+4]->read_frame();
+    //         // downImgs.push_back(cameras[i+4]->m_ret);
+    //         cameras[i+4]->getFrame(downImgs[i], false);
+    //     }
+    // }
+    // while(ostitcherDown.init(downImgs, initMode) != 0);
 
-        cameras[4]->getFrame(downImgs[0], false);
-        cameras[5]->getFrame(downImgs[1], false);
-#endif
-    }
-    while(ostitcherDown.init(downImgs, initMode) != 0);
-
-    spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
+    // spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
     // std::vector<std::thread> threads;
     // for(int i=0;i<USED_CAMERA_NUM;i++)
@@ -470,27 +365,16 @@ int main(int argc, char *argv[])
     {
         spdlog::debug("start loop");
         sdkResetTimer(&timer);
-#if CAM_IMX424
-        spdlog::debug("capture slave start");
-        std::thread server(serverCap);
-#endif
         
         cameras[0]->getFrame(upImgs[0], false);
         cameras[1]->getFrame(upImgs[1], false);
         cameras[2]->getFrame(upImgs[2], false);
         cameras[3]->getFrame(upImgs[3], false);
-        cameras[4]->getFrame(downImgs[0], false);
-        cameras[5]->getFrame(downImgs[1], false);
-#if CAM_IMX390
-        cameras[6]->getFrame(downImgs[2], false);
-        cameras[7]->getFrame(downImgs[3], false);
-#endif
+        // cameras[4]->getFrame(downImgs[0], false);
+        // cameras[5]->getFrame(downImgs[1], false);
+        // cameras[6]->getFrame(downImgs[2], false);
+        // cameras[7]->getFrame(downImgs[3], false);
         
-#if CAM_IMX424
-        spdlog::debug("master cap fini");
-        server.join();
-        spdlog::debug("slave cap fini");
-#endif
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
         /* serial execute*/
@@ -505,15 +389,15 @@ int main(int argc, char *argv[])
         /* parallel*/
 
         std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
-        std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
+        // std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
         t1.join();
-        t2.join();
+        // t2.join();
 
-        int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
-        upRet = stitcherOut[0](Rect(0,finalcut,width,height));
-        downRet = stitcherOut[1](Rect(0,finalcut,width,height));
+        // int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
+        // int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
+        // upRet = stitcherOut[0](Rect(0,finalcut,width,height));
+        // downRet = stitcherOut[1](Rect(0,finalcut,width,height));
 
         cv::Mat up,down,ori;
         if(displayori)
@@ -523,45 +407,21 @@ int main(int argc, char *argv[])
             cv::vconcat(up, down, ori);
         }
 
-        cv::vconcat(upRet, downRet, ret);
-        cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
+        // cv::vconcat(upRet, downRet, ret);
+        // cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
+
+        ret = stitcherOut[0];
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
 
         spdlog::info("stitching takes:{} ms", sdkGetTimerValue(&timer));
 
-        // if(saveret)
-        // {
-        //     imwrite("1.png", upImgs[0]);
-        //     imwrite("2.png", upImgs[1]);
-        //     imwrite("3.png", upImgs[2]);
-        //     imwrite("4.png", upImgs[3]);
-        //     imwrite("5.png", downImgs[0]);
-        //     imwrite("6.png", downImgs[1]);
-        //     imwrite("7.png", downImgs[2]);
-        //     imwrite("8.png", downImgs[3]);
-        // }
-#if CAM_IMX424
-        controlData ctl_command;
-        ctl_command = nvProcessor->getCtlCommand();
-        spdlog::info("***********get command: ");
-        spdlog::info("use_flip:{}, use_enh:{}, bright:{}, contrast:{}", ctl_command.use_flip, ctl_command.use_ssr, ctl_command.bright, ctl_command.contrast);
-#endif
-
-        // if(ctl_command.use_ssr || start_ssr) 
         if(start_ssr) 
             ret = nvProcessor->SSR(ret);
 
         if(detect)
         {
-            // yoloRet = nvProcessor.Process(ret);
             ret = nvProcessor->ProcessOnce(ret);
-        //    if(ctl_command.use_detect || detect){
-                // nvProcessor->publishImage(ret);
-                // detect = !detect;
-        //     } else{
-                // nvProcessor.publishImage(ret);
-            // }
             spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
         }
 
@@ -598,9 +458,6 @@ int main(int argc, char *argv[])
             *panoWriter << final;
             // *oriWriter << ori;
         }
-        // spdlog::debug("frame [{}], before render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
-
-        // cv::imshow("ret", ret);
         
         spdlog::debug("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         // setMouseCallback("ret",OnMouseAction);

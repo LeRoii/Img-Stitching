@@ -934,49 +934,51 @@
 // }
 
 /********* test cansender *********/
-#include "canmessenger.hpp"
+// #include "canmessenger.hpp"
 
-void SendAcc()
-{
-	int socket_fd;
-	unsigned long nbytes;
-	struct sockaddr_can addr;
-	struct ifreq ifrr;
+// void SendAcc()
+// {
+// 	int socket_fd;
+// 	unsigned long nbytes;
+// 	struct sockaddr_can addr;
+// 	struct ifreq ifrr;
 
-	socket_fd = socket(PF_CAN,SOCK_RAW,CAN_RAW);
-	strcpy(ifrr.ifr_name,"can0");
-	ioctl(socket_fd,SIOCGIFINDEX,&ifrr);
-	addr.can_family = AF_CAN;
-	addr.can_ifindex = ifrr.ifr_ifindex;
-	bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr));
-	while(1)
-	{
-		struct can_frame can_send_Acc;
-		can_send_Acc.can_id = 0x421;
-		can_send_Acc.can_dlc = 8;
-		can_send_Acc.data[0] = 1;
-		can_send_Acc.data[1] = 0;
-		can_send_Acc.data[2] = 1;
-		can_send_Acc.data[3] = 0;
-		can_send_Acc.data[4] = 0;
-		can_send_Acc.data[5] = 0;
-		can_send_Acc.data[6] = 0;
-		can_send_Acc.data[7] = 0;
-		nbytes = write(socket_fd, &can_send_Acc, sizeof(can_send_Acc));
-    printf("socket_fd:%d, nbytes:%d\n", socket_fd, nbytes);
-	}
-}
+// 	socket_fd = socket(PF_CAN,SOCK_RAW,CAN_RAW);
+// 	strcpy(ifrr.ifr_name,"can0");
+// 	ioctl(socket_fd,SIOCGIFINDEX,&ifrr);
+// 	addr.can_family = AF_CAN;
+// 	addr.can_ifindex = ifrr.ifr_ifindex;
+// 	bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr));
+// 	while(1)
+// 	{
+// 		struct can_frame can_send_Acc;
+// 		can_send_Acc.can_id = 0x421;
+// 		can_send_Acc.can_dlc = 8;
+// 		can_send_Acc.data[0] = 1;
+// 		can_send_Acc.data[1] = 0;
+// 		can_send_Acc.data[2] = 1;
+// 		can_send_Acc.data[3] = 0;
+// 		can_send_Acc.data[4] = 0;
+// 		can_send_Acc.data[5] = 0;
+// 		can_send_Acc.data[6] = 0;
+// 		can_send_Acc.data[7] = 0;
+// 		nbytes = write(socket_fd, &can_send_Acc, sizeof(can_send_Acc));
+//     printf("socket_fd:%d, nbytes:%d\n", socket_fd, nbytes);
+// 	}
+// }
 
 
-int main()
-{
-	// SendAcc();
-	// cansender *psender = new cansender("can0");
-	// psender->sendTest();
-	while(1)
-	{
-		// SendAcc();
-		printf("SendAcc()\n");
-	}
-	return 0;
-}
+// int main()
+// {
+// 	// SendAcc();
+// 	// cansender *psender = new cansender("can0");
+// 	// psender->sendTest();
+// 	while(1)
+// 	{
+// 		// SendAcc();
+// 		printf("SendAcc()\n");
+// 	}
+// 	return 0;
+// }
+
+

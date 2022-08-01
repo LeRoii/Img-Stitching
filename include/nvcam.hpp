@@ -164,31 +164,6 @@ nvbuff_do_clearchroma (int dmabuf_fd)
   return true;
 }
 
-// static bool
-// display_initialize(camcontext_t * ctx)
-// {
-//     /* Create EGL renderer */
-//     ctx->renderer = NvEglRenderer::createEglRenderer("renderer0",
-//             ctx->cam_w/2, ctx->cam_h/2, 0, 0);
-//     if (!ctx->renderer)
-//         ERROR_RETURN("Failed to create EGL renderer");
-//     ctx->renderer->setFPS(ctx->fps);
-
-//     if (ctx->enable_cuda)
-//     {
-//         /* Get defalut EGL display */
-//         ctx->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-//         if (ctx->egl_display == EGL_NO_DISPLAY)
-//             ERROR_RETURN("Failed to get EGL display connection");
-
-//         /* Init EGL display connection */
-//         if (!eglInitialize(ctx->egl_display, NULL, NULL))
-//             ERROR_RETURN("Failed to initialize EGL display connection");
-//     }
-
-//     return true;
-// }
-
 static bool
 camera_initialize(camcontext_t * ctx)
 {

@@ -427,189 +427,193 @@ stop_stream(camcontext_t * ctx)
 class nvCam
 {
 public:
-    nvCam(stCamCfg &camcfg):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
-	m_stitcherInputWidth(camcfg.retWidth),m_stitcherInputHeight(camcfg.retHeight),
-	m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), 
-	m_undistoredWidth(camcfg.undistoredWidth),m_undistoredHeight(camcfg.undistoredHeight), 
-    m_id(camcfg.id),m_undistor(camcfg.undistor)
+
+    // nvCam(stCamCfg &camcfg):m_camSrcWidth(camcfg.camSrcWidth),m_camSrcHeight(camcfg.camSrcHeight),
+	// m_stitcherInputWidth(camcfg.retWidth),m_stitcherInputHeight(camcfg.retHeight),
+	// m_distoredWidth(camcfg.distoredWidth),m_distoredHeight(camcfg.distoredHeight), 
+	// m_undistoredWidth(camcfg.undistoredWidth),m_undistoredHeight(camcfg.undistoredHeight), 
+    // m_id(camcfg.id),m_undistor(camcfg.undistor), m_cfg(camcfg)
     
-    {
-        if(m_camSrcWidth == 3840)
-        {
-            //4k camera 1080 undistored
-            intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
-                                    0, 1.980908029523902e+03, 5.694739251420406e+02,
-                                    0, 0, 1);
+    // {
+    //     m_cameraK = cv::Mat(3, 3, CV_64FC1);
+    //     m_cameraDistorParams = cv::Mat(1, 4, CV_64FC1);
 
-            distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
-            rectPara[0] = vector<int>{65,105,1788,886};
+    //     if(m_camSrcWidth == 3840)
+    //     {
+    //         //4k camera 1080 undistored
+    //         intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.767104822915813e+03, 0 , 9.674122717568121e+02, 
+    //                                 0, 1.980908029523902e+03, 5.694739251420406e+02,
+    //                                 0, 0, 1);
 
-            //4k camera 540 undistored
-            intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
-                                0, 959.666714085956, 280.450178308760,
-                                0, 0, 1);
+    //         distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.4066, 0.1044, 0, 0);
+    //         rectPara[0] = vector<int>{65,105,1788,886};
 
-            distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
-            rectPara[1] = vector<int>{36,53,888,440};
-        }
-        else if(m_camSrcWidth == 1920)
-        {
-            if(camcfg.vendor == 0)
-            {
-                // sensing imx390 60fov 1920x1080 undistored
-                intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.946119547414241e+03, 0, 1.016749758038493e+03,
-                                    0, 1.943374997244887e+03, 5.679760696574299e+02,
-                                    0, 0, 1);
+    //         //4k camera 540 undistored
+    //         intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 853.417882746302, 0, 483.001902270090,
+    //                             0, 959.666714085956, 280.450178308760,
+    //                             0, 0, 1);
 
-                distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.5554, 0.2303, 0, 0);
-                rectPara[0] = vector<int>{95,130,1751,840};
+    //         distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.368584528301156, 0.0602436114872144, 0, 0);
+    //         rectPara[1] = vector<int>{36,53,888,440};
+    //     }
+    //     else if(m_camSrcWidth == 1920)
+    //     {
+    //         if(camcfg.vendor == 0)
+    //         {
+    //             // sensing imx390 60fov 1920x1080 undistored
+    //             intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 1.946119547414241e+03, 0, 1.016749758038493e+03,
+    //                                 0, 1.943374997244887e+03, 5.679760696574299e+02,
+    //                                 0, 0, 1);
 
-                // sensing imx390 60fov 960x540 undistored
-                // intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.015264419405688e+03, 0, 5.175898502304585e+02,
-                //                     0, 1.011960767907845e+03, 2.927908447845667e+02,
-                //                     0, 0, 1);
+    //             distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.5554, 0.2303, 0, 0);
+    //             rectPara[0] = vector<int>{95,130,1751,840};
 
-                // distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6027, 0.2956, 0, 0);
-                // rectPara[1] = vector<int>{45,64,882,423};
+    //             // sensing imx390 60fov 960x540 undistored
+    //             // intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.015264419405688e+03, 0, 5.175898502304585e+02,
+    //             //                     0, 1.011960767907845e+03, 2.927908447845667e+02,
+    //             //                     0, 0, 1);
 
-                // sensing imx390 120fov 960x540 undistored
-                intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 4.890925118101495e+02, 0, 4.940763211103715e+02,
-                                    0, 4.912630345468579e+02, 2.865820139005963e+02,
-                                    0, 0, 1);
+    //             // distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6027, 0.2956, 0, 0);
+    //             // rectPara[1] = vector<int>{45,64,882,423};
 
-                distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.2838, 0.0628, 0, 0);
-                rectPara[1] = vector<int>{70,66,885,410};
-            }
-            else if(camcfg.vendor == 1)
-            {
-                // lijing imx390 60fov 1920x1080 undistored
-                intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 2.075765787574657e+03, 0, 9.479666200437899e+02,
-                                    0, 2.066538110898970e+03, 5.677805443267157e+02,
-                                    0, 0, 1);
+    //             // sensing imx390 120fov 960x540 undistored
+    //             intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 4.890925118101495e+02, 0, 4.940763211103715e+02,
+    //                                 0, 4.912630345468579e+02, 2.865820139005963e+02,
+    //                                 0, 0, 1);
 
-                distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.6183, 0.3355, 0, 0);
-                rectPara[0] = vector<int>{69,103,1782,889};
+    //             distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.2838, 0.0628, 0, 0);
+    //             rectPara[1] = vector<int>{70,66,885,410};
+    //         }
+    //         else if(camcfg.vendor == 1)
+    //         {
+    //             // lijing imx390 60fov 1920x1080 undistored
+    //             intrinsic_matrix[0] = (cv::Mat_<double>(3,3) << 2.075765787574657e+03, 0, 9.479666200437899e+02,
+    //                                 0, 2.066538110898970e+03, 5.677805443267157e+02,
+    //                                 0, 0, 1);
 
-                // lijing imx390 60fov 960x540 undistored
-                intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.049076504159804e+03, 0, 4.893740319911021e+02,
-                                    0, 1.042781786220125e+03, 2.982826528435153e+02,
-                                    0, 0, 1);
+    //             distortion_coeffs[0] = (cv::Mat_<double>(1,4) << -0.6183, 0.3355, 0, 0);
+    //             rectPara[0] = vector<int>{69,103,1782,889};
 
-                distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6479, 0.3817, 0, 0);
-                rectPara[1] = vector<int>{37,55,886,442};
-            }
-        }
-        else
-        {
-            spdlog::critical("invalid camSrcWidth:{}", m_camSrcWidth);
-        }
+    //             // lijing imx390 60fov 960x540 undistored
+    //             intrinsic_matrix[1] = (cv::Mat_<double>(3,3) << 1.049076504159804e+03, 0, 4.893740319911021e+02,
+    //                                 0, 1.042781786220125e+03, 2.982826528435153e+02,
+    //                                 0, 0, 1);
 
-        set_defaults(&ctx);
-        strcpy(ctx.dev_name, camcfg.name);
-        ctx.cam_pixfmt = V4L2_PIX_FMT_UYVY;
-        ctx.enable_cuda = true;
-        ctx.enable_verbose = true;
-        ctx.cam_w = m_camSrcWidth;
-        ctx.cam_h = m_camSrcHeight;
+    //             distortion_coeffs[1] = (cv::Mat_<double>(1,4) << -0.6479, 0.3817, 0, 0);
+    //             rectPara[1] = vector<int>{37,55,886,442};
+    //         }
+    //     }
+    //     else
+    //     {
+    //         spdlog::critical("invalid camSrcWidth:{}", m_camSrcWidth);
+    //     }
 
-        spdlog::critical("m_camSrcWidth:{}",m_camSrcWidth);
+    //     set_defaults(&ctx);
+    //     strcpy(ctx.dev_name, camcfg.name);
+    //     ctx.cam_pixfmt = V4L2_PIX_FMT_UYVY;
+    //     ctx.enable_cuda = true;
+    //     ctx.enable_verbose = true;
+    //     ctx.cam_w = m_camSrcWidth;
+    //     ctx.cam_h = m_camSrcHeight;
 
-        bool ok;
-        ok = init_components(&ctx);
-        ok &= prepare_buffers(&ctx);
-        ok &= start_stream(&ctx);
+    //     spdlog::critical("m_camSrcWidth:{}",m_camSrcWidth);
 
-        if(!ok)
-            // printf("ERROR: %s(): (line:%d)\n", __FUNCTION__, __LINE__);
-            spdlog::critical("ERROR: {}(): (line:{})", __FUNCTION__, __LINE__);
+    //     bool ok;
+    //     ok = init_components(&ctx);
+    //     ok &= prepare_buffers(&ctx);
+    //     ok &= start_stream(&ctx);
 
-        // NvBufferCreateParams bufparams = {0};
-        // retNvbuf = (nv_buffer *)malloc(2*sizeof(nv_buffer));
-        // // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
-        // bufparams.payloadType = NvBufferPayload_SurfArray;
-        // bufparams.width = 1920;
-        // bufparams.height = 1080;
-        // bufparams.layout = NvBufferLayout_Pitch;
-        // bufparams.colorFormat = NvBufferColorFormat_ARGB32;
-        // bufparams.nvbuf_tag = NvBufferTag_NONE;
-        // if (-1 == NvBufferCreateEx(&retNvbuf[0].dmabuff_fd, &bufparams))
-        //         spdlog::critical("Failed to create NvBuffer 1920");
+    //     if(!ok)
+    //         // printf("ERROR: %s(): (line:%d)\n", __FUNCTION__, __LINE__);
+    //         spdlog::critical("ERROR: {}(): (line:{})", __FUNCTION__, __LINE__);
 
-        // bufparams.width = 960;
-        // bufparams.height = 540;
-        // if (-1 == NvBufferCreateEx(&retNvbuf[1].dmabuff_fd, &bufparams))
-        //         spdlog::critical("Failed to create NvBuffer 960");
+    //     // NvBufferCreateParams bufparams = {0};
+    //     // retNvbuf = (nv_buffer *)malloc(2*sizeof(nv_buffer));
+    //     // // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+    //     // bufparams.payloadType = NvBufferPayload_SurfArray;
+    //     // bufparams.width = 1920;
+    //     // bufparams.height = 1080;
+    //     // bufparams.layout = NvBufferLayout_Pitch;
+    //     // bufparams.colorFormat = NvBufferColorFormat_ARGB32;
+    //     // bufparams.nvbuf_tag = NvBufferTag_NONE;
+    //     // if (-1 == NvBufferCreateEx(&retNvbuf[0].dmabuff_fd, &bufparams))
+    //     //         spdlog::critical("Failed to create NvBuffer 1920");
 
-        NvBufferCreateParams bufparams = {0};
-        retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
-        // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
-        bufparams.payloadType = NvBufferPayload_SurfArray;
-        bufparams.width = m_camSrcWidth;
-        bufparams.height = m_camSrcHeight;
-        bufparams.layout = NvBufferLayout_Pitch;
-        bufparams.colorFormat = NvBufferColorFormat_ARGB32;
-        bufparams.nvbuf_tag = NvBufferTag_NONE;
-        if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
-                spdlog::critical("Failed to create NvBuffer 1920");
+    //     // bufparams.width = 960;
+    //     // bufparams.height = 540;
+    //     // if (-1 == NvBufferCreateEx(&retNvbuf[1].dmabuff_fd, &bufparams))
+    //     //         spdlog::critical("Failed to create NvBuffer 960");
 
-        m_argb = cv::Mat(m_camSrcHeight, m_camSrcWidth, CV_8UC4);
-        // m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
-        m_ret = cv::Mat(m_stitcherInputHeight, m_stitcherInputWidth, CV_8UC3);
+    //     NvBufferCreateParams bufparams = {0};
+    //     retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+    //     // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+    //     bufparams.payloadType = NvBufferPayload_SurfArray;
+    //     bufparams.width = m_camSrcWidth;
+    //     bufparams.height = m_camSrcHeight;
+    //     bufparams.layout = NvBufferLayout_Pitch;
+    //     bufparams.colorFormat = NvBufferColorFormat_ARGB32;
+    //     bufparams.nvbuf_tag = NvBufferTag_NONE;
+    //     if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
+    //             spdlog::critical("Failed to create NvBuffer 1920");
 
-        bufparams.width = m_stitcherInputWidth;
-        bufparams.height = m_stitcherInputHeight;
-        if (-1 == NvBufferCreateEx(&ctx.render_dmabuf_fd, &bufparams))
-                spdlog::critical("Failed to create NvBuffer ctx->render_dmabuf_fd");
+    //     m_argb = cv::Mat(m_camSrcHeight, m_camSrcWidth, CV_8UC4);
+    //     // m_gpuargb = cv::cuda::GpuMat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+    //     m_ret = cv::Mat(m_stitcherInputHeight, m_stitcherInputWidth, CV_8UC3);
 
-        // m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
-        // m_argb[0] = cv::Mat(1080, 1920, CV_8UC4);
-        // m_argb[1] = cv::Mat(540, 960, CV_8UC4);
+    //     bufparams.width = m_stitcherInputWidth;
+    //     bufparams.height = m_stitcherInputHeight;
+    //     if (-1 == NvBufferCreateEx(&ctx.render_dmabuf_fd, &bufparams))
+    //             spdlog::critical("Failed to create NvBuffer ctx->render_dmabuf_fd");
 
-        // m_gpuargb[0] = cv::cuda::GpuMat(1080, 1920, CV_8UC4);
-        // m_gpuargb[1] = cv::cuda::GpuMat(540, 960, CV_8UC4);
+    //     // m_argb = cv::Mat(m_distoredHeight, m_distoredWidth, CV_8UC4);
+    //     // m_argb[0] = cv::Mat(1080, 1920, CV_8UC4);
+    //     // m_argb[1] = cv::Mat(540, 960, CV_8UC4);
 
-        // m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
-        // m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
-        // m_gpuret = cv::cuda::GpuMat(m_stitcherInputHeight, m_stitcherInputWidth, CV_8UC4);
+    //     // m_gpuargb[0] = cv::cuda::GpuMat(1080, 1920, CV_8UC4);
+    //     // m_gpuargb[1] = cv::cuda::GpuMat(540, 960, CV_8UC4);
 
-        /* Init the NvBufferTransformParams */
-        memset(&transParams, 0, sizeof(transParams));
-        transParams.transform_flag = NVBUFFER_TRANSFORM_FILTER;
-        transParams.transform_filter = NvBufferTransform_Filter_Smart;
+    //     // m_gpuDistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+    //     // m_gpuUndistoredImg = cv::cuda::GpuMat(m_undistoredHeight, m_undistoredWidth, CV_8UC4);
+    //     // m_gpuret = cv::cuda::GpuMat(m_stitcherInputHeight, m_stitcherInputWidth, CV_8UC4);
 
-        // m_queue.resize(10);
+    //     /* Init the NvBufferTransformParams */
+    //     memset(&transParams, 0, sizeof(transParams));
+    //     transParams.transform_flag = NVBUFFER_TRANSFORM_FILTER;
+    //     transParams.transform_filter = NvBufferTransform_Filter_Smart;
 
-        cv::Size image_size = cv::Size(1920, 1080);
-        cv::Size undistorSize = image_size;
+    //     // m_queue.resize(10);
 
-        // cv::Mat mapx[2], mapy[2];
-        mapx[0] = cv::Mat(undistorSize,CV_32FC1);
-        mapy[0] = cv::Mat(undistorSize,CV_32FC1);
-        cv::Mat R = cv::Mat::eye(3,3,CV_32F);
-        cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
-        cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx[0], mapy[0]);
-        // gpuMapx[0] = cv::cuda::GpuMat(mapx[0].clone());
-        // gpuMapy[0] = cv::cuda::GpuMat(mapy[0].clone());
+    //     cv::Size image_size = cv::Size(1920, 1080);
+    //     cv::Size undistorSize = image_size;
+
+    //     // cv::Mat mapx[2], mapy[2];
+    //     mapx[0] = cv::Mat(undistorSize,CV_32FC1);
+    //     mapy[0] = cv::Mat(undistorSize,CV_32FC1);
+    //     cv::Mat R = cv::Mat::eye(3,3,CV_32F);
+    //     cv::Mat optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[0], distortion_coeffs[0], image_size, 1, undistorSize, 0);
+    //     cv::initUndistortRectifyMap(intrinsic_matrix[0],distortion_coeffs[0], R, optMatrix, undistorSize, CV_32FC1, mapx[0], mapy[0]);
+    //     // gpuMapx[0] = cv::cuda::GpuMat(mapx[0].clone());
+    //     // gpuMapy[0] = cv::cuda::GpuMat(mapy[0].clone());
         
-        image_size = cv::Size(960, 540);
-        undistorSize = image_size;
-        mapx[1] = cv::Mat(undistorSize,CV_32FC1);
-        mapy[1] = cv::Mat(undistorSize,CV_32FC1);
-        optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[1], distortion_coeffs[1], image_size, 1, undistorSize, 0);
-        cv::initUndistortRectifyMap(intrinsic_matrix[1],distortion_coeffs[1], R, optMatrix, undistorSize, CV_32FC1, mapx[1], mapy[1]);
-        // gpuMapx[1] = cv::cuda::GpuMat(mapx[1]);
-        // gpuMapy[1] = cv::cuda::GpuMat(mapy[1]);
+    //     image_size = cv::Size(960, 540);
+    //     undistorSize = image_size;
+    //     mapx[1] = cv::Mat(undistorSize,CV_32FC1);
+    //     mapy[1] = cv::Mat(undistorSize,CV_32FC1);
+    //     optMatrix = getOptimalNewCameraMatrix(intrinsic_matrix[1], distortion_coeffs[1], image_size, 1, undistorSize, 0);
+    //     cv::initUndistortRectifyMap(intrinsic_matrix[1],distortion_coeffs[1], R, optMatrix, undistorSize, CV_32FC1, mapx[1], mapy[1]);
+    //     // gpuMapx[1] = cv::cuda::GpuMat(mapx[1]);
+    //     // gpuMapy[1] = cv::cuda::GpuMat(mapy[1]);
 
-        int bufsize = m_camSrcWidth*m_camSrcHeight*2;
-        m_258YUYVBuf = (unsigned char*)malloc(bufsize);
+    //     int bufsize = m_camSrcWidth*m_camSrcHeight*2;
+    //     m_258YUYVBuf = (unsigned char*)malloc(bufsize);
 
-        setDistoredSize(m_undistoredWidth);
-        spdlog::debug("cam [{}] init complete", m_id);
+    //     setDistoredSize(m_undistoredWidth);
+    //     spdlog::debug("cam [{}] init complete", m_id);
 
-        sdkCreateTimer(&timer);
-        sdkResetTimer(&timer);
-        sdkStartTimer(&timer);
-    }
+    //     sdkCreateTimer(&timer);
+    //     sdkResetTimer(&timer);
+    //     sdkStartTimer(&timer);
+    // }
 
     ~nvCam()
     {
@@ -634,6 +638,167 @@ public:
 
         NvBufferDestroy(retNvbuf->dmabuff_fd);
         // NvBufferDestroy(retNvbuf[1].dmabuff_fd);
+    }
+
+    nvCam(stCamCfg &camcfg):m_cfg(camcfg)
+    {
+        m_cameraK = cv::Mat(3, 3, CV_64FC1);
+        m_cameraDistorParams = cv::Mat(1, 4, CV_64FC1);
+
+        spdlog::debug("camsrcwidth:{},camsrcheight:{},distorWidth:{},distorHeight:{},\
+        undistorWidth:{},undistorHeight:{},outPutWidth{},outPutHeight:{}",m_cfg.camSrcWidth,\
+        m_cfg.camSrcHeight, m_cfg.distoredWidth, m_cfg.distoredHeight, m_cfg.undistoredWidth,\
+        m_cfg.undistoredHeight, m_cfg.outPutWidth, m_cfg.outPutHeight);
+        spdlog::debug("cam [{}] init complete", m_cfg.id);
+    }
+
+    int init(const std::string &cameracfgPath)
+    {
+        YAML::Node config;
+        try {
+            config = YAML::LoadFile(cameracfgPath);
+        } catch (YAML::ParserException &ex) {
+            spdlog::critical("camera cfg yaml parse failed:{}, can't undistor camera", ex.what());
+            m_cfg.undistor = false;
+            // std::cerr << "!! config parse failed: " << ex.what() << std::endl;
+            // exit(-1);
+        } catch (YAML::BadFile &ex) {
+            spdlog::critical("camera cfg yaml load failed:{}, can't undistor camera", ex.what());
+            m_cfg.undistor = false;
+            // std::cerr << "!! config load failed: " << ex.what() << std::endl;
+            // exit(-1);
+        }
+
+        auto cameras = config["cameras"];
+        for(auto cam:cameras)
+        {
+            auto vendor = cam["vendor"].as<std::string>();
+            auto sensor = cam["sensor"].as<std::string>();
+            auto fov = cam["fov"].as<int>();
+            auto srcsz = cam["srcsz"].as<int>();
+            auto undistorsz = cam["undistorsz"].as<int>();
+
+            if(vendor == m_cfg.vendor && sensor == m_cfg.sensor &&
+                fov == m_cfg.fov && srcsz == m_cfg.camSrcWidth && 
+                undistorsz == m_cfg.undistoredWidth)
+            {
+                auto K = cam["K"];
+
+                for(int mi=0;mi<3;mi++)
+                {
+                    for(int mj=0;mj<3;mj++)
+                    {
+                        m_cameraK.at<double>(mi,mj) = K[3*mi+mj].as<double>();
+                        spdlog::debug("parse camera inntrinsic:{}", K[3*mi+mj].as<double>());
+                    }
+                }
+
+                // for(auto i:K)
+                // {
+                //     spdlog::debug("parse camera inntrinsic:{}", i.as<double>());
+                //     m_cameraK.push_back(i.as<double>());
+                // }
+
+                auto distorParams = cam["distorParams"];
+                for(int mi=0;mi<3;mi++)
+                {
+                    m_cameraDistorParams.at<double>(0,mi) = distorParams[mi].as<double>();
+                    spdlog::debug("parse camera m_cameraDistorParams:{}", distorParams[mi].as<double>());
+                }
+                // for(auto i:distorParams)
+                // {
+                //     m_cameraDistorParams.push_back(i.as<double>());
+                //     spdlog::debug("parse camera m_cameraDistorParams:{}", i.as<double>());
+                // }
+
+                auto rect = cam["rect"];
+                for(auto i:rect)
+                {
+                    m_rectPara.push_back(i.as<int>());
+                    spdlog::debug("parse camera m_rectPara:{}", m_rectPara.back());
+                }
+
+                spdlog::debug("parse camera params complete");
+                break;
+            }
+        }
+
+        set_defaults(&ctx);
+        strcpy(ctx.dev_name, m_cfg.name);
+        ctx.cam_pixfmt = V4L2_PIX_FMT_UYVY;
+        ctx.enable_cuda = true;
+        ctx.enable_verbose = true;
+        ctx.cam_w = m_cfg.camSrcWidth;
+        ctx.cam_h = m_cfg.camSrcHeight;
+
+        bool ok;
+        ok = init_components(&ctx);
+        ok &= prepare_buffers(&ctx);
+        ok &= start_stream(&ctx);
+
+        if(!ok)
+        {
+            // printf("ERROR: %s(): (line:%d)\n", __FUNCTION__, __LINE__);
+            spdlog::critical("ERROR: {}(): (line:{})", __FUNCTION__, __LINE__);
+            return RET_ERR;
+        }
+
+        m_argb = cv::Mat(m_cfg.camSrcHeight, m_cfg.camSrcWidth, CV_8UC4);
+
+
+        createNvBuffer();
+        prepareUndistorMap();
+
+        int bufsize = m_cfg.camSrcWidth*m_cfg.camSrcHeight*2;
+        m_258YUYVBuf = (unsigned char*)malloc(bufsize);
+
+        sdkCreateTimer(&timer);
+        sdkResetTimer(&timer);
+        sdkStartTimer(&timer);
+
+        spdlog::debug("camera init complete");
+
+    }
+
+    int readCamParams()
+    {
+
+        return RET_OK;
+    }
+
+    int createNvBuffer()
+    {
+        NvBufferCreateParams bufparams = {0};
+        retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+        // retNvbuf = (nv_buffer *)malloc(sizeof(nv_buffer));
+        bufparams.payloadType = NvBufferPayload_SurfArray;
+        bufparams.width = m_cfg.camSrcWidth;
+        bufparams.height = m_cfg.camSrcHeight;
+        bufparams.layout = NvBufferLayout_Pitch;
+        bufparams.colorFormat = NvBufferColorFormat_ARGB32;
+        bufparams.nvbuf_tag = NvBufferTag_NONE;
+
+        memset(&transParams, 0, sizeof(transParams));
+        transParams.transform_flag = NVBUFFER_TRANSFORM_FILTER;
+        transParams.transform_filter = NvBufferTransform_Filter_Smart;
+
+        if (-1 == NvBufferCreateEx(&retNvbuf->dmabuff_fd, &bufparams))
+        {
+            spdlog::critical("Failed to create NvBuffer");
+            return RET_ERR;
+        } 
+    }
+
+    int prepareUndistorMap()
+    {
+        cv::Size image_size = cv::Size(m_cfg.undistoredWidth, m_cfg.undistoredHeight);
+        cv::Size undistorSize = image_size;
+        m_mapx = cv::Mat(undistorSize,CV_32FC1);
+        m_mapy = cv::Mat(undistorSize,CV_32FC1);
+        cv::Mat R = cv::Mat::eye(3,3,CV_32F);
+        cv::Mat optMatrix = getOptimalNewCameraMatrix(m_cameraK, m_cameraDistorParams, image_size, 1, undistorSize, 0);
+        cv::initUndistortRectifyMap(m_cameraK, m_cameraDistorParams, R, optMatrix, undistorSize, CV_32FC1, m_mapx, m_mapy);
+
     }
 
     void setDistoredSize(int width)
@@ -692,16 +857,16 @@ public:
         /*  Convert the camera buffer from YUV422 to ARGB */
         if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd, &transParams))
             ERROR_RETURN("Failed to convert the buffer");
-
+        spdlog::debug("860");
         // if(-1 == NvBuffer2Raw(retNvbuf[distoredszIdx].dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb[distoredszIdx].data))
         //         ERROR_RETURN("Failed to NvBuffer2Raw");
         if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_argb.size().width, m_argb.size().height, m_argb.data))
                 ERROR_RETURN("Failed to NvBuffer2Raw");
-        
+        spdlog::debug("865");
         // spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
 #endif
 
-        if(m_undistor)
+        if(m_cfg.undistor)
         {
             /***** cpu undistor *****/
             // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
@@ -725,8 +890,8 @@ public:
         {
             cv::Mat tmp;
             cv::cvtColor(m_argb, tmp, cv::COLOR_RGBA2RGB);
-            // cv::imwrite("b.png", tmp);
-            cv::resize(tmp, m_ret, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
+            // cv::imwrite("b.png", tmp); 
+            cv::resize(tmp, m_ret, cv::Size(m_cfg.outPutWidth, m_cfg.outPutHeight));
             // cv::imwrite("a.png", m_ret);
         }
 
@@ -872,36 +1037,36 @@ public:
                 spdlog::critical("run fct read frame fail");
                 continue;
             }
-			std::unique_lock<std::mutex> lock(m_mtx[m_id]);
+			std::unique_lock<std::mutex> lock(m_mtx[m_cfg.id]);
 			while(m_queue.size() >= 50)
             {
-                spdlog::trace("cam:[{}] wait for consumer", m_id);
+                spdlog::trace("cam:[{}] wait for consumer", m_cfg.id);
 				// m_queue.pop_front();
-                con[m_id].wait(lock);
+                con[m_cfg.id].wait(lock);
             }
             if(m_ret.size().width > 0)
             {
 			    m_queue.push(m_ret);
             }
-            con[m_id].notify_all();
+            con[m_cfg.id].notify_all();
 			// printf("run ok!!!!!!!!!!!!1\n");
 		}
 	}
 
     int getFrame(cv::Mat &mat, bool src = true)
 	{
-        std::unique_lock<std::mutex> lock(m_mtx[m_id]);
+        std::unique_lock<std::mutex> lock(m_mtx[m_cfg.id]);
         while(m_queue.empty())
         {
-            spdlog::trace("cam:[{}] wait for img", m_id);
+            spdlog::trace("cam:[{}] wait for img", m_cfg.id);
             // return 0;
-            con[m_id].wait(lock);
+            con[m_cfg.id].wait(lock);
         }
         mat = m_queue.front().clone();
         if(!src)
-            cv::resize(mat, mat, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
+            cv::resize(mat, mat, cv::Size(m_cfg.outPutWidth, m_cfg.outPutHeight));
         m_queue.pop();
-        con[m_id].notify_all();
+        con[m_cfg.id].notify_all();
 
         return 1;
 	}
@@ -937,4 +1102,9 @@ public:
 
     bool m_undistor;
     unsigned char *m_258YUYVBuf;
+
+    cv::Mat m_cameraK, m_cameraDistorParams;
+    cv::Mat m_mapx, m_mapy;
+    stCamCfg m_cfg;
+    std::vector<int> m_rectPara;
 };

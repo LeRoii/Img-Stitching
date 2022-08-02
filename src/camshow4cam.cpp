@@ -92,19 +92,27 @@ int main(int argc, char *argv[])
 {
     YAML::Node config = YAML::LoadFile(defaultcfgpath);
     spdlog::info("defaultcfgpath:{}", defaultcfgpath);
-    stitcherinputWidth = config["stitcherinputWidth"].as<int>();
-    stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+    // stitcherinputWidth = config["stitcherinputWidth"].as<int>();
+    // stitcherinputHeight = config["stitcherinputHeight"].as<int>();
 
     // if(RET_ERR == parse_cmdline(argc, argv))
     //     return RET_ERR;
+
+    std::string cameraParamsPath = config["cameraparams"].as<string>();
+    stCamCfg ymlCameraCfg;
     
-    vendor = config["vendor"].as<int>();
-    camSrcWidth = config["camsrcwidth"].as<int>();
-    camSrcHeight = config["camsrcheight"].as<int>();
-    distorWidth = config["distorWidth"].as<int>();
-    distorHeight = config["distorHeight"].as<int>();
-    undistorWidth = config["undistorWidth"].as<int>();
-    undistorHeight = config["undistorHeight"].as<int>();
+    ymlCameraCfg.camSrcWidth = config["camsrcwidth"].as<int>();
+    ymlCameraCfg.camSrcHeight = config["camsrcheight"].as<int>();
+    ymlCameraCfg.distoredWidth = config["distorWidth"].as<int>();
+    ymlCameraCfg.distoredHeight = config["distorHeight"].as<int>();
+    ymlCameraCfg.undistoredWidth = config["undistorWidth"].as<int>();
+    ymlCameraCfg.undistoredHeight = config["undistorHeight"].as<int>();
+    ymlCameraCfg.outPutWidth = config["outPutWidth"].as<int>();
+    ymlCameraCfg.outPutHeight = config["outPutHeight"].as<int>();
+    ymlCameraCfg.undistor = config["undistor"].as<bool>();
+    ymlCameraCfg.vendor = config["vendor"].as<string>();
+    ymlCameraCfg.sensor = config["sensor"].as<string>();
+    ymlCameraCfg.fov = config["fov"].as<int>();
     
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
@@ -118,7 +126,7 @@ int main(int argc, char *argv[])
     std::string cfgpath = config["camcfgpath"].as<string>();
     std::string canname = config["canname"].as<string>();
     // showall = config["showall"].as<bool>();
-    undistor = config["undistor"].as<bool>();
+    // undistor = config["undistor"].as<bool>();
     renderMode = config["renderMode"].as<int>();
 
     auto camDispIdx = config["camDispIdx"].as<string>();
@@ -137,8 +145,8 @@ int main(int argc, char *argv[])
             idx = 1;
         }
         
-        stitcherinputWidth = undistorWidth = 1920/2;
-        stitcherinputHeight = undistorHeight = 1080/2;
+        ymlCameraCfg.outPutWidth = ymlCameraCfg.undistoredWidth = 1920/2;
+        ymlCameraCfg.outPutHeight = ymlCameraCfg.undistoredHeight = 1080/2;
     }
 
     std::string loglvl = config["loglvl"].as<string>();
@@ -157,7 +165,7 @@ int main(int argc, char *argv[])
     nvrender *renderer = new nvrender(rendercfg);
 
 
-    imgs = std::vector<Mat>(CAMERA_NUM, Mat(stitcherinputHeight, stitcherinputWidth, CV_8UC4));
+    imgs = std::vector<Mat>(CAMERA_NUM, Mat(ymlCameraCfg.outPutHeight, ymlCameraCfg.outPutWidth, CV_8UC4));
     
 
     VideoWriter *writer[CAMERA_NUM];
@@ -167,44 +175,36 @@ int main(int argc, char *argv[])
             writer[i] = new VideoWriter(std::to_string(i)+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, Size(1920,1080));
     }
 
-    stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6", vendor},
-                                    stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7", vendor}};
+    // stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
+    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
+    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2", vendor},
+    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3", vendor},
+    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4", vendor},
+    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5", vendor},
+    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6", vendor},
+    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7", vendor}};
+    stCamCfg camcfgs[CAMERA_NUM];
+    for(int i=0;i<CAMERA_NUM;i++)
+    {
+        camcfgs[i] = ymlCameraCfg;
+        camcfgs[i].id = i;
+        std::string str = "/dev/video";
+        strcpy(camcfgs[i].name, (str+std::to_string(i)).c_str());
+    }
 
     std::shared_ptr<nvCam> cameras[CAMERA_NUM];
-    // if(showall)
-    // {
-    //     for(int i=0;i<USED_CAMERA_NUM;i++)
-    //         cameras[i].reset(new nvCam(camcfgs[i]));
-
-    //     std::vector<std::thread> threads;
-    //     for(int i=0;i<USED_CAMERA_NUM;i++)
-    //         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    //     for(auto& th:threads)
-    //         th.detach();
-    // }
-    // else
-    // {
-    //     cameras[idx-1].reset(new nvCam(camcfgs[idx-1]));
-    //     // std::thread t(&nvCam::run, cameras[idx-1].get());
-    //     // t.detach();
-    // }
 
     for(int i=0;i<USED_CAMERA_NUM;i++)
-            cameras[i].reset(new nvCam(camcfgs[i]));
+    {
+        cameras[i].reset(new nvCam(camcfgs[i]));
+        cameras[i]->init(cameraParamsPath);
+    }
 
     std::vector<std::thread> threads;
     for(int i=0;i<USED_CAMERA_NUM;i++)
         threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
     for(auto& th:threads)
         th.detach();
-
-    Mat rets[USED_CAMERA_NUM];
 
     StopWatchInterface *timer = NULL;
     sdkCreateTimer(&timer);

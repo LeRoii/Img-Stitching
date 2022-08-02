@@ -64,12 +64,15 @@ struct stCamCfg
 	int distoredHeight;
 	int undistoredWidth;
 	int undistoredHeight;
-	int retWidth;
-	int retHeight;
+	int outPutWidth;
+	int outPutHeight;
     bool undistor;
 	int id;
     char name[20];
-    int vendor;
+    // int vendor;
+    std::string vendor;
+    std::string sensor;
+    int fov;
 };
 
 struct nvrenderCfg

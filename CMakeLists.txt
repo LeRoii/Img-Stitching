@@ -13,7 +13,7 @@ set(NVINFER_VERSION 7)
 
 set(BUILD_testocv OFF CACHE BOOL "build testocv" FORCE)
 set(BUILD_cameracuda OFF CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
-set(BUILD_master OFF CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
+set(BUILD_master ON CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
 set(BUILD_master2 OFF CACHE BOOL "build master2, dev app for 2 cams panorama" FORCE)
 set(BUILD_replay OFF CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
 set(BUILD_replay2 OFF CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)

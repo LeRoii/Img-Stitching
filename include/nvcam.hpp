@@ -857,31 +857,29 @@ public:
         /*  Convert the camera buffer from YUV422 to ARGB */
         if (-1 == NvBufferTransform(ctx.g_buff[v4l2_buf.index].dmabuff_fd, retNvbuf->dmabuff_fd, &transParams))
             ERROR_RETURN("Failed to convert the buffer");
-        spdlog::debug("860");
         // if(-1 == NvBuffer2Raw(retNvbuf[distoredszIdx].dmabuff_fd, 0, m_distoredWidth, m_distoredHeight, m_argb[distoredszIdx].data))
         //         ERROR_RETURN("Failed to NvBuffer2Raw");
         if(-1 == NvBuffer2Raw(retNvbuf->dmabuff_fd, 0, m_argb.size().width, m_argb.size().height, m_argb.data))
                 ERROR_RETURN("Failed to NvBuffer2Raw");
-        spdlog::debug("865");
         // spdlog::trace("before undistored takes :{} ms\n", sdkGetTimerValue(&timer));
 #endif
 
-        if(m_cfg.undistor)
+        if(m_cfg.undistor) 
         {
             /***** cpu undistor *****/
             // cv::cvtColor(m_argb, m_ret, cv::COLOR_RGBA2RGB);
             cv::Mat tmp;
-            cv::resize(m_argb, tmp, cv::Size(m_undistoredWidth, m_undistoredHeight));
+            cv::resize(m_argb, tmp, cv::Size(m_cfg.undistoredWidth, m_cfg.undistoredHeight));
             cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
             // m_distoredImg = tmp.clone();
             // // /*undistored*********/
 
             // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
-            cv::remap(tmp, m_undistoredImg, mapx[distoredszIdx], mapy[distoredszIdx], cv::INTER_CUBIC);
+            cv::remap(tmp, m_undistoredImg, m_mapx, m_mapy, cv::INTER_CUBIC);
 
             // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
-            m_undistoredImg = m_undistoredImg(cv::Rect(rectPara[distoredszIdx][0], rectPara[distoredszIdx][1], rectPara[distoredszIdx][2], rectPara[distoredszIdx][3]));
-            cv::resize(m_undistoredImg, m_ret, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
+            m_undistoredImg = m_undistoredImg(cv::Rect(m_rectPara[0], m_rectPara[1], m_rectPara[2], m_rectPara[3]));
+            cv::resize(m_undistoredImg, m_ret, cv::Size(m_cfg.undistoredWidth, m_cfg.undistoredHeight));
             // cv::resize(m_undistoredImg, m_ret, cv::Size(m_undistoredWidth, m_undistoredHeight));
             
             /***** cpu undistor end*****/
@@ -891,7 +889,7 @@ public:
             cv::Mat tmp;
             cv::cvtColor(m_argb, tmp, cv::COLOR_RGBA2RGB);
             // cv::imwrite("b.png", tmp); 
-            cv::resize(tmp, m_ret, cv::Size(m_cfg.outPutWidth, m_cfg.outPutHeight));
+            cv::resize(tmp, m_ret, cv::Size(m_cfg.undistoredWidth, m_cfg.undistoredHeight));
             // cv::imwrite("a.png", m_ret);
         }
 

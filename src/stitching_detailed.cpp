@@ -140,7 +140,7 @@ bool try_cuda = false;
 double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
-float conf_thresh = 1.f;
+float conf_thresh = 0.7f;
 string features_type = "surf";
 string matcher_type = "homography";
 string estimator_type = "homography";
@@ -450,10 +450,10 @@ int main(int argc, char* argv[])
     // img_names.push_back("3.png");
     // img_names.push_back("4.png");
 
-    img_names.push_back("5.png");
-    img_names.push_back("6.png");
-    img_names.push_back("7.png");
-    img_names.push_back("8.png");
+    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/0.png");
+    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/1.png");
+    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/2.png");
+    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/3.png");
 
     for (int i = 0; i < num_images; ++i)
     {

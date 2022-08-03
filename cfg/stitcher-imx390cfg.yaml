@@ -12,8 +12,8 @@ distorHeight: 1080
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-outPutWidth: 960
-outPutHeight: 540
+outPutWidth: 640 # 800 # 720 #640
+outPutHeight: 360 # 450 # 405 #360
 fov: 120
 
 # camera params path
@@ -47,12 +47,12 @@ loglvl: "debug"
 # parameters for stitcher
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
-stitcherBlenderStrength: 0
+stitcherBlenderStrength: 5
 stitcherCameraExThres: 30e3
 stitcherCameraInThres: 100e3
 
 # init mode, 1:initall, 2:use default, init seam, 3:read cfg, init seam
-initMode: 1
+initMode: 2
 
 # parameters for detector
 batchSize: 1

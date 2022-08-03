@@ -348,6 +348,13 @@ int main(int argc, char *argv[])
     while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
 
+    cv::imwrite("m0.png", upImgs[0]);
+    cv::imwrite("m1.png", upImgs[1]);
+    cv::imwrite("m2.png", upImgs[2]);
+    cv::imwrite("m3.png", upImgs[3]);
+
+
+
     // return 0;
 
     // do{

@@ -59,7 +59,7 @@ encoder_capture_plane_dq_callback(struct v4l2_buffer *v4l2_buf, NvBuffer * buffe
 
 
     saved_size = GetFileSize(ctx->out_file_path);
-    spdlog::debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^size:{} ",saved_size);
+    // spdlog::debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^size:{} ",saved_size);
 
     if(saved_size>104857600 || !ctx->out_file->is_open()){ //100MB = 104857600B
         save_id ++;
@@ -218,8 +218,8 @@ void jetsonEncoder::set_defaults(context_t * ctx)
     ctx->bitrate = 2 * 1024* 1024;
     ctx->fps_n = 30;
     ctx->fps_d = 1;
-    ctx->width = 1920;
-    ctx->height = 400;
+    ctx->width = 1280;
+    ctx->height = 720;
     ctx->out_file_path = new char[256];
 }
 

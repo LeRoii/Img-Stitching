@@ -8,6 +8,8 @@
 #include "stitcherglobal.h"
 #include "helper_timer.h"
 
+#include "imageProcess.h"
+
 using namespace cv;
 
 vector<Mat> upImgs(4);
@@ -225,6 +227,8 @@ int main(int argc, char *argv[])
     // cv::VideoCapture capture("/home/nvidia/ssd/code/Img-Stitching/build/2021-11-19-16-44-28-pano.avi");
     // spdlog::warn("is open:{}", capture.isOpened());
 
+    auto nvProcessor = new imageProcessor(net, canname, batchSize);  
+
     while(1)
     {
         sdkResetTimer(&timer);
@@ -277,6 +281,8 @@ int main(int argc, char *argv[])
             if(withnum)
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
+
+        nvProcessor->publishImage(ret);
 
         spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         

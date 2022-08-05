@@ -2,7 +2,8 @@
 #include <string>
 
 std::string UDP_PORT = "9000";
-std::string UDP_SERVADD = "192.168.1.120";
+// std::string UDP_SERVADD = "192.168.1.120";
+std::string UDP_SERVADD = "127.0.0.1";
 
 //208
 // int vendor = 0;

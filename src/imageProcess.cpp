@@ -20,100 +20,6 @@ int angle_y;  //第一个目标中心坐标-角度
 
 // int n_batch = 1;
 
-targetInfo sendData;
-
-canCmd can_recv_data;
-
-void canInit()
-{
-	struct sockaddr_can addr;
-	struct ifreq ifrr;
-
-	can_socket_fd = socket(PF_CAN,SOCK_RAW,CAN_RAW);
-	strcpy(ifrr.ifr_name,CANPORT);
-	ioctl(can_socket_fd,SIOCGIFINDEX,&ifrr);
-	addr.can_family = AF_CAN;
-	addr.can_ifindex = ifrr.ifr_ifindex;
-	bind(can_socket_fd, (struct sockaddr *)&addr, sizeof(addr));
-}
-
-int canSend(std::vector<int> temp_data){
-    int length = temp_data.size()/6;
-
-
-    int turn_angle=0;  //转台角度
-    struct can_frame can_send_pos[length];
-    struct can_frame can_send_angle;
-    for(int i=0;i<length;i++){ 
-        can_send_pos[i].can_id = sendPos_id+i;
-        can_send_pos[i].can_dlc = 8;
-        can_send_pos[i].data[0]=temp_data[6*i]>>8;    //x高8位
-        can_send_pos[i].data[1]=temp_data[6*i];   //x低8位
-        can_send_pos[i].data[2]=temp_data[6*i+1]>>8;    //y高8位
-        can_send_pos[i].data[3]=temp_data[6*i+1];   //y低8位
-        can_send_pos[i].data[4]=temp_data[6*i+2]>>8;    //w高8位
-        can_send_pos[i].data[5]=temp_data[6*i+2];   //w低8位
-        can_send_pos[i].data[6]=temp_data[6*i+3]>>8;    //h高8位
-        can_send_pos[i].data[7]=temp_data[6*i+3];   //h低8位
-        nbytes = write(can_socket_fd, &can_send_pos[i], sizeof(can_send_pos[i]));        
-    }
-
-    if(length>0){
-        if(temp_data[1]+temp_data[3]/2<=280){    //上半部分
-            angle_x = (temp_data[0]+temp_data[2]/2)*1.184;  // 放大10倍，px*1800/1520  
-            angle_y = (temp_data[1]+temp_data[3]/2)*1.778;  //放大10倍，py*320/280
-        }else if(temp_data[1]+temp_data[3]/2>280){       //下半部分
-            angle_x = (temp_data[0]+temp_data[2]/2)*1.184 + 1800;  // 放大10倍，px*1800/1520 ，图像下半部分，x增180度
-            angle_y = (temp_data[1]+temp_data[3]/2-280)*1.778;  //放大10倍，(py-280)*320/280
-        }
-        can_send_angle.can_id = sendAngle_id;
-        can_send_angle.can_dlc = 8;
-        can_send_angle.data[0] = angle_x>>8;     //第一个目标中心坐标高8位（转角度）
-        can_send_angle.data[1] = angle_x;  //第一个目标中心坐标低8位（转角度）
-        can_send_angle.data[2] = angle_x>>8;     //第一个目标中心坐标高8位（转角度）
-        can_send_angle.data[3] = angle_x;  //第一个目标中心坐标低8位（转角度）
-        can_send_angle.data[4] = turn_angle>>8; //转台实际角度高8位
-        can_send_angle.data[5] = turn_angle;    //转台实际角度低8位
-        can_send_angle.data[6] = 0; 
-        can_send_angle.data[7] = 0;
-        nbytes = write(can_socket_fd, &can_send_angle, sizeof(can_send_angle));        
-    }
-}
-
-void* canRecv(void* args)
-{
-	unsigned long nbytes;
-
-    struct can_frame can_read_cmd;
-    while(1){
-        nbytes = read(can_socket_fd, &can_read_cmd, sizeof(can_read_cmd));
-        if(nbytes>0){
-            if(can_read_cmd.can_id == recvCmd1_id){
-                std::cout<<"^^^^^^^^^^^^^^^^^^^^can data recv: ";
-                for(int i =0; i<8;i++) {
-                    printf("  %x",can_read_cmd.data[i]);
-                }
-               std::cout<<" "<<std::endl;
-                can_recv_data.use_dehaze = can_read_cmd.data[0];
-                can_recv_data.use_ssr = can_read_cmd.data[1];
-                can_recv_data.bright_method = can_read_cmd.data[2];
-                can_recv_data.bright = can_read_cmd.data[3];
-                can_recv_data.contrast_method = can_read_cmd.data[4];
-                can_recv_data.contrast = can_read_cmd.data[5];
-                can_recv_data.use_flip = can_read_cmd.data[6];
-                can_recv_data.use_detect = can_read_cmd.data[7];
-            } else if(can_read_cmd.can_id == recvCmd2_id){
-                can_recv_data.use_cross = can_read_cmd.data[0];
-                can_recv_data.video_save = can_read_cmd.data[1];
-                can_recv_data.self_check = can_read_cmd.data[2];
-                can_recv_data.open_window = can_read_cmd.data[3];
-                can_recv_data.turn_ctl = can_read_cmd.data[4];
-                can_recv_data.turn_ctl_angle |= can_read_cmd.data[5]<<8;
-                can_recv_data.turn_ctl_angle |= can_read_cmd.data[6];    
-            }
-        }
-    }
-}
 
 
 cv::Mat imageProcessor::getROIimage(cv::Mat srcImg)
@@ -255,34 +161,6 @@ cv::Mat imageProcessor::processImage(std::vector<cv::Mat> &ceil_img) {
     cv::Mat roi_img1=ImageDetect(ceil_img[0], detret_left);
     cv::Mat roi_img2=ImageDetect(ceil_img[1], detret_right);
 
-    //=======get target bbox, and send it to server========//
-    sendData.target_header=0xFFEEAABB;
-    sendData.target_num = detret_left.size()/6 + detret_right.size()/6;
-    if(detret_left.size()>=6 ){
-        for(int i=0;i<detret_left.size()/6;i++){
-            sendData.target_id[i]=i;
-            sendData.target_x[i]=detret_left[6*i];
-            sendData.target_y[i]=detret_left[6*i+1];
-            sendData.target_w[i]=detret_left[6*i+2];
-            sendData.target_h[i]=detret_left[6*i+3];
-            sendData.target_class[i]=detret_left[6*i+4]; 
-            sendData.target_prob[i]=detret_left[6*i+5];
-        }
-    }
-    if(detret_right.size()>=6){
-        for(int i=0; i< detret_right.size()/6;i++){
-            sendData.target_id[i+detret_left.size()/6]=i+detret_left.size()/6;
-            sendData.target_x[i+detret_left.size()/6]=detret_right[6*i]+760;
-            sendData.target_y[i+detret_left.size()/6]=detret_right[6*i+1];
-            sendData.target_w[i+detret_left.size()/6]=detret_right[6*i+2];
-            sendData.target_h[i+detret_left.size()/6]=detret_right[6*i+3];
-            sendData.target_class[i+detret_left.size()/6]=detret_right[6*i+4]; 
-            sendData.target_prob[i+detret_left.size()/6]=detret_right[6*i+5];
-
-        } 
-    }
-
-    nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
 
     detret_all.insert(detret_all.end(),detret_left.begin(),detret_left.end());
     detret_all.insert(detret_all.end(),detret_right.begin(),detret_right.end());
@@ -329,25 +207,6 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img, std::vector<int> &detr){
     char center_str[10]={0};
     cv::Mat ret = ImageDetect(img, detr);
 
-    //=======get target bbox, and send it to server========//
-    sendData.target_header=0xFFEEAABB;
-    sendData.target_num = detr.size()/6;
-    if(detr.size()>=6 ){
-        for(int i=0;i<detr.size()/6;i++){
-            sendData.target_id[i]=i;
-            sendData.target_x[i]=detr[6*i];
-            sendData.target_y[i]=detr[6*i+1];
-            sendData.target_w[i]=detr[6*i+2];
-            sendData.target_h[i]=detr[6*i+3];
-            sendData.target_class[i]=detr[6*i+4]; 
-            sendData.target_prob[i]=detr[6*i+5];
-        }
-    }
-
-    // nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
-    // canSend(detret_all);
-    // pCanSender->sendObjDetRet(detret_all);
-
     if(detr.size()>=6){
         cv::Point p = cv::Point(detr[0]+detr[2]/2,detr[1]+detr[3]/2);
         sprintf(center_str,"%d, %d", angle_x/10, angle_y/10);
@@ -367,24 +226,6 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
     char center_str[10]={0};
     cv::Mat ret = ImageDetect(img, detr);
 
-    //=======get target bbox, and send it to server========//
-    sendData.target_header=0xFFEEAABB;
-    sendData.target_num = detr.size()/6;
-    if(detr.size()>=6 ){
-        for(int i=0;i<detr.size()/6;i++){
-            sendData.target_id[i]=i;
-            sendData.target_x[i]=detr[6*i];
-            sendData.target_y[i]=detr[6*i+1];
-            sendData.target_w[i]=detr[6*i+2];
-            sendData.target_h[i]=detr[6*i+3];
-            sendData.target_class[i]=detr[6*i+4]; 
-            sendData.target_prob[i]=detr[6*i+5];
-        }
-    }
-
-    // nvEncoder.pubTargetData(sendData);  //UDP发送目标信息
-    // canSend(detret_all);
-    // pCanSender->sendObjDetRet(detret_all);
 
     if(detr.size()>=6){
         cv::Point p = cv::Point(detr[0]+detr[2]/2,detr[1]+detr[3]/2);
@@ -400,24 +241,15 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
 
 void imageProcessor::publishImage(cv::Mat img)
 {
-
-
     cv::Mat yuvImg;
-    cv::resize(img, img, cv::Size(1920,400));
+    cv::resize(img, img, cv::Size(1280,720));
     cvtColor(img, yuvImg,CV_BGR2YUV_I420);
-
 
     // spdlog::warn("yuvImg size:{}", yuvImg.total()*yuvImg.elemSize());
 
     nvEncoder.encodeFrame(yuvImg.data); 
-
 }
 
-controlData imageProcessor::getCtlCommand(){
-    controlData ctl_data;
-    ctl_data = nvEncoder.getControlData();
-    return ctl_data;
-}
 //Init here
 imageProcessor::imageProcessor(std::string net, std::string canname, int batchsize):n_batch(batchsize) {
     pthread_t tid;

@@ -328,7 +328,6 @@ int main(int argc, char *argv[])
                                     stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
-    // ocvStitcher ostitcherDown(stitchercfg[1]);
 
     int failnum = 0;
     do{
@@ -347,36 +346,6 @@ int main(int argc, char *argv[])
     }
     while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
-
-    cv::imwrite("m0.png", upImgs[0]);
-    cv::imwrite("m1.png", upImgs[1]);
-    cv::imwrite("m2.png", upImgs[2]);
-    cv::imwrite("m3.png", upImgs[3]);
-
-
-
-    // return 0;
-
-    // do{
-    //     downImgs.clear();
-    //     for(int i=0;i<4;i++)
-    //     {
-    //         // cameras[i+4]->read_frame();
-    //         // downImgs.push_back(cameras[i+4]->m_ret);
-    //         cameras[i+4]->getFrame(downImgs[i], false);
-    //     }
-    // }
-    // while(ostitcherDown.init(downImgs, initMode) != 0);
-
-    // spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
-
-    // std::vector<std::thread> threads;
-    // for(int i=0;i<USED_CAMERA_NUM;i++)
-    //     threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    // for(auto& th:threads)
-    //     th.detach();
-
-    // imageProcessor nvProcessor(net);     //图像处理类
 
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;
@@ -403,27 +372,9 @@ int main(int argc, char *argv[])
         
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
-        /* serial execute*/
-        // LOGLN("up process %%%%%%%%%%%%%%%%%%%");
-        // ostitcherUp.process(upImgs, stitcherOut[0]);
-        // LOGLN("down process %%%%%%%%%%%%%%%%%%%");
-        // ostitcherDown.process(downImgs, stitcherOut[1]);
-        
-        // upRet = upRet(Rect(0,20,1185,200));
-        // downRet = downRet(Rect(0,25,1185,200));
-        
-        /* parallel*/
-
         std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
-        // std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
         t1.join();
-        // t2.join();
-
-        // int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        // int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
-        // upRet = stitcherOut[0](Rect(0,finalcut,width,height));
-        // downRet = stitcherOut[1](Rect(0,finalcut,width,height));
 
         cv::Mat up,down,ori;
         if(displayori)
@@ -433,13 +384,12 @@ int main(int argc, char *argv[])
             cv::vconcat(up, down, ori);
         }
 
-        // cv::vconcat(upRet, downRet, ret);
-        // cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
-
-        int cut = 35;
+        int cut = 20;
         int width = stitcherOut[0].size().width;
         int height = stitcherOut[0].size().height - cut*2;
-        ret = stitcherOut[0](Rect(0,finalcut,width,height));
+        ret = stitcherOut[0](Rect(0,cut,width,height));
+
+        // ret = stitcherOut[0];
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
 
@@ -463,15 +413,10 @@ int main(int argc, char *argv[])
             Size panoSize(ret.size().width, ret.size().height);
             Size oriSize(ori.size().width, ori.size().height);
             // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
-            panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
+           // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
+             panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('D','I','V','X'), videoFps, Size(1920,1080));
             // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
 
-            //检查是否成功创建
-            // if (!panoWriter->isOpened() || !oriWriter->isOpened())
-            // {
-            //     spdlog::critical("Can not create video file.");
-            //     return -1;
-            // }
             if (!panoWriter->isOpened())
             {
                 spdlog::critical("Can not create video file.");
@@ -482,6 +427,8 @@ int main(int argc, char *argv[])
         }
         cv::Mat final;
         renderer->render(ret, final);
+        // nvProcessor->publishImage(ret);
+        return 0;
         if(savevideo)
         {
             *panoWriter << final;
@@ -491,22 +438,13 @@ int main(int argc, char *argv[])
         spdlog::debug("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         // setMouseCallback("ret",OnMouseAction);
 
-        if(detCamNum!=0)
-        {
-            spdlog::critical("detCamNum::{}", detCamNum);
-            cv::Mat croped = cameras[detCamNum-1]->m_distoredImg(cv::Rect(640, 300, 640, 480)).clone();
-            croped = nvProcessor->ProcessOnce(croped);
-            cv::imshow("det", croped);
-        }
-
-        if(displayori)
-            cv::imshow("ori", ori);
-
-        if(saveret)
-        {
-            cv::imwrite("up.png", stitcherOut[0]);
-            cv::imwrite("down.png", stitcherOut[1]);
-        }
+        // if(detCamNum!=0)
+        // {
+        //     spdlog::critical("detCamNum::{}", detCamNum);
+        //     cv::Mat croped = cameras[detCamNum-1]->m_distoredImg(cv::Rect(640, 300, 640, 480)).clone();
+        //     croped = nvProcessor->ProcessOnce(croped);
+        //     cv::imshow("det", croped);
+        // }
 
         char c = (char)cv::waitKey(1);
         switch(c)

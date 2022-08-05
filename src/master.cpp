@@ -427,7 +427,7 @@ int main(int argc, char *argv[])
         }
         cv::Mat final;
         renderer->render(ret, final);
-        // nvProcessor->publishImage(ret);
+        // nvProcessor->publishImage(ret); 
         return 0;
         if(savevideo)
         {

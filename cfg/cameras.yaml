@@ -58,7 +58,7 @@ cameras:
   srcsz: 1920
   undistorsz: 1920
   K: [1.1,0,1.3,0,2.2,2.3,0,0,1]
-  distorParams: [0.1,0.2]
+  distorParams: [70,66,885,410]
  -
   vendor: sensing
   sensor: imx390
@@ -116,5 +116,14 @@ cameras:
   fov: 120
   srcsz: 1920
   undistorsz: 960
-  K: [1.1,0,1.3,0,2.2,2.3,0,0,1]
-  distorParams: [0.1,0.2]
+  K: [5.697254178623398e+02,0,4.829014673006656e+02,0,5.704662182576785e+02,2.533451302114767e+02,0,0,1]
+  distorParams: [-0.3892, 0.1146, 0, 0]
+  rect: [10,65,945,406]
+
+structures:
+ -
+  vendor: lijing
+  sensor: imx390
+  type: silver
+  fov: 120
+  inputsz: 640

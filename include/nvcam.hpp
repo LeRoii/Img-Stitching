@@ -760,12 +760,6 @@ public:
 
     }
 
-    int readCamParams()
-    {
-
-        return RET_OK;
-    }
-
     int createNvBuffer()
     {
         NvBufferCreateParams bufparams = {0};
@@ -876,6 +870,10 @@ public:
 
             // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
             cv::remap(tmp, m_undistoredImg, m_mapx, m_mapy, cv::INTER_CUBIC);
+
+            // cv::imwrite("un.png", m_undistoredImg);
+            // cv::imwrite("tmp.png", tmp);
+            // return 0;
 
             // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
             m_undistoredImg = m_undistoredImg(cv::Rect(m_rectPara[0], m_rectPara[1], m_rectPara[2], m_rectPara[3]));

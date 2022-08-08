@@ -1,6 +1,9 @@
 #include "nvrender.h"
 #include <chrono>
 
+static int offsetX, offsetY, h, w;
+static double fitscale;
+
 nvrender::nvrender(nvrenderCfg cfg):nvbufferWidth(cfg.bufferw), nvbufferHeight(cfg.bufferh),
 m_mode(cfg.mode)
 {
@@ -173,7 +176,7 @@ void nvrender::renderocv(cv::Mat &img, cv::Mat &final)
 {
     fit2final(img, canvas);
     cv::imshow("final", canvas);
-    final  = canvas.clone();
+    // final  = canvas.clone();
     // cv::waitKey(1);
 }
 
@@ -185,7 +188,7 @@ void nvrender::render(cv::Mat &img)
     ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
     std::string str = ss.str();
     // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-    cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
+    // cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
     cv::Mat tmp;
     if(m_mode == RENDER_EGL)
@@ -202,7 +205,7 @@ void nvrender::render(cv::Mat &img, cv::Mat &final)
     ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
     std::string str = ss.str();
     // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-    cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
+    // cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
     if(m_mode == RENDER_EGL)
         renderegl(img);
@@ -216,3 +219,8 @@ void nvrender::renderimgs(cv::Mat &img, cv::Mat &inner, int x, int y)
     render(img);
 }
 
+// void nvrender::renderWithUi(cv::Mat &pano, cv::Mat &ori)
+// {
+//     // pano.copyTo(canvas(cv::Rect(0, 10, pano.cols, pano.rows)));
+//     // ori.copyTo(canvas(cv::Rect()))
+// }

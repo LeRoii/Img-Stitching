@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
             idx = 1;
         }
         
-        ymlCameraCfg.outPutWidth = ymlCameraCfg.undistoredWidth = 1920/2;
-        ymlCameraCfg.outPutHeight = ymlCameraCfg.undistoredHeight = 1080/2;
+        // ymlCameraCfg.outPutWidth = ymlCameraCfg.undistoredWidth = 1920;
+        // ymlCameraCfg.outPutHeight = ymlCameraCfg.undistoredHeight = 1080;
     }
 
     std::string loglvl = config["loglvl"].as<string>();
@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
                 cv::putText(ret, std::to_string(idx), cv::Point(20, 20), cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(0, 255, 255), 1, 8, 0);
         }
 
-        nvProcessor->publishImage(ret);
+        // nvProcessor->publishImage(ret);
 
         spdlog::info("frame [{}], read takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         

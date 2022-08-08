@@ -7,8 +7,7 @@
 #include "spdlog/spdlog.h"
 #include "stitcherglobal.h"
 
-static int offsetX, offsetY, h, w;
-static double fitscale;
+
 class nvrender
 {
 public:

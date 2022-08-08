@@ -7,7 +7,7 @@
 #include "PracticalSocket.h"
 #include "ocvstitcher.hpp"
 #include "helper_timer.h"
-#include "nvrender.h"
+#include "nvrenderbeta.h"
 
 
 // #define CAMERA_NUM 8
@@ -158,6 +158,8 @@ int main(int argc, char *argv[])
     ymlCameraCfg.sensor = config["sensor"].as<string>();
     ymlCameraCfg.fov = config["fov"].as<int>();
 
+    int imgcut = config["imgcut"].as<int>();
+
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
     renderX = config["renderX"].as<int>();
@@ -202,7 +204,7 @@ int main(int argc, char *argv[])
         finalcut = 35;
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
-    nvrender *renderer = new nvrender(rendercfg);
+    nvrenderBeta *renderer = new nvrenderBeta(rendercfg);
 
     // stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
     //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
@@ -361,14 +363,15 @@ int main(int argc, char *argv[])
         spdlog::debug("start loop");
         sdkResetTimer(&timer);
         
-        cameras[0]->getFrame(upImgs[0], false);
+        // cameras[0]->getFrame(upImgs[0], false);
+        cameras[0]->getFrame(upImgs[0], true);
         cameras[1]->getFrame(upImgs[1], false);
         cameras[2]->getFrame(upImgs[2], false);
         cameras[3]->getFrame(upImgs[3], false);
-        // cameras[4]->getFrame(downImgs[0], false);
-        // cameras[5]->getFrame(downImgs[1], false);
-        // cameras[6]->getFrame(downImgs[2], false);
-        // cameras[7]->getFrame(downImgs[3], false);
+
+        cv::Mat oriimg = upImgs[0].clone();
+        spdlog::info("oriimg size:{},{}", oriimg.cols, oriimg.rows);
+        cv::resize(upImgs[0], upImgs[0], cv::Size(ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight));
         
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
@@ -384,10 +387,15 @@ int main(int argc, char *argv[])
             cv::vconcat(up, down, ori);
         }
 
-        int cut = 20;
+        int cut = 40;
         int width = stitcherOut[0].size().width;
         int height = stitcherOut[0].size().height - cut*2;
         ret = stitcherOut[0](Rect(0,cut,width,height));
+
+        // cv::imwrite("pano.png", ret);
+        // cv::imwrite("ori.png", oriimg);
+
+        // return 0;
 
         // ret = stitcherOut[0];
 
@@ -426,9 +434,12 @@ int main(int argc, char *argv[])
             writerInit = true;
         }
         cv::Mat final;
-        renderer->render(ret, final);
+        // renderer->render(ret);
+        // renderer->render(ret, final);
+        // renderer->render(oriimg, final);
+
+        renderer->renderWithUi(ret, oriimg);
         // nvProcessor->publishImage(ret); 
-        return 0;
         if(savevideo)
         {
             *panoWriter << final;

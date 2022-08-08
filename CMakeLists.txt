@@ -27,7 +27,7 @@ set(BUILD_slave OFF CACHE BOOL "build slave, 8 panorama slave app" FORCE)
 set(BUILD_slaveshow OFF CACHE BOOL "build BUILD_slaveshow, 11 panorama slaveshow app" FORCE)
 
 set(BUILD_sti OFF CACHE BOOL "build sti, opencv stitching test app" FORCE)
-set(BUILD_sd ON CACHE BOOL "build sd, origin opencv stitching app" FORCE)
+set(BUILD_sd OFF CACHE BOOL "build sd, origin opencv stitching app" FORCE)
 set(BUILD_mo OFF CACHE BOOL "build mo, modified opencv stitching app" FORCE)
 set(BUILD_server OFF CACHE BOOL "build server, udp server" FORCE)
 
@@ -162,8 +162,10 @@ endif()
 #-------------------------------------------------------------------------------
 # Build testocv 
 #-------------------------------------------------------------------------------
-if(BUILD_TESTOCV)
-    add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+if(BUILD_testocv)
+    add_executable(testocv src/testocv.cpp src/imageProcess.cpp src/PracticalSocket.cpp 
+    src/nvrenderbase.cpp src/nvrenderAlpha.cpp src/nvrenderbeta.cpp src/stitcherglobal.cpp 
+    ${NVENCODER_SOURCE} ${COMMONCLSFILES})
     target_link_libraries(testocv  -lyaml-cpp ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES} 
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
@@ -192,7 +194,9 @@ message(STATUS "before BUILD_master:::::::::: ${BUILD_master}")
 if(BUILD_master)
 message(STATUS "BUILD_master:::::::::: ${BUILD_master}")
 
-    add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+    add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp 
+    src/nvrenderbase.cpp src/nvrenderAlpha.cpp src/nvrenderbeta.cpp src/stitcherglobal.cpp 
+    ${NVENCODER_SOURCE} ${COMMONCLSFILES})
     target_link_libraries(master  -lyaml-cpp
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 

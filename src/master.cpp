@@ -3,7 +3,7 @@
 #include <thread>
 #include <memory>
 #include <opencv2/core/utility.hpp>
-#include "yaml-cpp/yaml.h"
+
 #include "imageProcess.h"
 #include "nvcam.hpp"
 #include "PracticalSocket.h"
@@ -345,8 +345,12 @@ int main(int argc, char *argv[])
     }
     /************************************stitch all end*****************************************/
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 1, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
-                                    stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 2, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 
+                            0, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, 
+                            stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath},
+                                    stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 
+                                    1, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, 
+                                    stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);

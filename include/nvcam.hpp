@@ -52,10 +52,13 @@
 #include <mutex>
 #include <condition_variable>
 
+#include "yaml-cpp/yaml.h"
+
 #include "NvEglRenderer.h"
 #include "NvUtils.h"
 #include "NvCudaProc.h"
 #include "nvbuf_utils.h"
+
 
 #include "camera_v4l2-cuda.h"
 #include "spdlog/spdlog.h"

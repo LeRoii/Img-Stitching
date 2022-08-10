@@ -20,6 +20,7 @@
 #include "opencv2/stitching/detail/seam_finders.hpp"
 #include "opencv2/stitching/detail/warpers.hpp"
 #include "opencv2/stitching/warpers.hpp"
+#include "yaml-cpp/yaml.h"
 
 #include "spdlog/spdlog.h"
 #include "stitcherglobal.h"
@@ -254,10 +255,37 @@ class ocvStitcher
 {
     public:
     ocvStitcher(stStitcherCfg cfg):
-    m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id),num_images(cfg.num_images), m_cfgpath(cfg.cfgPath), 
+    m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id),num_images(cfg.num_images), 
     match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
-    cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres)
+    cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres),defaultCamParams("")
     {
+        YAML::Node config = YAML::LoadFile(cfg.cfgPath);
+        m_cfgpath = config["camcfgpath"].as<string>();
+
+        auto cameraCfgYmlPath = config["cameraparams"].as<string>();
+        YAML::Node cameraCfgNode = YAML::LoadFile(cameraCfgYmlPath);
+        auto structureParams = cameraCfgNode["structures"];
+
+        for(auto sPara:structureParams)
+        {
+            if(sPara["vendor"].as<std::string>() == config["vendor"].as<string>() && \
+                sPara["sensor"].as<std::string>() == config["sensor"].as<string>() && \
+                sPara["sttype"].as<std::string>() == config["sttype"].as<string>() && \
+                sPara["undistor"].as<bool>() == config["undistor"].as<bool>() && \
+                sPara["fov"].as<int>() == config["fov"].as<int>() && \
+                sPara["inputsz"].as<int>() == config["outPutWidth"].as<int>())
+            {
+                for(auto s:sPara["params"][m_id]["cams"])
+                {
+                    defaultCamParams += s.as<std::string>()+",";
+                }
+                defaultCamParams.pop_back();
+
+                spdlog::debug("**********default stitcher camera parameters:{}**********", m_id);
+                std::cout << "defaultCamParams:" << defaultCamParams << std::endl;
+            }
+        }
+
 
         finder = makePtr<SurfFeaturesFinder>();
 
@@ -351,7 +379,7 @@ class ocvStitcher
     int useDefaultCamParams()
     {
         vector<string> res;
-        Stringsplit(camParams[m_id-1], ',', res);
+        Stringsplit(defaultCamParams, ',', res);
         spdlog::debug("useDefaultCamParams,res size:{}", res.size());
         for(int i=0;i<num_images;i++)
         {
@@ -1139,6 +1167,8 @@ class ocvStitcher
     std::string m_cfgpath;
 
     float match_conf, conf_thresh, blend_strength, cameraExThres, cameraInThres;
+
+    std::string defaultCamParams;
 
     // Ptr<Blender> blender;
 

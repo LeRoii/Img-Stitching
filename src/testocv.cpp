@@ -229,10 +229,26 @@ int main()
 
         auto p = s["params"];
 
+        // auto upp = s["params"]["up"].as<std::string>();
+
+        std::string para;
+
         std::cout << "type:" << p.Type() << std::endl;
         std::cout << "size:" << p.size() << std::endl;
-        std::cout << "up:" << s["params"]["up"] << std::endl;
+        // std::cout << "up:" << s["params"]["up"] << std::endl;
+        // std::cout << "up:" << upp << std::endl;
+        std::cout << "params type:" << s["params"].Type() << std::endl;
         // type 3 for sequence(aka array), type 2 for scalar, type 4 for map(aka dict)
+
+        std::cout << "params type:" << s["params"][0].Type() << std::endl;
+
+        for(auto s:s["params"][0]["cams"])
+        {
+            para += s.as<std::string>()+",";
+        }
+        para.pop_back();
+
+        std::cout << "para:" << para << std::endl;
     }
 
 

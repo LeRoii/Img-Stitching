@@ -142,3 +142,8 @@ make
 07.28.
 - cmakelist增加开关，支持对不同程序的编译
 - 增加基于trt8的tkdnn头文件和so
+
+08.10.
+- 标定和拼接用的相机参数写在yml中，不再hardcode
+- 增加nvrenderbase抽象类以支持不同的ui，目前还不完整
+- 增加第三方库websocketpp

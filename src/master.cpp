@@ -1,3 +1,5 @@
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
 #include <thread>
 #include <memory>
 #include <opencv2/core/utility.hpp>
@@ -7,7 +9,8 @@
 #include "PracticalSocket.h"
 #include "ocvstitcher.hpp"
 #include "helper_timer.h"
-#include "nvrenderbeta.h"
+// #include "nvrender.h"
+#include "nvrenderAlpha.h"
 
 
 // #define CAMERA_NUM 8
@@ -15,6 +18,12 @@
 // #define BUF_LEN 65540 
 
 using namespace cv;
+
+typedef websocketpp::client<websocketpp::config::asio_client> client;
+
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+using websocketpp::lib::bind;
 
 static unsigned short servPort = 10001;
 static UDPSocket sock(servPort);
@@ -159,6 +168,7 @@ int main(int argc, char *argv[])
     ymlCameraCfg.fov = config["fov"].as<int>();
 
     int imgcut = config["imgcut"].as<int>();
+    num_images = config["num_images"].as<int>();
 
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
@@ -204,7 +214,7 @@ int main(int argc, char *argv[])
         finalcut = 35;
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
-    nvrenderBeta *renderer = new nvrenderBeta(rendercfg);
+    nvrenderAlpha *renderer = new nvrenderAlpha(rendercfg);
 
     // stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
     //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
@@ -240,6 +250,15 @@ int main(int argc, char *argv[])
         th.detach();
 
     nvProcessor = new imageProcessor(net, canname, batchSize);  
+
+    client c;
+    std::string uri = "ws://localhost:9002";
+
+    c.set_access_channels(websocketpp::log::alevel::all);
+    c.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    c.clear_access_channels(websocketpp::log::alevel::frame_header);
+
+    c.init_asio();
 
     /************************************stitch all *****************************************/
     {
@@ -326,15 +345,16 @@ int main(int argc, char *argv[])
     }
     /************************************stitch all end*****************************************/
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 1,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 1, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
+                                    stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 2, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
+    ocvStitcher ostitcherDown(stitchercfg[1]);
 
     int failnum = 0;
     do{
         upImgs.clear();
-        for(int i=0;i<4;i++)
+        for(int i=0;i<num_images;i++)
         {
             cameras[i]->getFrame(upImgs[i], false);
         }
@@ -348,6 +368,23 @@ int main(int argc, char *argv[])
     }
     while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
+
+    do{
+        downImgs.clear();
+        for(int i=0;i<num_images;i++)
+        {
+            cameras[i+num_images]->getFrame(downImgs[i], false);
+        }
+
+        failnum++;
+        if(failnum > 5)
+        {
+            spdlog::warn("initalization failed due to environment, use default parameters");
+            initMode = 2;
+        }
+    }
+    while(ostitcherDown.init(downImgs, initMode) != 0);
+    spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
 	VideoWriter *panoWriter = nullptr;
 	VideoWriter *oriWriter = nullptr;
@@ -364,34 +401,42 @@ int main(int argc, char *argv[])
         sdkResetTimer(&timer);
         
         // cameras[0]->getFrame(upImgs[0], false);
-        cameras[0]->getFrame(upImgs[0], true);
+        cameras[0]->getFrame(upImgs[0], false);
         cameras[1]->getFrame(upImgs[1], false);
-        cameras[2]->getFrame(upImgs[2], false);
-        cameras[3]->getFrame(upImgs[3], false);
+        cameras[2]->getFrame(downImgs[0], false);
+        cameras[3]->getFrame(downImgs[1], false);
 
         cv::Mat oriimg = upImgs[0].clone();
         spdlog::info("oriimg size:{},{}", oriimg.cols, oriimg.rows);
-        cv::resize(upImgs[0], upImgs[0], cv::Size(ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight));
+        // cv::resize(upImgs[0], upImgs[0], cv::Size(ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight)); 
         
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
         std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
+        std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
         t1.join();
+        t2.join();
+
+        // finalcut = 0;
+        // int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
+        // int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
+        // upRet = stitcherOut[0](Rect(0,finalcut,width,height));
+        // downRet = stitcherOut[1](Rect(0,finalcut,width,height));
+
+        // upRet = stitcherOut[0](Rect(0,53,958,260));
+        // downRet = stitcherOut[1](Rect(5,80,813,206));
+        // cv::resize(downRet, downRet, cv::Size(958,260));
+
+
+        upRet = stitcherOut[0](Rect(3,58,1371,386));
+        downRet = stitcherOut[1](Rect(4,90,1205,322));
+        cv::resize(upRet, upRet, cv::Size(1205,322));
 
         cv::Mat up,down,ori;
-        if(displayori)
-        {
-            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-            cv::vconcat(up, down, ori);
-        }
 
-        int cut = 40;
-        int width = stitcherOut[0].size().width;
-        int height = stitcherOut[0].size().height - cut*2;
-        ret = stitcherOut[0](Rect(0,cut,width,height));
-
+        cv::vconcat(upRet, downRet, ret);
+  
         // cv::imwrite("pano.png", ret);
         // cv::imwrite("ori.png", oriimg);
 
@@ -400,7 +445,6 @@ int main(int argc, char *argv[])
         // ret = stitcherOut[0];
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
-
         spdlog::info("stitching takes:{} ms", sdkGetTimerValue(&timer));
 
         if(start_ssr) 
@@ -434,11 +478,11 @@ int main(int argc, char *argv[])
             writerInit = true;
         }
         cv::Mat final;
-        // renderer->render(ret);
+        renderer->render(ret);
         // renderer->render(ret, final);
         // renderer->render(oriimg, final);
 
-        renderer->renderWithUi(ret, oriimg);
+        // renderer->renderWithUi(ret, oriimg);
         // nvProcessor->publishImage(ret); 
         if(savevideo)
         {
@@ -457,38 +501,38 @@ int main(int argc, char *argv[])
         //     cv::imshow("det", croped);
         // }
 
-        char c = (char)cv::waitKey(1);
-        switch(c)
-        {
-            case 27:
-                return 0;
-            case 'e':
-                start_ssr = !start_ssr;
-                break;
-            case 'd':
-                detect = !detect;
-                break;
-            case 'v':
-                if(savevideo)
-                {
-                    panoWriter->release();
-                    // oriWriter->release();
-                    writerInit = false;
-                }
-                savevideo = !savevideo;
-                break;
-            case 'o':
-                displayori = !displayori;
-                break;
-            case 'x':
-                detCamNum = 0;
-                break;
-            case 's':
-                cv::imwrite("final.png", final);
-                break;
-            default:
-                break;
-        }
+        // char c = (char)cv::waitKey(1);
+        // switch(c)
+        // {
+        //     case 27:
+        //         return 0;
+        //     case 'e':
+        //         start_ssr = !start_ssr;
+        //         break;
+        //     case 'd':
+        //         detect = !detect;
+        //         break;
+        //     case 'v':
+        //         if(savevideo)
+        //         {
+        //             panoWriter->release();
+        //             // oriWriter->release();
+        //             writerInit = false;
+        //         }
+        //         savevideo = !savevideo;
+        //         break;
+        //     case 'o':
+        //         displayori = !displayori;
+        //         break;
+        //     case 'x':
+        //         detCamNum = 0;
+        //         break;
+        //     case 's':
+        //         cv::imwrite("final.png", final);
+        //         break;
+        //     default:
+        //         break;
+        // }
 
         spdlog::info("frame [{}], all takes:{} ms", framecnt++, sdkGetTimerValue(&timer));
     }

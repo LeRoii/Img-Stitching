@@ -1,6 +1,6 @@
 # camera vendor, 0:sensing, 1:lijing
-vendor: "lijing"
-sensor: "imx390"
+vendor: lijing
+sensor: imx390
 # camsrc is the origin size of camera, can only be 3840x2160(for imx424b) or 1920x1080(for imx390)
 camsrcwidth: 1920
 camsrcheight: 1080
@@ -12,8 +12,8 @@ distorHeight: 1080
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-outPutWidth: 640 # 800 # 720 #640
-outPutHeight: 360 # 450 # 405 #360
+outPutWidth: 960 # 800 # 720 #640
+outPutHeight: 540 # 450 # 405 #360
 fov: 120
 
 imgcut: 40
@@ -22,16 +22,16 @@ imgcut: 40
 cameraparams: "../cfg/cameras.yaml"
 
 # parameters for renderer
-renderWidth: 960
-renderHeight: 540
+renderWidth: 1280
+renderHeight: 720
 renderX: 0
 renderY: 0
-renderBufWidth: 1920
-renderBufHeight: 1080
+renderBufWidth: 1280
+renderBufHeight: 720
 # 0 for egl, 1 for opencv
 renderMode: 0
 
-num_images: 4
+num_images: 2
 
 USED_CAMERA_NUM: 4
 # netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
@@ -49,7 +49,7 @@ loglvl: "debug"
 # parameters for stitcher
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
-stitcherBlenderStrength: 3
+stitcherBlenderStrength: 1
 stitcherCameraExThres: 30e3
 stitcherCameraInThres: 100e3
 

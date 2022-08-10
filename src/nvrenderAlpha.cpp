@@ -144,18 +144,25 @@ void nvrenderAlpha::fit2final(cv::Mat &input, cv::Mat &output)
     cv::Mat tmp;
     if(!fitsizeok)
     {
+        maxHeight = 720;
+        maxWidth = 1280;
         fitscale = 1;
         if(input.cols > maxWidth)
         {
             fitscale = maxWidth * 1.0 / input.cols;
         }
+        fitscale = maxWidth * 1.0 / input.cols;
         cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
         w = tmp.cols;
         h = tmp.rows;
-        offsetX = indicatorStartX + (maxWidth - w)/2;
-        offsetY = uplongEndY + (maxHeight - h)/2;
+        // offsetX = indicatorStartX + (maxWidth - w)/2;
+        // offsetY = uplongEndY + (maxHeight - h)/2;
+        offsetX =  (maxWidth - w)/2;
+        offsetY =  (maxHeight - h)/2;
 
         fitsizeok = true;
+
+        spdlog::debug("fit2final w:{},h:{}, offsetX:{}, offsetY:{}", w, h, offsetX, offsetY);
     }
     cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
     tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));

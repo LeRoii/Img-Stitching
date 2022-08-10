@@ -170,6 +170,8 @@ int main(int argc, char *argv[])
     batchSize = config["batchSize"].as<int>();
     initMode = config["initMode"].as<int>();
 
+    num_images = config["num_images"].as<int>();
+
     std::string loglvl = config["loglvl"].as<string>();
     if(loglvl == "critical")
         spdlog::set_level(spdlog::level::critical);
@@ -222,17 +224,19 @@ int main(int argc, char *argv[])
 
 
     stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 1,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
+                                    stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 2,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
-    // ocvStitcher ostitcherDown(stitchercfg[1]);
+    ocvStitcher ostitcherDown(stitchercfg[1]);
 
     int failnum = 0;
 
-    upImgs[0] = cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/0.png");
-    upImgs[1] = cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/1.png");
-    upImgs[2] = cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/2.png");
-    upImgs[3] = cv::imread("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/3.png");
+    upImgs[0] = cv::imread("/home/nvidia/ssd/data/4cam/3/0.png");
+    upImgs[1] = cv::imread("/home/nvidia/ssd/data/4cam/3/1.png");
+
+    downImgs[0] = cv::imread("/home/nvidia/ssd/data/4cam/3/2.png");
+    downImgs[1] = cv::imread("/home/nvidia/ssd/data/4cam/3/3.png");
+
     do{
         failnum++;
         if(failnum > 5)
@@ -243,6 +247,17 @@ int main(int argc, char *argv[])
     }
     while(ostitcherUp.init(upImgs, initMode) != 0);
     spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
+    
+    do{
+        failnum++;
+        if(failnum > 5)
+        {
+            spdlog::warn("initalization failed due to environment, use default parameters");
+            initMode = 2;
+        }
+    }
+    while(ostitcherDown.init(downImgs, initMode) != 0);
+    spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
 
 	VideoWriter *panoWriter = nullptr;
@@ -282,31 +297,26 @@ int main(int argc, char *argv[])
         /* parallel*/
 
         std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
-        // std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
+        std::thread t2 = std::thread(&ocvStitcher::process, &ostitcherDown, std::ref(downImgs), std::ref(stitcherOut[1]));
 
         t1.join();
-        // t2.join();
+        t2.join();
 
-        // int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        // int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
-        // upRet = stitcherOut[0](Rect(0,finalcut,width,height));
-        // downRet = stitcherOut[1](Rect(0,finalcut,width,height));
+        finalcut = 0;
+        int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
+        int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
+        upRet = stitcherOut[0](Rect(0,finalcut,width,height));
+        downRet = stitcherOut[1](Rect(0,finalcut,width,height));
 
         cv::Mat up,down,ori;
-        if(displayori)
-        {
-            cv::hconcat(vector<cv::Mat>{upImgs[3], upImgs[2], upImgs[1], upImgs[0]}, up);
-            cv::hconcat(vector<cv::Mat>{downImgs[3], downImgs[2], downImgs[1], downImgs[0]}, down);
-            cv::vconcat(up, down, ori);
-        }
 
-        // cv::vconcat(upRet, downRet, ret);
+        cv::vconcat(upRet, downRet, ret);
         // cv::rectangle(ret, cv::Rect(0, height - 2, width, 4), cv::Scalar(0,0,0), -1, 1, 0);
 
-        int cut = 35;
-        int width = stitcherOut[0].size().width;
-        int height = stitcherOut[0].size().height - cut*2;
-        ret = stitcherOut[0](Rect(0,finalcut,width,height));
+        // int cut = 35;
+        // int width = stitcherOut[0].size().width;
+        // int height = stitcherOut[0].size().height - cut*2;
+        // ret = stitcherOut[0](Rect(0,finalcut,width,height));
 
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
 
@@ -357,9 +367,6 @@ int main(int argc, char *argv[])
         
         spdlog::debug("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
         // setMouseCallback("ret",OnMouseAction);
-
-        if(displayori)
-            cv::imshow("ori", ori);
 
         if(saveret)
         {

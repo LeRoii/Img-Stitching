@@ -11,14 +11,14 @@ set(LIB_PANO_PATCH 0)
 
 set(NVINFER_VERSION 7)
 
-set(BUILD_testocv OFF CACHE BOOL "build testocv" FORCE)
+set(BUILD_testocv ON CACHE BOOL "build testocv" FORCE)
 set(BUILD_cameracuda OFF CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
-set(BUILD_master ON CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
+set(BUILD_master OFF CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
 set(BUILD_master2 OFF CACHE BOOL "build master2, dev app for 2 cams panorama" FORCE)
 set(BUILD_replay OFF CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
 set(BUILD_replay2 OFF CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
 set(BUILD_camshow OFF CACHE BOOL "build camshow, 8 camera disp app" FORCE)
-set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
+set(BUILD_camshow4cam OFF CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
 set(BUILD_camshow_2 OFF CACHE BOOL "build camshow-2, 2 camera disp app" FORCE)
 set(BUILD_panocam OFF CACHE BOOL "build panocam, panorama so" FORCE)
 set(BUILD_demo OFF CACHE BOOL "build demo, panorama so test app" FORCE)
@@ -114,6 +114,7 @@ include_directories(
     include/nvencoder 
     /usr/src/jetson_multimedia_api/include
     /usr/src/jetson_multimedia_api/samples/common/algorithm/cuda/
+    ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/
     )
 
 if(${NVINFER_VERSION} EQUAL 7)
@@ -195,14 +196,14 @@ if(BUILD_master)
 message(STATUS "BUILD_master:::::::::: ${BUILD_master}")
 
     add_executable(master src/master.cpp src/imageProcess.cpp src/PracticalSocket.cpp 
-    src/nvrenderbase.cpp src/nvrenderAlpha.cpp src/nvrenderbeta.cpp src/stitcherglobal.cpp 
+    src/nvrenderbase.cpp src/nvrenderAlpha.cpp src/nvrender.cpp src/stitcherglobal.cpp 
     ${NVENCODER_SOURCE} ${COMMONCLSFILES})
     target_link_libraries(master  -lyaml-cpp
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
     ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS} ${CUDNN_LIBRARIES}
     -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN -lkernels 
-    
+    -lboost_system -lboost_random -lboost_thread -lpthread
     )
 endif()
 

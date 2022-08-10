@@ -1013,12 +1013,6 @@ public:
         
     }
     
-    int getStitcherInputFrame(cv::Mat &frame)
-    {
-        getFrame(frame);
-        cv::resize(frame, frame, cv::Size(m_stitcherInputWidth, m_stitcherInputHeight));
-    }
-
     void run()
 	{
         // struct pollfd fds[1];

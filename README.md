@@ -37,6 +37,7 @@ make
 - [ ] 删除没用的tkdnn头文件
 - [x] 包含的tkdnn头文件需要同时兼容tensorrt7和8
 - [ ] dev分支中删除424b相机相关的代码，相关代码保留在其余分支
+- [ ] nvrender删除cv模式，不再通过waitkey获取运行时指令
 
 
 

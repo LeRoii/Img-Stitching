@@ -80,3 +80,6 @@ float stitcherCameraInThres = 100;
 
 int batchSize = 1;
 int initMode = 1;
+
+
+std::string weburi = "";

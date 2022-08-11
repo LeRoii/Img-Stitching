@@ -60,9 +60,6 @@ struct controlData
 };
 
 
-
-
-
 class jetsonEncoder
 {
     public:

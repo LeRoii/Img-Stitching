@@ -190,11 +190,12 @@ void nvrender::render(cv::Mat &img)
     // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
     // cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
-    cv::Mat tmp;
-    if(m_mode == RENDER_EGL)
-        renderegl(img);
-    else if(m_mode == RENDER_OCV)
-        renderocv(img, tmp);
+    renderegl(img);
+    // cv::Mat tmp;
+    // if(m_mode == RENDER_EGL)
+    //     renderegl(img);
+    // else if(m_mode == RENDER_OCV)
+    //     renderocv(img, tmp);
 }
 
 void nvrender::render(cv::Mat &img, cv::Mat &final)

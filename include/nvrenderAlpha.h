@@ -19,7 +19,7 @@ public:
 private:
     cv::Mat renderegl(cv::Mat &img);
     cv::Mat renderocv(cv::Mat &img);
-    void fit2final(cv::Mat &input, cv::Mat &output);
+    cv::Mat fit2final(cv::Mat &input);
 };
 
 #endif

@@ -283,6 +283,15 @@ class ocvStitcher
 
                 spdlog::debug("**********default stitcher camera parameters:{}**********", m_id);
                 std::cout << "defaultCamParams:" << defaultCamParams << std::endl;
+
+                m_cutParams.clear();
+                for(auto s:sPara["params"][m_id]["cut"])
+                {
+                    
+                    m_cutParams.push_back(s.as<int>());
+                }
+                spdlog::debug("**********default stitcher {}, cut parameters:[{},{},{},{}]**********", m_id,
+                m_cutParams[0], m_cutParams[1], m_cutParams[2], m_cutParams[3]);
             }
         }
 
@@ -315,7 +324,7 @@ class ocvStitcher
 
     ~ocvStitcher()
     {
-
+        spdlog::warn("ocvStitcher destructor ");
     }
 
     int verifyCamParams()
@@ -1084,6 +1093,8 @@ class ocvStitcher
         blender->blend(result, result_mask);
         result.convertTo(ret, CV_8U);
 
+        ret = ret(Rect(m_cutParams[0],m_cutParams[1],m_cutParams[2],m_cutParams[3]));
+
         spdlog::debug("stitcher {} process takes : {:03.3f} ms", m_id, ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
         // imwrite("ocvprocess.png", ret);
 
@@ -1169,6 +1180,7 @@ class ocvStitcher
     float match_conf, conf_thresh, blend_strength, cameraExThres, cameraInThres;
 
     std::string defaultCamParams;
+    std::vector<int> m_cutParams;
 
     // Ptr<Blender> blender;
 

@@ -66,7 +66,7 @@ cv::Mat nvrenderAlpha::renderegl(cv::Mat &img)
 {
     cv::Mat tmp;
     cv::cvtColor(img, tmp, cv::COLOR_RGB2RGBA);
-    fit2final(tmp, canvas);
+    fit2final(tmp);
     if(0 != NvBufferMemSyncForDevice (nvbufferfd, 0, (void**)&canvas.data))
         spdlog::warn("NvBufferMemSyncForDevice failed");
     renderer->render(nvbufferfd);
@@ -76,8 +76,8 @@ cv::Mat nvrenderAlpha::renderegl(cv::Mat &img)
 
 cv::Mat nvrenderAlpha::renderocv(cv::Mat &img)
 {
-    fit2final(img, canvas);
-    cv::imshow("final", canvas);
+    // fit2final(img, canvas);
+    // cv::imshow("final", canvas);
     return canvas;
 
     // cv::waitKey(1);
@@ -93,11 +93,16 @@ cv::Mat nvrenderAlpha::render(cv::Mat &img)
     // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
     cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
-    cv::Mat tmp;
     if(m_mode == RENDER_EGL)
         return renderegl(img);
-    else if(m_mode == RENDER_OCV)
-        return renderocv(img);
+    else if(m_mode == RENDER_NONE)
+        return fit2final(img);
+
+    // cv::Mat tmp;
+    // if(m_mode == RENDER_EGL)
+    //     return renderegl(img);
+    // else if(m_mode == RENDER_OCV)
+    //     return renderocv(img);
 }
 
 // void nvrenderAlpha::render(cv::Mat &img, cv::Mat &final)
@@ -132,14 +137,15 @@ void nvrenderAlpha::renderimgs(cv::Mat &img, cv::Mat &inner, int x, int y)
     render(img);
 }
 
-void nvrenderAlpha::fit2final(cv::Mat &input, cv::Mat &output)
+cv::Mat nvrenderAlpha::fit2final(cv::Mat &input)
 {
+    
     if(input.cols == 1920 && input.rows == 1080)
     {
-        input.copyTo(output); 
-        return;
+        // input.copyTo(output); 
+        return input;
     }
-    // int offsetX, offsetY, h, w; 
+    // int offsetX, offsetY, h, w;
     static bool fitsizeok = false;
     cv::Mat tmp;
     if(!fitsizeok)
@@ -151,7 +157,7 @@ void nvrenderAlpha::fit2final(cv::Mat &input, cv::Mat &output)
         {
             fitscale = maxWidth * 1.0 / input.cols;
         }
-        fitscale = maxWidth * 1.0 / input.cols;
+        // fitscale = maxWidth * 1.0 / input.cols;
         cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
         w = tmp.cols;
         h = tmp.rows;
@@ -165,5 +171,7 @@ void nvrenderAlpha::fit2final(cv::Mat &input, cv::Mat &output)
         spdlog::debug("fit2final w:{},h:{}, offsetX:{}, offsetY:{}", w, h, offsetX, offsetY);
     }
     cv::resize(input, tmp, cv::Size(), fitscale, fitscale);
-    tmp.copyTo(output(cv::Rect(offsetX, offsetY, w, h)));
+    tmp.copyTo(canvas(cv::Rect(offsetX, offsetY, w, h)));
+
+    return canvas;
 }

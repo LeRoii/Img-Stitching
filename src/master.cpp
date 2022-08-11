@@ -1,5 +1,4 @@
-#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/client.hpp>
+
 #include <thread>
 #include <memory>
 #include <opencv2/core/utility.hpp>
@@ -19,11 +18,9 @@
 
 using namespace cv;
 
-typedef websocketpp::client<websocketpp::config::asio_client> client;
 
-using websocketpp::lib::placeholders::_1;
-using websocketpp::lib::placeholders::_2;
-using websocketpp::lib::bind;
+
+
 
 static unsigned short servPort = 10001;
 static UDPSocket sock(servPort);
@@ -35,7 +32,6 @@ vector<Mat> downImgs(4);
 vector<Mat> stitcherOut(2);
 Mat upRet, downRet, ret;
 int framecnt = 0;
-
 
 bool saveret = false;
 bool detect = false;
@@ -205,6 +201,8 @@ int main(int argc, char *argv[])
     else
         spdlog::set_level(spdlog::level::debug);
 
+    weburi = config["websocketurl"].as<string>();
+
     int finalcut = 15;
     if(stitcherinputWidth == 480)
         finalcut = 15;
@@ -251,14 +249,6 @@ int main(int argc, char *argv[])
 
     nvProcessor = new imageProcessor(net, canname, batchSize);  
 
-    client c;
-    std::string uri = "ws://localhost:9002";
-
-    c.set_access_channels(websocketpp::log::alevel::all);
-    c.clear_access_channels(websocketpp::log::alevel::frame_payload);
-    c.clear_access_channels(websocketpp::log::alevel::frame_header);
-
-    c.init_asio();
 
     /************************************stitch all *****************************************/
     {
@@ -422,24 +412,11 @@ int main(int argc, char *argv[])
         t1.join();
         t2.join();
 
-        // finalcut = 0;
-        // int width = min(stitcherOut[0].size().width, stitcherOut[1].size().width);
-        // int height = min(stitcherOut[0].size().height, stitcherOut[1].size().height) - finalcut*2;
-        // upRet = stitcherOut[0](Rect(0,finalcut,width,height));
-        // downRet = stitcherOut[1](Rect(0,finalcut,width,height));
-
-        // upRet = stitcherOut[0](Rect(0,53,958,260));
-        // downRet = stitcherOut[1](Rect(5,80,813,206));
-        // cv::resize(downRet, downRet, cv::Size(958,260));
-
-
-        upRet = stitcherOut[0](Rect(3,58,1371,386));
-        downRet = stitcherOut[1](Rect(4,90,1205,322));
-        cv::resize(upRet, upRet, cv::Size(1205,322));
+        cv::resize(stitcherOut[0], stitcherOut[0], stitcherOut[1].size());
 
         cv::Mat up,down,ori;
 
-        cv::vconcat(upRet, downRet, ret);
+        cv::vconcat(stitcherOut[0], stitcherOut[1], ret);
   
         // cv::imwrite("pano.png", ret);
         // cv::imwrite("ori.png", oriimg);
@@ -482,12 +459,13 @@ int main(int argc, char *argv[])
             writerInit = true;
         }
         cv::Mat final;
-        renderer->render(ret);
+        final = renderer->render(ret);
         // renderer->render(ret, final);
         // renderer->render(oriimg, final);
 
         // renderer->renderWithUi(ret, oriimg);
-        // nvProcessor->publishImage(ret); 
+        nvProcessor->publishImage(final); 
+
         if(savevideo)
         {
             *panoWriter << final;

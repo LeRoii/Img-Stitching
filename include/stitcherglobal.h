@@ -7,6 +7,7 @@ const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 // const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
 const int RENDER_EGL = 0;
 const int RENDER_OCV = 1;
+const int RENDER_NONE = 2;
 const int CAMERA_NUM = 8;
 const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
 const int RET_OK = 0;
@@ -38,6 +39,7 @@ extern int renderMode;
 
 extern std::string UDP_PORT;
 extern std::string UDP_SERVADD;
+extern std::string weburi;
 
 // output render buffer, in general it's fixed
 extern int renderBufWidth; 

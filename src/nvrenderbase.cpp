@@ -38,6 +38,12 @@ nvbufferWidth(cfg.bufferw), nvbufferHeight(cfg.bufferh),m_mode(cfg.mode)
         // cv::moveWindow("input",0,0);
         // cv::setWindowProperty("input", CV_WINDOW_FULLSCREEN, CV_WINDOW_FULLSCREEN);
     }
+    else if(cfg.mode == RENDER_NONE)
+    {
+        canvas = cv::Mat(cfg.bufferh, cfg.bufferw, CV_8UC3);
+        canvas.setTo(0);
+        return;
+    }
 
     spdlog::debug("renderbase ctor cplt");
 }

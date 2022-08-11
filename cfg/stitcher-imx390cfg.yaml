@@ -23,14 +23,14 @@ imgcut: 40
 cameraparams: "../cfg/cameras.yaml"
 
 # parameters for renderer
-renderWidth: 1280
-renderHeight: 720
+renderWidth: 128
+renderHeight: 72
 renderX: 0
 renderY: 0
 renderBufWidth: 1280
 renderBufHeight: 720
-# 0 for egl, 1 for opencv
-renderMode: 0
+# 0 for egl, 1 for opencv, 2 for no display
+renderMode: 2
 
 num_images: 2
 
@@ -50,7 +50,7 @@ loglvl: "debug"
 # parameters for stitcher
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
-stitcherBlenderStrength: 1
+stitcherBlenderStrength: 0
 stitcherCameraExThres: 30e3
 stitcherCameraInThres: 100e3
 
@@ -59,3 +59,6 @@ initMode: 2
 
 # parameters for detector
 batchSize: 1
+
+# websocket dst url
+websocketurl: "ws://192.168.168.171:9002" # "ws://localhost:9002"

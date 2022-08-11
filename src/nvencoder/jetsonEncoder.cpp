@@ -1,11 +1,24 @@
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
+
 #include "jetsonEncoder.h"
 #include "udp_publisher.h"
 #include <chrono>
 #include <iomanip>
 #include "spdlog/spdlog.h"
+#include "stitcherglobal.h"
+
 
 udp_publisher::UdpPublisher udp_pub;
+typedef websocketpp::client<websocketpp::config::asio_client> client;
 
+using websocketpp::lib::placeholders::_1;
+using websocketpp::lib::placeholders::_2;
+using websocketpp::lib::bind;
+
+client c;
+client::connection_ptr con;
+websocketpp::connection_hdl hdl;
 
 int save_id = 0;
 
@@ -80,7 +93,8 @@ encoder_capture_plane_dq_callback(struct v4l2_buffer *v4l2_buf, NvBuffer * buffe
         TEST_ERROR(!ctx->out_file->is_open(), "Could not open output file");
     }
 
-    write_encoder_output_frame(ctx->out_file, buffer);
+    // write_encoder_output_frame(ctx->out_file, buffer);
+    c.send(hdl, buffer->planes[0].data, buffer->planes[0].bytesused, websocketpp::frame::opcode::binary);
 
     /* qBuffer on the capture plane */
     if (enc->capture_plane.qBuffer(*v4l2_buf, NULL) < 0)
@@ -202,11 +216,37 @@ jetsonEncoder::jetsonEncoder()
         }
     }
 
+    // websocket init
     
+    // std::string uri = "ws://localhost:9002";
+
+    c.set_access_channels(websocketpp::log::alevel::all);
+    c.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    c.clear_access_channels(websocketpp::log::alevel::frame_header);
+
+    c.init_asio();
+
+    websocketpp::lib::error_code ec;
+    con = c.get_connection(weburi, ec);
+    con->add_subprotocol("janus-protocol");
+    if(ec)
+    {
+        spdlog::warn("could not create connection because:{}", ec.message());
+    }
+
+    hdl = con->get_handle();
+    c.connect(con);
+    std::thread th(&client::run, &c);
+    th.detach();
+    sleep(3);
+    c.send(hdl, "hello", websocketpp::frame::opcode::text);
+    // c.close(hdl, websocketpp::close::status::normal, "");
 }
 
 jetsonEncoder::~jetsonEncoder()
 {
+    spdlog::warn("jetsonEncoder destructor ");
+    c.close(hdl, websocketpp::close::status::normal, "");
     if(ctx.enc)
         delete ctx.enc;
 }

@@ -33,7 +33,7 @@ int save_id = 0;
 static int write_encoder_output_frame(ofstream * stream, NvBuffer * buffer)
 {
     stream->write((char *) buffer->planes[0].data, buffer->planes[0].bytesused);
-    udp_pub.sendimage(buffer->planes[0].data,buffer->planes[0].bytesused);
+    // udp_pub.sendimage(buffer->planes[0].data,buffer->planes[0].bytesused);
     // char *socketData;
     // udp_pub.getSocketData(socketData);
     // printf("get Data: %s\n",socketData);
@@ -74,24 +74,24 @@ encoder_capture_plane_dq_callback(struct v4l2_buffer *v4l2_buf, NvBuffer * buffe
     saved_size = GetFileSize(ctx->out_file_path);
     // spdlog::debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^size:{} ",saved_size);
 
-    if(saved_size>104857600 || !ctx->out_file->is_open()){ //100MB = 104857600B
-        save_id ++;
-        sprintf(str, "/home/nvidia/out_%d.h264", save_id);
+    // if(saved_size>104857600 || !ctx->out_file->is_open()){ //100MB = 104857600B
+    //     save_id ++;
+    //     sprintf(str, "/home/nvidia/out_%d.h264", save_id);
 
-        std::time_t tt = std::chrono::system_clock::to_time_t (std::chrono::system_clock::now());
-        std::stringstream ss;
-        ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
-        std::string str = "/home/nvidia/"+ss.str()+".h264";
-        ss.str("");
-        ss << str;
-        ss >> ctx->out_file_path;
-        // ctx->out_file_path = str.c_str();
+    //     std::time_t tt = std::chrono::system_clock::to_time_t (std::chrono::system_clock::now());
+    //     std::stringstream ss;
+    //     ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
+    //     std::string str = "/home/nvidia/"+ss.str()+".h264";
+    //     ss.str("");
+    //     ss << str;
+    //     ss >> ctx->out_file_path;
+    //     // ctx->out_file_path = str.c_str();
 
-        // ctx->out_file_path = str;
-        spdlog::debug("The video save to a new file!");
-        ctx->out_file = new ofstream(ctx->out_file_path);
-        TEST_ERROR(!ctx->out_file->is_open(), "Could not open output file");
-    }
+    //     // ctx->out_file_path = str;
+    //     spdlog::debug("The video save to a new file!");
+    //     ctx->out_file = new ofstream(ctx->out_file_path);
+    //     TEST_ERROR(!ctx->out_file->is_open(), "Could not open output file");
+    // }
 
     // write_encoder_output_frame(ctx->out_file, buffer);
     c.send(hdl, buffer->planes[0].data, buffer->planes[0].bytesused, websocketpp::frame::opcode::binary);
@@ -239,7 +239,7 @@ jetsonEncoder::jetsonEncoder()
     std::thread th(&client::run, &c);
     th.detach();
     sleep(3);
-    c.send(hdl, "hello", websocketpp::frame::opcode::text);
+    // c.send(hdl, "hello", websocketpp::frame::opcode::text);
     // c.close(hdl, websocketpp::close::status::normal, "");
 }
 
@@ -334,26 +334,9 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
         //return cleanup(ctx, 1);
     }
 
-
     frame_count++;
     return ret;
 }
 
-
- int jetsonEncoder::pubTargetData(targetInfo  target_data){
-
-    int needSendlen = sizeof(target_data);
-#if DEV_MODE
-    cerr<<"send Data length:"<<needSendlen<<endl;
-#endif
-    udp_pub.sendData(target_data,needSendlen);
- }
-
- controlData  jetsonEncoder::getControlData(){
-    controlData ctl_data;
-    ctl_data = udp_pub.recvData();
-    return ctl_data;
- }
- 
 
 

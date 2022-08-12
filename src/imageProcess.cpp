@@ -243,6 +243,7 @@ void imageProcessor::publishImage(cv::Mat img)
 {
     cv::Mat yuvImg;
     cv::resize(img, img, cv::Size(1280,720));
+
     cvtColor(img, yuvImg,CV_BGR2YUV_I420);
 
     // spdlog::warn("yuvImg size:{}", yuvImg.total()*yuvImg.elemSize());

@@ -7,7 +7,7 @@ static double fitscale;
 
 nvrenderAlpha::nvrenderAlpha(const nvrenderCfg &cfg):nvrenderbase(cfg)
 {
-    drawIndicator();
+    // drawIndicator();
 }
 
 nvrenderAlpha::~nvrenderAlpha()

@@ -120,40 +120,6 @@ namespace udp_publisher
 
   }
   
-  void UdpPublisher::sendData(targetInfo data,int length)
-  {
-    struct sockaddr_in send_addr;
-    memset(&send_addr,0,sizeof(struct sockaddr_in));
-    send_addr.sin_family = AF_INET;
-    send_addr.sin_port = htons(9999);
-    send_addr.sin_addr.s_addr = inet_addr("192.168.1.103");
-
-#if DEV_MODE
-		printf("Enter data to send:");
-#endif
-
-    if(sendto(m_sockfd,(targetInfo*)&data,length,0,(sockaddr *)&send_addr,sizeof(send_addr)) <= 0)
-    {
-      printf("send data error");
-    }
-		
-  }
-
-
-  controlData UdpPublisher::recvData()
-  {
-    controlData data;
-		printf("\n ~~~~~~~~~~~Enter data to recv:  ");
-
-    if(  recvfrom(m_sockfd, (controlData*)&data, sizeof(data), 0, (struct sockaddr *)&local_addr, (socklen_t *)&len) <= 0)
-    {
-      printf("recv data error");
-    } 
-    return data;
-  }
- 
-
-
   UdpPublisher::~UdpPublisher(void)
   {
     (void)close(m_sockfd);

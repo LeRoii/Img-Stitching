@@ -26,8 +26,6 @@ namespace udp_publisher
       UdpPublisher();
       ~UdpPublisher();
       void sendimage(unsigned char* image, int length);
-      void sendData(targetInfo data,int length);
-      controlData recvData();
       void setAddr();
 
     private:

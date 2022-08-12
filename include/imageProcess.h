@@ -41,7 +41,6 @@ class imageProcessor
     cv::Mat ProcessOnce(cv::Mat &img);
     void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
     cv::Mat SSR(cv::Mat input);     //图像增强
-    controlData getCtlCommand();    //UDP通讯获得上位机控制命令
     cv::Mat ImageDetect(cv::Mat &img, std::vector<int> &detret);     //目标检测
     void ImageDetect(std::vector<cv::Mat> &imgs, std::vector<std::vector<int>> &detret);
 

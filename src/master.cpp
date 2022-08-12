@@ -202,6 +202,7 @@ int main(int argc, char *argv[])
         spdlog::set_level(spdlog::level::debug);
 
     weburi = config["websocketurl"].as<string>();
+    bool websocketOn = config["websocketOn"].as<bool>();
 
     int finalcut = 15;
     if(stitcherinputWidth == 480)
@@ -400,8 +401,8 @@ int main(int argc, char *argv[])
         cameras[2]->getFrame(downImgs[0], false);
         cameras[3]->getFrame(downImgs[1], false);
 
-        cv::Mat oriimg = upImgs[0].clone();
-        spdlog::info("oriimg size:{},{}", oriimg.cols, oriimg.rows);
+        // cv::Mat oriimg = upImgs[0].clone();
+        // spdlog::info("oriimg size:{},{}", oriimg.cols, oriimg.rows);
         // cv::resize(upImgs[0], upImgs[0], cv::Size(ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight)); 
         
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
@@ -411,6 +412,7 @@ int main(int argc, char *argv[])
 
         t1.join();
         t2.join();
+        spdlog::info("stitching takes:{} ms", sdkGetTimerValue(&timer));
 
         cv::resize(stitcherOut[0], stitcherOut[0], stitcherOut[1].size());
 
@@ -418,103 +420,55 @@ int main(int argc, char *argv[])
 
         cv::vconcat(stitcherOut[0], stitcherOut[1], ret);
   
-        // cv::imwrite("pano.png", ret);
-        // cv::imwrite("ori.png", oriimg);
-
-        // return 0;
-
-        // ret = stitcherOut[0];
-
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
-        spdlog::info("stitching takes:{} ms", sdkGetTimerValue(&timer));
+        spdlog::info("concat takes:{} ms", sdkGetTimerValue(&timer));
 
-        if(start_ssr) 
-            ret = nvProcessor->SSR(ret);
+        // if(start_ssr) 
+        //     ret = nvProcessor->SSR(ret);
 
-        if(detect)
-        {
-            ret = nvProcessor->ProcessOnce(ret);
-            spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
-        }
+        // if(detect)
+        // {
+        //     ret = nvProcessor->ProcessOnce(ret);
+        //     spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
+        // }
 
-        if(!writerInit && savevideo)
-        {
-            std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-            struct std::tm * ptm = std::localtime(&tt);
-            stringstream sstr;
-            sstr << std::put_time(ptm,"%F-%H-%M-%S");
-            Size panoSize(ret.size().width, ret.size().height);
-            Size oriSize(ori.size().width, ori.size().height);
-            // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
-           // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
-             panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('D','I','V','X'), videoFps, Size(1920,1080));
-            // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
+        // if(!writerInit && savevideo)
+        // {
+        //     std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
+        //     struct std::tm * ptm = std::localtime(&tt);
+        //     stringstream sstr;
+        //     sstr << std::put_time(ptm,"%F-%H-%M-%S");
+        //     Size panoSize(ret.size().width, ret.size().height);
+        //     Size oriSize(ori.size().width, ori.size().height);
+        //     // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
+        //    // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
+        //      panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('D','I','V','X'), videoFps, Size(1920,1080));
+        //     // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
 
-            if (!panoWriter->isOpened())
-            {
-                spdlog::critical("Can not create video file.");
-                return -1;
-            }
+        //     if (!panoWriter->isOpened())
+        //     {
+        //         spdlog::critical("Can not create video file.");
+        //         return -1;
+        //     }
 
-            writerInit = true;
-        }
+        //     writerInit = true;
+        // }
         cv::Mat final;
         final = renderer->render(ret);
         // renderer->render(ret, final);
         // renderer->render(oriimg, final);
 
         // renderer->renderWithUi(ret, oriimg);
-        nvProcessor->publishImage(final); 
+        if(websocketOn)
+            nvProcessor->publishImage(final); 
 
-        if(savevideo)
-        {
-            *panoWriter << final;
-            // *oriWriter << ori;
-        }
+        // if(savevideo)
+        // {
+        //     *panoWriter << final;
+        //     // *oriWriter << ori;
+        // }
         
         spdlog::debug("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
-        // setMouseCallback("ret",OnMouseAction);
-
-        // if(detCamNum!=0)
-        // {
-        //     spdlog::critical("detCamNum::{}", detCamNum);
-        //     cv::Mat croped = cameras[detCamNum-1]->m_distoredImg(cv::Rect(640, 300, 640, 480)).clone();
-        //     croped = nvProcessor->ProcessOnce(croped);
-        //     cv::imshow("det", croped);
-        // }
-
-        // char c = (char)cv::waitKey(1);
-        // switch(c)
-        // {
-        //     case 27:
-        //         return 0;
-        //     case 'e':
-        //         start_ssr = !start_ssr;
-        //         break;
-        //     case 'd':
-        //         detect = !detect;
-        //         break;
-        //     case 'v':
-        //         if(savevideo)
-        //         {
-        //             panoWriter->release();
-        //             // oriWriter->release();
-        //             writerInit = false;
-        //         }
-        //         savevideo = !savevideo;
-        //         break;
-        //     case 'o':
-        //         displayori = !displayori;
-        //         break;
-        //     case 'x':
-        //         detCamNum = 0;
-        //         break;
-        //     case 's':
-        //         cv::imwrite("final.png", final);
-        //         break;
-        //     default:
-        //         break;
-        // }
 
         spdlog::info("frame [{}], all takes:{} ms", framecnt++, sdkGetTimerValue(&timer));
     }

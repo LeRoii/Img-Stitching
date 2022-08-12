@@ -13,8 +13,8 @@ distorHeight: 1080
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-outPutWidth: 960 # 800 # 720 #640
-outPutHeight: 540 # 450 # 405 #360
+outPutWidth: 720 # 800 # 720 #640
+outPutHeight: 405 # 450 # 405 #360
 fov: 120
 
 imgcut: 40
@@ -23,13 +23,13 @@ imgcut: 40
 cameraparams: "../cfg/cameras.yaml"
 
 # parameters for renderer
-renderWidth: 128
-renderHeight: 72
+renderWidth: 1280
+renderHeight: 720
 renderX: 0
 renderY: 0
 renderBufWidth: 1280
 renderBufHeight: 720
-# 0 for egl, 1 for opencv, 2 for no display
+# 0 for egl, 1 for opencv(deprecated), 2 for no display
 renderMode: 2
 
 num_images: 2
@@ -61,4 +61,6 @@ initMode: 2
 batchSize: 1
 
 # websocket dst url
-websocketurl: "ws://192.168.168.171:9002" # "ws://localhost:9002"
+# websocketurl: "ws://192.168.168.171:9002" # "ws://localhost:9002"
+websocketurl: "ws://localhost:9002"
+websocketOn: true

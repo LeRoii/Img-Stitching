@@ -648,7 +648,7 @@ public:
         m_cameraK = cv::Mat(3, 3, CV_64FC1);
         m_cameraDistorParams = cv::Mat(1, 4, CV_64FC1);
 
-        spdlog::debug("camsrcwidth:{},camsrcheight:{},distorWidth:{},distorHeight:{},\
+        spdlog::debug("************nvCam constructor************\n camsrcwidth:{},camsrcheight:{},distorWidth:{},distorHeight:{},\
         undistorWidth:{},undistorHeight:{},outPutWidth{},outPutHeight:{}",m_cfg.camSrcWidth,\
         m_cfg.camSrcHeight, m_cfg.distoredWidth, m_cfg.distoredHeight, m_cfg.undistoredWidth,\
         m_cfg.undistoredHeight, m_cfg.outPutWidth, m_cfg.outPutHeight);
@@ -661,12 +661,12 @@ public:
         try {
             config = YAML::LoadFile(cameracfgPath);
         } catch (YAML::ParserException &ex) {
-            spdlog::critical("camera cfg yaml parse failed:{}, can't undistor camera", ex.what());
+            spdlog::critical("camera cfg yaml:{}  parse failed:{}, can't undistor camera", cameracfgPath, ex.what());
             m_cfg.undistor = false;
             // std::cerr << "!! config parse failed: " << ex.what() << std::endl;
             // exit(-1);
         } catch (YAML::BadFile &ex) {
-            spdlog::critical("camera cfg yaml load failed:{}, can't undistor camera", ex.what());
+            spdlog::critical("camera cfg yaml:{} load failed:{}, can't undistor camera", cameracfgPath, ex.what());
             m_cfg.undistor = false;
             // std::cerr << "!! config load failed: " << ex.what() << std::endl;
             // exit(-1);
@@ -760,6 +760,7 @@ public:
         sdkStartTimer(&timer);
 
         spdlog::debug("camera init complete");
+        return RET_OK;
 
     }
 
@@ -877,7 +878,7 @@ public:
             // cv::imwrite("un.png", m_undistoredImg);
             // cv::imwrite("tmp.png", tmp);
             // return 0;
-
+            // m_ret = m_undistoredImg;
             // spdlog::trace("read frame before cut and resize takes :{} ms", sdkGetTimerValue(&timer));
             m_undistoredImg = m_undistoredImg(cv::Rect(m_rectPara[0], m_rectPara[1], m_rectPara[2], m_rectPara[3]));
             cv::resize(m_undistoredImg, m_ret, cv::Size(m_cfg.undistoredWidth, m_cfg.undistoredHeight));

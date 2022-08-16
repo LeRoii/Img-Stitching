@@ -220,25 +220,25 @@ jetsonEncoder::jetsonEncoder()
     
     // std::string uri = "ws://localhost:9002";
 
-    c.set_access_channels(websocketpp::log::alevel::all);
-    c.clear_access_channels(websocketpp::log::alevel::frame_payload);
-    c.clear_access_channels(websocketpp::log::alevel::frame_header);
+    // c.set_access_channels(websocketpp::log::alevel::all);
+    // c.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    // c.clear_access_channels(websocketpp::log::alevel::frame_header);
 
-    c.init_asio();
+    // c.init_asio();
 
-    websocketpp::lib::error_code ec;
-    con = c.get_connection(weburi, ec);
-    con->add_subprotocol("janus-protocol");
-    if(ec)
-    {
-        spdlog::warn("could not create connection because:{}", ec.message());
-    }
+    // websocketpp::lib::error_code ec;
+    // con = c.get_connection(weburi, ec);
+    // con->add_subprotocol("janus-protocol");
+    // if(ec)
+    // {
+    //     spdlog::warn("could not create connection because:{}", ec.message());
+    // }
 
-    hdl = con->get_handle();
-    c.connect(con);
-    std::thread th(&client::run, &c);
-    th.detach();
-    sleep(3);
+    // hdl = con->get_handle();
+    // c.connect(con);
+    // std::thread th(&client::run, &c);
+    // th.detach();
+    // sleep(3);
     // c.send(hdl, "hello", websocketpp::frame::opcode::text);
     // c.close(hdl, websocketpp::close::status::normal, "");
 }

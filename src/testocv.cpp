@@ -212,48 +212,48 @@
 // }
 
 /********* test yaml *********/
-#include <iostream>
-#include "yaml-cpp/yaml.h"
+// #include <iostream>
+// #include "yaml-cpp/yaml.h"
 
-int main()
-{
-    YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/Img-Stitching/cfg/cameras.yaml");
-    auto st = config["structures"];
-    for(auto s:st)
-    {
-        auto vendor = s["vendor"].as<std::string>();
-        auto sensor = s["sensor"].as<std::string>();
-        auto sttype = s["sttype"].as<std::string>();
-        auto fov = s["fov"].as<int>();
-        auto inputsz = s["inputsz"].as<int>();
+// int main()
+// {
+//     YAML::Node config = YAML::LoadFile("/home/nvidia/ssd/code/Img-Stitching/cfg/cameras.yaml");
+//     auto st = config["structures"];
+//     for(auto s:st)
+//     {
+//         auto vendor = s["vendor"].as<std::string>();
+//         auto sensor = s["sensor"].as<std::string>();
+//         auto sttype = s["sttype"].as<std::string>();
+//         auto fov = s["fov"].as<int>();
+//         auto inputsz = s["inputsz"].as<int>();
 
-        auto p = s["params"];
+//         auto p = s["params"];
 
-        // auto upp = s["params"]["up"].as<std::string>();
+//         // auto upp = s["params"]["up"].as<std::string>();
 
-        std::string para;
+//         std::string para;
 
-        std::cout << "type:" << p.Type() << std::endl;
-        std::cout << "size:" << p.size() << std::endl;
-        // std::cout << "up:" << s["params"]["up"] << std::endl;
-        // std::cout << "up:" << upp << std::endl;
-        std::cout << "params type:" << s["params"].Type() << std::endl;
-        // type 3 for sequence(aka array), type 2 for scalar, type 4 for map(aka dict)
+//         std::cout << "type:" << p.Type() << std::endl;
+//         std::cout << "size:" << p.size() << std::endl;
+//         // std::cout << "up:" << s["params"]["up"] << std::endl;
+//         // std::cout << "up:" << upp << std::endl;
+//         std::cout << "params type:" << s["params"].Type() << std::endl;
+//         // type 3 for sequence(aka array), type 2 for scalar, type 4 for map(aka dict)
 
-        std::cout << "params type:" << s["params"][0].Type() << std::endl;
+//         std::cout << "params type:" << s["params"][0].Type() << std::endl;
 
-        for(auto s:s["params"][0]["cams"])
-        {
-            para += s.as<std::string>()+",";
-        }
-        para.pop_back();
+//         for(auto s:s["params"][0]["cams"])
+//         {
+//             para += s.as<std::string>()+",";
+//         }
+//         para.pop_back();
 
-        std::cout << "para:" << para << std::endl;
-    }
+//         std::cout << "para:" << para << std::endl;
+//     }
 
 
-    return 0;
-}
+//     return 0;
+// }
 
 /********* test nvidia timer *********/
 // #include <unistd.h> //sleep usleep
@@ -1018,95 +1018,95 @@ int main()
 // }
 
 /********* test opencv copyTo *********/
-// #include <opencv2/opencv.hpp>
-// #include "nvrenderAlpha.h"
-// #include "nvrenderbeta.h"
+#include <opencv2/opencv.hpp>
+#include "nvrenderAlpha.h"
+#include "nvrenderbeta.h"
 
-// int main()
-// {
-//     cv::Mat pano = cv::imread("pano.png");
-//     cv::Mat ori = cv::imread("ori.png");
+int main()
+{
+    // cv::Mat pano = cv::imread("pano.png");
+    // cv::Mat ori = cv::imread("ori.png");
 
-//     cv::resize(ori, ori, cv::Size(640, 360));
+    // cv::resize(ori, ori, cv::Size(640, 360));
 
-//     cv::Mat ret = cv::Mat(720, 1280, CV_8UC3);
-//     ret.setTo(0);
+    cv::Mat ret = cv::Mat(720, 1280, CV_8UC3);
+    ret.setTo(0);
 
-//     int indicatorStartX = 10;
-//     int longStartX = 0;
-//     int uplongStartY = 20;
-//     int uplongLen = 20;
-//     int upshortLen = 10;
-//     int uplongEndY = uplongStartY + uplongLen;
-//     int upshortEndY = uplongStartY + upshortLen;
-//     double fontScale = 0.5;
-//     int lineSickness = 2;
-//     int fontSickness = 1;
-//     int longStep = 70;
-//     int shortStep = longStep/5;
-//     cv::Scalar color = cv::Scalar(5, 217, 82 );
-//     for(int i=0;i<19;i++)
-//     {
-//         longStartX = indicatorStartX+i*longStep;
-//         cv::line(ret, cv::Point(longStartX, uplongStartY), cv::Point(longStartX, uplongEndY), color, lineSickness);
-//         if(i==0)
-//             cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-5, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-//         else
-//             cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-//         if(i == 18)
-//             continue;
-//         for(int j=0;j<4;j++)
-//             cv::line(ret, cv::Point(longStartX+shortStep*(1+j), uplongStartY), cv::Point(longStartX+shortStep*(1+j), upshortEndY), color, lineSickness);
-//     }
+    int indicatorStartX = 10;
+    int longStartX = 0;
+    int uplongStartY = 100;
+    int uplongLen = 20;
+    int upshortLen = 10;
+    int uplongEndY = uplongStartY + uplongLen;
+    int upshortEndY = uplongStartY + upshortLen;
+    double fontScale = 0.5;
+    int lineSickness = 2;
+    int fontSickness = 1;
+    int longStep = 70;
+    int shortStep = longStep/5;
+    cv::Scalar color = cv::Scalar(5, 217, 82 );
+    for(int i=0;i<19;i++)
+    {
+        longStartX = indicatorStartX+i*longStep;
+        cv::line(ret, cv::Point(longStartX, uplongStartY), cv::Point(longStartX, uplongEndY), color, lineSickness);
+        if(i==0)
+            cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-5, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        else
+            cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        if(i == 18)
+            continue;
+        for(int j=0;j<4;j++)
+            cv::line(ret, cv::Point(longStartX+shortStep*(1+j), uplongStartY), cv::Point(longStartX+shortStep*(1+j), upshortEndY), color, lineSickness);
+    }
 
-//     int panoMargin = 5;
-//     int panoHeight = 240;
-//     int panoWidth = longStep*18;
-//     int downlongStartY = uplongEndY + panoHeight + panoMargin*2;
-//     int downlongEndY = downlongStartY + uplongLen;
-//     int downshortEndY = downlongStartY + upshortLen;
-//     for(int i=0;i<19;i++)
-//     {
-//         longStartX = indicatorStartX+i*longStep;
-//         cv::line(ret, cv::Point(longStartX, downlongStartY), cv::Point(longStartX, downlongEndY), color, lineSickness);
-//         if(i==0)
-//             cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-//         else
-//             cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-//         if(i == 18)
-//             continue;
-//         for(int j=0;j<4;j++)
-//             cv::line(ret, cv::Point(longStartX+shortStep*(1+j), downlongStartY), cv::Point(longStartX+shortStep*(1+j), downshortEndY), color, lineSickness);
-//     }
+    int panoMargin = 5;
+    int panoHeight = 480;
+    int panoWidth = longStep*18;
+    int downlongStartY = uplongEndY + panoHeight + panoMargin*2;
+    int downlongEndY = downlongStartY + uplongLen;
+    int downshortEndY = downlongStartY + upshortLen;
+    for(int i=0;i<19;i++)
+    {
+        longStartX = indicatorStartX+i*longStep;
+        cv::line(ret, cv::Point(longStartX, downlongStartY), cv::Point(longStartX, downlongEndY), color, lineSickness);
+        if(i==0)
+            cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        else
+            cv::putText(ret, std::to_string(i*20), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        if(i == 18)
+            continue;
+        for(int j=0;j<4;j++)
+            cv::line(ret, cv::Point(longStartX+shortStep*(1+j), downlongStartY), cv::Point(longStartX+shortStep*(1+j), downshortEndY), color, lineSickness);
+    }
 
-//     cv::resize(pano, pano, cv::Size(panoWidth, panoHeight));
-//     pano.copyTo(ret(cv::Rect(indicatorStartX, uplongEndY + 5, panoWidth, panoHeight)));
+    // cv::resize(pano, pano, cv::Size(panoWidth, panoHeight));
+    // pano.copyTo(ret(cv::Rect(indicatorStartX, uplongEndY + 5, panoWidth, panoHeight)));
 
-//     int oriStartX = indicatorStartX;
-//     int oriStartY = downlongEndY + 30;
-//     int oriWidth = 640;
-//     int oriHeight = 360;
-//     ori.copyTo(ret(cv::Rect(indicatorStartX, oriStartY + 20, oriWidth, oriHeight)));
+    // int oriStartX = indicatorStartX;
+    // int oriStartY = downlongEndY + 30;
+    // int oriWidth = 640;
+    // int oriHeight = 360;
+    // ori.copyTo(ret(cv::Rect(indicatorStartX, oriStartY + 20, oriWidth, oriHeight)));
 
     
 
-//     cv::Point center = cv::Point(960, 540);
-//     int radius = 130;
-//     float cathetus = radius * 1.0 / sqrt(2);
-//     cv::Point leftTop = center + cv::Point(-cathetus, -cathetus);
-//     cv::Point leftBot = center + cv::Point(-cathetus, cathetus);
-//     cv::Point rightBot = center + cv::Point(cathetus, cathetus);
-//     cv::Point rightTop = center + cv::Point(cathetus, -cathetus);
+    // cv::Point center = cv::Point(960, 540);
+    // int radius = 130;
+    // float cathetus = radius * 1.0 / sqrt(2);
+    // cv::Point leftTop = center + cv::Point(-cathetus, -cathetus);
+    // cv::Point leftBot = center + cv::Point(-cathetus, cathetus);
+    // cv::Point rightBot = center + cv::Point(cathetus, cathetus);
+    // cv::Point rightTop = center + cv::Point(cathetus, -cathetus);
 
-//     cv::circle(ret, center, radius, cv::Scalar(0, 255, 0), 1);
-//     cv::line(ret, center, leftTop, cv::Scalar(255, 0, 0), 1);
-//     cv::line(ret, center, rightTop, cv::Scalar(255, 0, 0), 1);
+    // cv::circle(ret, center, radius, cv::Scalar(0, 255, 0), 1);
+    // cv::line(ret, center, leftTop, cv::Scalar(255, 0, 0), 1);
+    // cv::line(ret, center, rightTop, cv::Scalar(255, 0, 0), 1);
 
-//     cv::putText(ret, "camera No.1", center + cv::Point(-60, -160), cv::FONT_HERSHEY_SIMPLEX, 0.6, color, fontSickness);
+    // cv::putText(ret, "camera No.1", center + cv::Point(-60, -160), cv::FONT_HERSHEY_SIMPLEX, 0.6, color, fontSickness);
 
 
 
-//     cv::imwrite("rett.png", ret);
+    cv::imwrite("rett.png", ret);
 
-//     return 0;
-// }
+    return 0;
+}

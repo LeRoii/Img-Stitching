@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
         spdlog::set_level(spdlog::level::debug);
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
-    nvrender *renderer = new nvrender(rendercfg);
+    // nvrender *renderer = new nvrender(rendercfg);
 
 
     imgs = std::vector<Mat>(CAMERA_NUM, Mat(ymlCameraCfg.outPutHeight, ymlCameraCfg.outPutWidth, CV_8UC4));
@@ -298,12 +298,12 @@ int main(int argc, char *argv[])
         if(!savevideo)
         {
             spdlog::info("render");
-            renderer->render(ret);
+            // renderer->render(ret);
             // if(stitcherinputWidth==1920 && showall)
             //     renderer->render(imgs[1]);
             // else
             //     renderer->render(ret);
-                // cv::imshow("m_dev_name", ret);
+                cv::imshow("m_dev_name", ret);
             // else
             //     cv::imshow("m_dev_name", ret);
             //*writer[0] << ret;

@@ -1,4 +1,4 @@
-
+#include <termio.h>
 #include <thread>
 #include <memory>
 #include <opencv2/core/utility.hpp>
@@ -11,19 +11,9 @@
 // #include "nvrender.h"
 #include "nvrenderAlpha.h"
 
-
-// #define CAMERA_NUM 8
-// #define USED_CAMERA_NUM 6
-// #define BUF_LEN 65540 
-
 using namespace cv;
 
-
-
-
-
-static unsigned short servPort = 10001;
-static UDPSocket sock(servPort);
+static int g_keyboardinput = 0;
 
 static char buffer[SLAVE_PCIE_UDP_BUF_LEN]; // Buffer for echo string
 
@@ -41,8 +31,14 @@ bool savevideo = false;
 bool displayori = false;
 int videoFps = 10;
 
+static int imgcut = 0;
+static std::string net;
+static std::string canname;
+static stCamCfg ymlCameraCfg;
+static std::string cameraParamsPath;
+static bool websocketOn;
 
-std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
+static std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -124,18 +120,120 @@ static void OnMouseAction(int event, int x, int y, int flags, void *data)
                 detCamNum =  5;
         }
         
-        // if(ancientDetCamNum == detCamNum)
-        //     return;
-        // if(ancientDetCamNum != 0)
-        //     cameras[ancientDetCamNum-1]->setDistoredSize(960);
-        // if(detCamNum > 6)
-        // {
-        //     spdlog::warn("src not available");
-        //     detCamNum = 0;
-        //     return;
-        // }
-        // cameras[detCamNum-1]->setDistoredSize(1920);
     }
+}
+
+static int parseYml()
+{
+    try
+    {
+        YAML::Node config = YAML::LoadFile(stitchercfgpath);
+        cameraParamsPath = config["cameraparams"].as<string>();
+        ymlCameraCfg.camSrcWidth = config["camsrcwidth"].as<int>();
+        ymlCameraCfg.camSrcHeight = config["camsrcheight"].as<int>();
+        ymlCameraCfg.distoredWidth = config["distorWidth"].as<int>();
+        ymlCameraCfg.distoredHeight = config["distorHeight"].as<int>();
+        ymlCameraCfg.undistoredWidth = config["undistorWidth"].as<int>();
+        ymlCameraCfg.undistoredHeight = config["undistorHeight"].as<int>();
+        ymlCameraCfg.outPutWidth = config["outPutWidth"].as<int>();
+        ymlCameraCfg.outPutHeight = config["outPutHeight"].as<int>();
+        ymlCameraCfg.undistor = config["undistor"].as<bool>();
+        ymlCameraCfg.vendor = config["vendor"].as<string>();
+        ymlCameraCfg.sensor = config["sensor"].as<string>();
+        ymlCameraCfg.fov = config["fov"].as<int>();
+
+        imgcut = config["imgcut"].as<int>();
+        num_images = config["num_images"].as<int>();
+
+        renderWidth = config["renderWidth"].as<int>();
+        renderHeight = config["renderHeight"].as<int>();
+        renderX = config["renderX"].as<int>();
+        renderY = config["renderY"].as<int>();
+        renderBufWidth = config["renderBufWidth"].as<int>();
+        renderBufHeight = config["renderBufHeight"].as<int>();
+
+        USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
+        net = config["netpath"].as<string>();
+
+        canname = config["canname"].as<string>();
+        renderMode = config["renderMode"].as<int>();
+
+        stitcherMatchConf = config["stitcherMatchConf"].as<float>();
+        stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
+        stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
+        stitcherCameraExThres = config["stitcherCameraExThres"].as<float>();
+        stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
+
+        batchSize = config["batchSize"].as<int>();
+        initMode = config["initMode"].as<int>();
+
+        std::string loglvl = config["loglvl"].as<string>();
+        if(loglvl == "critical")
+            spdlog::set_level(spdlog::level::critical);
+        else if(loglvl == "trace")
+            spdlog::set_level(spdlog::level::trace);
+        else if(loglvl == "warn")
+            spdlog::set_level(spdlog::level::warn);
+        else if(loglvl == "info")
+            spdlog::set_level(spdlog::level::info);
+        else
+            spdlog::set_level(spdlog::level::debug);
+
+        weburi = config["websocketurl"].as<string>();
+        websocketOn = config["websocketOn"].as<bool>();
+    }
+    catch(...)
+    {
+        spdlog::critical("yml parse failed, check your config yaml!");
+        return RET_ERR;
+    }
+
+    return RET_OK;
+}
+
+int scanKeyboard()
+{
+  //  struct termios
+  //    {
+  //      tcflag_t c_iflag;		/* input mode flags */
+  //      tcflag_t c_oflag;		/* output mode flags */
+  //      tcflag_t c_cflag;		/* control mode flags */
+  //      tcflag_t c_lflag;		/* local mode flags */
+  //      cc_t c_line;			/* line discipline */
+  //      cc_t c_cc[NCCS];		/* control characters */
+  //      speed_t c_ispeed;		/* input speed */
+  //      speed_t c_ospeed;		/* output speed */
+  //  #define _HAVE_STRUCT_TERMIOS_C_ISPEED 1
+  //  #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
+  //    };
+  while(1 && g_keyboardinput!=113)
+  {
+    
+    struct termios new_settings;
+    struct termios stored_settings;
+    tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+    new_settings = stored_settings;           //
+    new_settings.c_lflag &= (~ICANON);        //
+    new_settings.c_cc[VTIME] = 0;
+    tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+    new_settings.c_cc[VMIN] = 1;
+    tcsetattr(STDIN_FILENO,TCSANOW,&new_settings); //
+
+    g_keyboardinput = getchar();
+
+    tcsetattr(STDIN_FILENO,TCSANOW,&stored_settings);
+
+    // setbit(g_usrcmd, SETTING_ON);
+    // if(g_keyboardinput == 101)  //e
+    //     setbit(g_usrcmd, SETTING_IMGENHANCE);
+    // else if(g_keyboardinput == 100) //d
+    //     reversebit(g_usrcmd, SETTING_DETECTION);
+    // else if(g_keyboardinput == 99)  //c
+    //     reversebit(g_usrcmd, SETTING_CROSS);
+    // else if(g_keyboardinput == 115)  //s
+    //     reversebit(g_usrcmd, SETTING_SAVE);
+    // return g_keyboardinput;
+  }
 }
 
 imageProcessor *nvProcessor = nullptr;
@@ -145,65 +243,9 @@ int main(int argc, char *argv[])
     if(RET_ERR == parse_cmdline(argc, argv))
         return RET_ERR;
 
-    YAML::Node config = YAML::LoadFile(stitchercfgpath);
-
-    std::string cameraParamsPath = config["cameraparams"].as<string>();
-    stCamCfg ymlCameraCfg;
-
-    ymlCameraCfg.camSrcWidth = config["camsrcwidth"].as<int>();
-    ymlCameraCfg.camSrcHeight = config["camsrcheight"].as<int>();
-    ymlCameraCfg.distoredWidth = config["distorWidth"].as<int>();
-    ymlCameraCfg.distoredHeight = config["distorHeight"].as<int>();
-    ymlCameraCfg.undistoredWidth = config["undistorWidth"].as<int>();
-    ymlCameraCfg.undistoredHeight = config["undistorHeight"].as<int>();
-    ymlCameraCfg.outPutWidth = config["outPutWidth"].as<int>();
-    ymlCameraCfg.outPutHeight = config["outPutHeight"].as<int>();
-    ymlCameraCfg.undistor = config["undistor"].as<bool>();
-    ymlCameraCfg.vendor = config["vendor"].as<string>();
-    ymlCameraCfg.sensor = config["sensor"].as<string>();
-    ymlCameraCfg.fov = config["fov"].as<int>();
-
-    int imgcut = config["imgcut"].as<int>();
-    num_images = config["num_images"].as<int>();
-
-    renderWidth = config["renderWidth"].as<int>();
-    renderHeight = config["renderHeight"].as<int>();
-    renderX = config["renderX"].as<int>();
-    renderY = config["renderY"].as<int>();
-    renderBufWidth = config["renderBufWidth"].as<int>();
-    renderBufHeight = config["renderBufHeight"].as<int>();
-
-    USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
-    std::string net = config["netpath"].as<string>();
-    std::string cfgpath = config["camcfgpath"].as<string>();
-    std::string canname = config["canname"].as<string>();
-    // undistor = config["undistor"].as<bool>();
-    renderMode = config["renderMode"].as<int>();
-
-    stitcherMatchConf = config["stitcherMatchConf"].as<float>();
-    stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
-    stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
-    stitcherCameraExThres = config["stitcherCameraExThres"].as<float>();
-    stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
-
-    batchSize = config["batchSize"].as<int>();
-    initMode = config["initMode"].as<int>();
-
-    std::string loglvl = config["loglvl"].as<string>();
-    if(loglvl == "critical")
-        spdlog::set_level(spdlog::level::critical);
-    else if(loglvl == "trace")
-        spdlog::set_level(spdlog::level::trace);
-    else if(loglvl == "warn")
-        spdlog::set_level(spdlog::level::warn);
-    else if(loglvl == "info")
-        spdlog::set_level(spdlog::level::info);
-    else
-        spdlog::set_level(spdlog::level::debug);
-
-    weburi = config["websocketurl"].as<string>();
-    bool websocketOn = config["websocketOn"].as<bool>();
-
+    if(RET_ERR == parseYml())
+        return RET_ERR;
+    
     int finalcut = 15;
     if(stitcherinputWidth == 480)
         finalcut = 15;
@@ -214,15 +256,6 @@ int main(int argc, char *argv[])
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrenderAlpha *renderer = new nvrenderAlpha(rendercfg);
-
-    // stCamCfg camcfgs[CAMERA_NUM] = {stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,1,"/dev/video0", vendor},
-    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,2,"/dev/video1", vendor},
-    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,3,"/dev/video2", vendor},
-    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,4,"/dev/video3", vendor},
-    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,5,"/dev/video4", vendor},
-    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,6,"/dev/video5", vendor},
-    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,7,"/dev/video6", vendor},
-    //                                 stCamCfg{camSrcWidth,camSrcHeight,distorWidth,distorHeight,undistorWidth,undistorHeight,stitcherinputWidth,stitcherinputHeight,undistor,8,"/dev/video7", vendor}};
 
     stCamCfg camcfgs[CAMERA_NUM];
     for(int i=0;i<CAMERA_NUM;i++)
@@ -239,7 +272,10 @@ int main(int argc, char *argv[])
     for(int i=0;i<USED_CAMERA_NUM;i++)
     {
         cameras[i].reset(new nvCam(camcfgs[i]));
-        cameras[i]->init(cameraParamsPath);
+        if(RET_ERR == cameras[i]->init(cameraParamsPath))
+        {
+            spdlog::warn("camera [{}] init failed!", i);
+        }
     }
 
     std::vector<std::thread> threads;
@@ -346,6 +382,9 @@ int main(int argc, char *argv[])
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);
 
+    ostitcherUp.init();
+    ostitcherDown.init();
+
     int failnum = 0;
     do{
         upImgs.clear();
@@ -389,22 +428,20 @@ int main(int argc, char *argv[])
     sdkCreateTimer(&timer);
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
+
+    std::thread listerner = std::thread(scanKeyboard);
+    listerner.detach();
     
     while(1)
     {
         spdlog::debug("start loop");
         sdkResetTimer(&timer);
         
-        // cameras[0]->getFrame(upImgs[0], false);
         cameras[0]->getFrame(upImgs[0], false);
         cameras[1]->getFrame(upImgs[1], false);
         cameras[2]->getFrame(downImgs[0], false);
         cameras[3]->getFrame(downImgs[1], false);
 
-        // cv::Mat oriimg = upImgs[0].clone();
-        // spdlog::info("oriimg size:{},{}", oriimg.cols, oriimg.rows);
-        // cv::resize(upImgs[0], upImgs[0], cv::Size(ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight)); 
-        
         spdlog::info("read takes:{} ms", sdkGetTimerValue(&timer));
 
         std::thread t1 = std::thread(&ocvStitcher::process, &ostitcherUp, std::ref(upImgs), std::ref(stitcherOut[0]));
@@ -419,12 +456,11 @@ int main(int argc, char *argv[])
         cv::Mat up,down,ori;
 
         cv::vconcat(stitcherOut[0], stitcherOut[1], ret);
+        cv::rectangle(ret, cv::Rect(0, ret.rows/2-5, ret.cols, 10), cv::Scalar(0,0,0), -1);
   
         spdlog::debug("ret size:[{},{}]", ret.size().width, ret.size().height);
         spdlog::info("concat takes:{} ms", sdkGetTimerValue(&timer));
 
-        // if(start_ssr) 
-        //     ret = nvProcessor->SSR(ret);
 
         // if(detect)
         // {
@@ -432,27 +468,27 @@ int main(int argc, char *argv[])
         //     spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
         // }
 
-        // if(!writerInit && savevideo)
-        // {
-        //     std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-        //     struct std::tm * ptm = std::localtime(&tt);
-        //     stringstream sstr;
-        //     sstr << std::put_time(ptm,"%F-%H-%M-%S");
-        //     Size panoSize(ret.size().width, ret.size().height);
-        //     Size oriSize(ori.size().width, ori.size().height);
-        //     // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
-        //    // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
-        //      panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('D','I','V','X'), videoFps, Size(1920,1080));
-        //     // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
+        if(!writerInit && savevideo)
+        {
+             std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
+             struct std::tm * ptm = std::localtime(&tt);
+             stringstream sstr;
+             sstr << std::put_time(ptm,"%F-%H-%M-%S");
+             Size panoSize(ret.size().width, ret.size().height);
+             Size oriSize(ori.size().width, ori.size().height);
+             // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
+            // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
+             panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('D','I','V','X'), videoFps, Size(1280,720));
+             // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
 
-        //     if (!panoWriter->isOpened())
-        //     {
-        //         spdlog::critical("Can not create video file.");
-        //         return -1;
-        //     }
+             if (!panoWriter->isOpened())
+             {
+                 spdlog::critical("Can not create video file.");
+                 return -1;
+             }
 
-        //     writerInit = true;
-        // }
+             writerInit = true;
+         }
         cv::Mat final;
         final = renderer->render(ret);
         // renderer->render(ret, final);
@@ -462,15 +498,48 @@ int main(int argc, char *argv[])
         if(websocketOn)
             nvProcessor->publishImage(final); 
 
-        // if(savevideo)
-        // {
-        //     *panoWriter << final;
-        //     // *oriWriter << ori;
-        // }
+        if(savevideo)
+        {
+            *panoWriter << final;
+            // *oriWriter << ori;
+        }
+
+        // cv::imwrite("final.png", stitcherOut[1]);
+        // return 0;
+
+        // cv::imshow("1", stitcherOut[1]);
+        char c = (char)cv::waitKey(1);
+        if(c=='v')
+        {
+            if(panoWriter)
+            {
+                panoWriter->release();
+                return 0;
+            }
+        }
         
         spdlog::debug("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
 
         spdlog::info("frame [{}], all takes:{} ms", framecnt++, sdkGetTimerValue(&timer));
+
+        // if(g_keyboardinput == 'v')
+        // {
+        //     if(savevideo)
+        //     {
+        //         spdlog::critical("panoWriter is opened:{}",panoWriter->isOpened());
+        //         spdlog::critical("g_keyboardinput:{}",g_keyboardinput);
+        //         panoWriter->release();
+        //         savevideo = false;
+        //         spdlog::critical("panoWriter is opened:{}",panoWriter->isOpened());
+        //         return 0;
+        //     }
+        //     else
+        //     {
+        //         savevideo = true;
+        //     }
+
+        //     g_keyboardinput = 0;
+        // }
     }
     return 0;
 }

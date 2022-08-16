@@ -8,6 +8,7 @@ static double fitscale;
 nvrenderAlpha::nvrenderAlpha(const nvrenderCfg &cfg):nvrenderbase(cfg)
 {
     // drawIndicator();
+    canvas.setTo(0);
 }
 
 nvrenderAlpha::~nvrenderAlpha()
@@ -18,44 +19,54 @@ nvrenderAlpha::~nvrenderAlpha()
 void nvrenderAlpha::drawIndicator()
 {
     canvas.setTo(0);
-    indicatorStartX = 30;
+    indicatorStartX = 10;
     longStartX = 0;
-    uplongStartY = 200;
-    uplongEndY = uplongStartY+30;
-    upshortEndY = uplongStartY+15;
+    uplongStartY = 20;
+    uplongLen = 20;
+    upshortLen = 10;
+    uplongEndY = uplongStartY + uplongLen;
+    upshortEndY = uplongStartY + upshortLen;
+    longStep = 70;
+    shortStep = longStep/5;
+
     double fontScale = 0.6;
     int lineSickness = 2;
     int fontSickness = 2;
     cv::Scalar color = cv::Scalar(5, 217, 82 );
+
     for(int i=0;i<19;i++)
     {
-        longStartX = indicatorStartX+i*102;
+        longStartX = indicatorStartX+i*longStep;
         cv::line(canvas, cv::Point(longStartX, uplongStartY), cv::Point(longStartX, uplongEndY), color, lineSickness);
-        // if(i==0)
-        //     cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-        // else
-        //     cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        if(i==0)
+            cv::putText(canvas, std::to_string(i*20), cv::Point(longStartX-5, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        else
+            cv::putText(canvas, std::to_string(i*20), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         if(i == 18)
             continue;
         for(int j=0;j<4;j++)
-            cv::line(canvas, cv::Point(longStartX+20*(1+j), uplongStartY), cv::Point(longStartX+20*(1+j), upshortEndY), color, lineSickness);
+            cv::line(canvas, cv::Point(longStartX+shortStep*(1+j), uplongStartY), cv::Point(longStartX+shortStep*(1+j), upshortEndY), color, lineSickness);
     }
 
-    downlongStartY = 880;
-    downlongEndY = downlongStartY+30;
-    downshortEndY = downlongStartY+15;
+    panoMargin = 5;
+    panoHeight = 240;
+    panoWidth = longStep*18;
+    downlongStartY = uplongEndY + panoHeight + panoMargin*2;
+    downlongEndY = downlongStartY + uplongLen;
+    downshortEndY = downlongStartY + upshortLen;
+
     for(int i=0;i<19;i++)
     {
-        longStartX = indicatorStartX+i*102;
+        longStartX = indicatorStartX+i*longStep;
         cv::line(canvas, cv::Point(longStartX, downlongStartY), cv::Point(longStartX, downlongEndY), color, lineSickness);
-        // if(i==0)
-        //     cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-        // else
-        //     cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        if(i==0)
+            cv::putText(canvas, std::to_string(i*20), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        else
+            cv::putText(canvas, std::to_string(i*20), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         if(i == 18)
             continue;
         for(int j=0;j<4;j++)
-            cv::line(canvas, cv::Point(longStartX+20*(1+j), downlongStartY), cv::Point(longStartX+20*(1+j), downshortEndY), color, lineSickness);
+            cv::line(canvas, cv::Point(longStartX+shortStep*(1+j), downlongStartY), cv::Point(longStartX+shortStep*(1+j), downshortEndY), color, lineSickness);
     }
 
     maxWidth = 18*102;
@@ -76,8 +87,8 @@ cv::Mat nvrenderAlpha::renderegl(cv::Mat &img)
 
 cv::Mat nvrenderAlpha::renderocv(cv::Mat &img)
 {
-    // fit2final(img, canvas);
-    // cv::imshow("final", canvas);
+    fit2final(img);
+    cv::imshow("final", canvas);
     return canvas;
 
     // cv::waitKey(1);
@@ -97,6 +108,8 @@ cv::Mat nvrenderAlpha::render(cv::Mat &img)
         return renderegl(img);
     else if(m_mode == RENDER_NONE)
         return fit2final(img);
+    else if(m_mode == RENDER_OCV)
+        return renderocv(img);
 
     // cv::Mat tmp;
     // if(m_mode == RENDER_EGL)

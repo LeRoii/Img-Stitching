@@ -1,7 +1,7 @@
 # camera vendor, 0:sensing, 1:lijing
 vendor: lijing
 sensor: imx390
-sttype: 4cam-silver
+sttype: 4cam-black
 # camsrc is the origin size of camera, can only be 3840x2160(for imx424b) or 1920x1080(for imx390)
 camsrcwidth: 1920
 camsrcheight: 1080
@@ -13,8 +13,8 @@ distorHeight: 1080
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-outPutWidth: 720 # 800 # 720 #640
-outPutHeight: 405 # 450 # 405 #360
+outPutWidth: 960 # 800 # 720 #640
+outPutHeight: 540 # 450 # 405 #360
 fov: 120
 
 imgcut: 40
@@ -30,7 +30,7 @@ renderY: 0
 renderBufWidth: 1280
 renderBufHeight: 720
 # 0 for egl, 1 for opencv(deprecated), 2 for no display
-renderMode: 2
+renderMode: 1
 
 num_images: 2
 
@@ -50,7 +50,7 @@ loglvl: "debug"
 # parameters for stitcher
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
-stitcherBlenderStrength: 0
+stitcherBlenderStrength: 1
 stitcherCameraExThres: 30e3
 stitcherCameraInThres: 100e3
 
@@ -63,4 +63,4 @@ batchSize: 1
 # websocket dst url
 # websocketurl: "ws://192.168.168.171:9002" # "ws://localhost:9002"
 websocketurl: "ws://localhost:9002"
-websocketOn: true
+websocketOn: false

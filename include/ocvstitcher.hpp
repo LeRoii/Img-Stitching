@@ -255,12 +255,47 @@ class ocvStitcher
 {
     public:
     ocvStitcher(stStitcherCfg cfg):
-    m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id),num_images(cfg.num_images), 
+    m_stitcherCfgPath(cfg),m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id),num_images(cfg.num_images), 
     match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
     cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres),defaultCamParams("")
     {
-        YAML::Node config = YAML::LoadFile(cfg.cfgPath);
-        m_cfgpath = config["camcfgpath"].as<string>();
+        finder = makePtr<SurfFeaturesFinder>();
+        seam_work_aspect = min(1.0, sqrt(1e5 / (m_imgHeight*m_imgWidth)));
+        // seam_work_aspect = 1;//min(1.0, sqrt(1e5 / (m_imgHeight*m_imgWidth)));
+
+        // camK.reserve(num_images);
+        corners.reserve(num_images); 
+        blenderMask.reserve(num_images);
+
+        cameraK = Mat(Size(3,3), CV_32FC1);
+        for(int i=0;i<num_images;i++)
+        {
+            cameraR.push_back(Mat(Size(3,3), CV_32FC1));
+            camK.push_back(Mat(Size(3,3), CV_32FC1));
+        }
+
+        
+// #ifdef GENERATE_SO
+//         useDefaultCamParams();
+//         presetParaOk = true;
+// #else
+//         (initCamParams(m_camCfgPath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
+// #endif
+        spdlog::debug("stitcher {} constructor completed!", m_id);
+    }
+
+    int init()
+    {
+        YAML::Node config;
+        try{
+            config = YAML::LoadFile(m_stitcherCfgPath.cfgPath);
+        }catch (YAML::ParserException &ex) {
+            spdlog::critical("stitcher cfg yaml parse failed:{}", ex.what());
+        } catch (YAML::BadFile &ex) {
+            spdlog::critical("stitcher cfg yaml load failed:{}", ex.what());
+        }
+        
+        m_camCfgPath = config["camcfgpath"].as<string>();
 
         auto cameraCfgYmlPath = config["cameraparams"].as<string>();
         YAML::Node cameraCfgNode = YAML::LoadFile(cameraCfgYmlPath);
@@ -295,31 +330,7 @@ class ocvStitcher
             }
         }
 
-
-        finder = makePtr<SurfFeaturesFinder>();
-
-        seam_work_aspect = min(1.0, sqrt(1e5 / (m_imgHeight*m_imgWidth)));
-        // seam_work_aspect = 1;//min(1.0, sqrt(1e5 / (m_imgHeight*m_imgWidth)));
-
-        // camK.reserve(num_images);
-        corners.reserve(num_images); 
-        blenderMask.reserve(num_images);
-
-        cameraK = Mat(Size(3,3), CV_32FC1);
-        for(int i=0;i<num_images;i++)
-        {
-            cameraR.push_back(Mat(Size(3,3), CV_32FC1));
-            camK.push_back(Mat(Size(3,3), CV_32FC1));
-        }
-
         useDefaultCamParams();
-// #ifdef GENERATE_SO
-//         useDefaultCamParams();
-//         presetParaOk = true;
-// #else
-//         (initCamParams(m_cfgpath) == RET_OK) ? (presetParaOk = true) : (presetParaOk = false);
-// #endif
-        spdlog::debug("stitcher {} constructor completed!", m_id);
     }
 
     ~ocvStitcher()
@@ -485,7 +496,7 @@ class ocvStitcher
         struct std::tm * ptm = std::localtime(&tt);
         // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
 
-        string filename = m_cfgpath + "cameraparaout_" + to_string(m_id) + ".txt";
+        string filename = m_camCfgPath + "cameraparaout_" + to_string(m_id) + ".txt";
         ofstream fout(filename, std::ofstream::out | std::ofstream::app);
 
         if(!fout.is_open())
@@ -538,7 +549,7 @@ class ocvStitcher
         }
         else if(enInitByCfg)
         {
-            if(RET_OK ==initCamParams(m_cfgpath))
+            if(RET_OK ==initCamParams(m_camCfgPath))
                 return initSeam(imgs);
             else
                 return initAll(imgs);
@@ -1175,12 +1186,14 @@ class ocvStitcher
     short int m_id;
 
     bool presetParaOk;
-    std::string m_cfgpath;
+    std::string m_camCfgPath;
 
     float match_conf, conf_thresh, blend_strength, cameraExThres, cameraInThres;
 
     std::string defaultCamParams;
     std::vector<int> m_cutParams;
+
+    stStitcherCfg m_stitcherCfgPath;
 
     // Ptr<Blender> blender;
 

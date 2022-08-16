@@ -18,7 +18,7 @@ set(BUILD_master2 OFF CACHE BOOL "build master2, dev app for 2 cams panorama" FO
 set(BUILD_replay OFF CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
 set(BUILD_replay2 OFF CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
 set(BUILD_camshow OFF CACHE BOOL "build camshow, 8 camera disp app" FORCE)
-set(BUILD_camshow4cam OFF CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
+set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
 set(BUILD_camshow_2 OFF CACHE BOOL "build camshow-2, 2 camera disp app" FORCE)
 set(BUILD_panocam OFF CACHE BOOL "build panocam, panorama so" FORCE)
 set(BUILD_demo OFF CACHE BOOL "build demo, panorama so test app" FORCE)

@@ -655,24 +655,27 @@ public:
         spdlog::debug("cam [{}] init complete", m_cfg.id);
     }
 
-    int init(const std::string &cameracfgPath)
+    int init(const std::string &stitcherCfgPath)
     {
         YAML::Node config;
         try {
-            config = YAML::LoadFile(cameracfgPath);
+            config = YAML::LoadFile(stitcherCfgPath);
         } catch (YAML::ParserException &ex) {
-            spdlog::critical("camera cfg yaml:{}  parse failed:{}, can't undistor camera", cameracfgPath, ex.what());
+            spdlog::critical("camera cfg yaml:{}  parse failed:{}, can't undistor camera", stitcherCfgPath, ex.what());
             m_cfg.undistor = false;
             // std::cerr << "!! config parse failed: " << ex.what() << std::endl;
             // exit(-1);
         } catch (YAML::BadFile &ex) {
-            spdlog::critical("camera cfg yaml:{} load failed:{}, can't undistor camera", cameracfgPath, ex.what());
+            spdlog::critical("camera cfg yaml:{} load failed:{}, can't undistor camera", stitcherCfgPath, ex.what());
             m_cfg.undistor = false;
             // std::cerr << "!! config load failed: " << ex.what() << std::endl;
             // exit(-1);
         }
 
-        auto cameras = config["cameras"];
+        auto cameraCfgYmlPath = config["cameraparams"].as<string>();
+        YAML::Node cameraCfgNode = YAML::LoadFile(cameraCfgYmlPath);
+
+        auto cameras = cameraCfgNode["cameras"];
         for(auto cam:cameras)
         {
             auto vendor = cam["vendor"].as<std::string>();
@@ -683,7 +686,8 @@ public:
 
             if(vendor == m_cfg.vendor && sensor == m_cfg.sensor &&
                 fov == m_cfg.fov && srcsz == m_cfg.camSrcWidth && 
-                undistorsz == m_cfg.undistoredWidth)
+                undistorsz == m_cfg.undistoredWidth &&
+                cam["sttype"].as<std::string>() == config["sttype"].as<std::string>())
             {
                 auto K = cam["K"];
 

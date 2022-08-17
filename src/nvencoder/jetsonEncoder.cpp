@@ -1,5 +1,5 @@
-#include <websocketpp/config/asio_no_tls_client.hpp>
-#include <websocketpp/client.hpp>
+#include <websocketpp/config/asio_no_tls.hpp>
+#include <websocketpp/server.hpp>
 
 #include "jetsonEncoder.h"
 #include "udp_publisher.h"
@@ -10,17 +10,22 @@
 
 
 udp_publisher::UdpPublisher udp_pub;
-typedef websocketpp::client<websocketpp::config::asio_client> client;
+// typedef websocketpp::client<websocketpp::config::asio_client> client;
+typedef websocketpp::server<websocketpp::config::asio> server;
 
 using websocketpp::lib::placeholders::_1;
 using websocketpp::lib::placeholders::_2;
 using websocketpp::lib::bind;
 
-client c;
-client::connection_ptr con;
-websocketpp::connection_hdl hdl;
+// client c;
+// client::connection_ptr con;
+websocketpp::connection_hdl g_hdl;
+server m_endpoint;
 
+    
 int save_id = 0;
+
+static bool webSocketSendStart = false;
 
  size_t GetFileSize(const std::string& file_name){
 	std::ifstream in(file_name.c_str());
@@ -29,6 +34,31 @@ int save_id = 0;
 	in.close();
 	return size; //单位是：Byte
 }
+
+static void on_open(websocketpp::connection_hdl hdl)
+{
+    g_hdl = hdl;
+    std::string msg = "send started";
+    // m_endpoint.send(g_hdl, msg, websocketpp::frame::opcode::text);
+    // c->get_alog().write(websocketpp::log::alevel::app, "Tx: " + msg);
+    webSocketSendStart = true;
+}
+
+
+static void startServerTh()
+{
+    m_endpoint.set_error_channels(websocketpp::log::elevel::all);
+    m_endpoint.set_access_channels(websocketpp::log::alevel::devel);
+    m_endpoint.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    m_endpoint.init_asio();
+    m_endpoint.set_open_handler(std::bind(&on_open, std::placeholders::_1));
+    m_endpoint.listen(9002);
+    m_endpoint.start_accept();
+    // 开始Asio事件循环
+    m_endpoint.run();
+}
+
+
 
 static int write_encoder_output_frame(ofstream * stream, NvBuffer * buffer)
 {
@@ -74,34 +104,91 @@ encoder_capture_plane_dq_callback(struct v4l2_buffer *v4l2_buf, NvBuffer * buffe
     saved_size = GetFileSize(ctx->out_file_path);
     // spdlog::debug("^^^^^^^^^^^^^^^^^^^^^^^^^^^^size:{} ",saved_size);
 
-    // if(saved_size>104857600 || !ctx->out_file->is_open()){ //100MB = 104857600B
-    //     save_id ++;
-    //     sprintf(str, "/home/nvidia/out_%d.h264", save_id);
+    if(saved_size>104857600 || !ctx->out_file->is_open()){ //100MB = 104857600B
+        save_id ++;
+        sprintf(str, "/home/nvidia/out_%d.h264", save_id);
 
-    //     std::time_t tt = std::chrono::system_clock::to_time_t (std::chrono::system_clock::now());
-    //     std::stringstream ss;
-    //     ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
-    //     std::string str = "/home/nvidia/"+ss.str()+".h264";
-    //     ss.str("");
-    //     ss << str;
-    //     ss >> ctx->out_file_path;
-    //     // ctx->out_file_path = str.c_str();
+        std::time_t tt = std::chrono::system_clock::to_time_t (std::chrono::system_clock::now());
+        std::stringstream ss;
+        ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
+        std::string str = "/home/nvidia/"+ss.str()+".h264";
+        ss.str("");
+        ss << str;
+        ss >> ctx->out_file_path;
+        // ctx->out_file_path = str.c_str();
 
-    //     // ctx->out_file_path = str;
-    //     spdlog::debug("The video save to a new file!");
-    //     ctx->out_file = new ofstream(ctx->out_file_path);
-    //     TEST_ERROR(!ctx->out_file->is_open(), "Could not open output file");
-    // }
+        // ctx->out_file_path = str;
+        spdlog::debug("The video save to a new file!");
+        ctx->out_file = new ofstream(ctx->out_file_path);
+        TEST_ERROR(!ctx->out_file->is_open(), "Could not open output file");
+    }
 
     // write_encoder_output_frame(ctx->out_file, buffer);
-    c.send(hdl, buffer->planes[0].data, buffer->planes[0].bytesused, websocketpp::frame::opcode::binary);
-
-    /* qBuffer on the capture plane */
-    if (enc->capture_plane.qBuffer(*v4l2_buf, NULL) < 0)
+    //  cv::Mat org;
+    
+    // m_h264Decoder.decode(buffer->planes[0].data, buffer->planes[0].bytesused, org);
+    // if(!org.empty())
+    // {
+    //     cv::imshow("org",org);
+    //     cv::waitKey(10);
+    // }
+    // c.send(hdl, buffer->planes[0].data, buffer->planes[0].bytesused, websocketpp::frame::opcode::binary);
+    if(webSocketSendStart)
     {
-        cerr << "Error while Qing buffer at capture plane" << endl;
-        //abort(ctx);
-        return false;
+        // write_encoder_output_frame(ctx->out_file, buffer);
+        // int img = open("/home/nvidia/2022-08-16-19-32-27.h264", O_RDONLY);
+        // if(img == -1)
+        //     printf("Failed to open file for rendering\n");
+        // int imgbufsize = 30000;
+        // unsigned char *imgbuf = (unsigned char*)malloc(imgbufsize);
+        // int cnt = read(img, imgbuf, imgbufsize);
+        //     printf("read %d bytes\n", cnt);
+        // cv::Mat org;
+        // m_h264Decoder.initial();
+        // m_h264Decoder.decode(buffer->planes[0].data, buffer->planes[0].bytesused, org);
+        // if(!org.empty())
+        // {
+        //     cv::imshow("org",org);
+        //     cv::waitKey(10);
+        // }
+        try{
+            m_endpoint.send(g_hdl, buffer->planes[0].data, buffer->planes[0].bytesused, websocketpp::frame::opcode::binary);
+
+        }
+        catch(...)
+        {
+            spdlog::warn("websocket connection failed");
+            webSocketSendStart = false;
+
+            // enc->capture_plane.stopDQThread();
+            // enc->output_plane.setStreamStatus(false);
+            // enc->capture_plane.setStreamStatus(false);
+
+            // enc->output_plane.setStreamStatus(true);
+            // enc->capture_plane.setStreamStatus(true);
+
+            // enc->capture_plane.startDQThread(ctx);
+
+            // spdlog::warn("enc->output_plane.getNumBuffers():{}", enc->output_plane.getNumBuffers());
+        }
+                // m_endpoint.send(g_hdl, imgbuf, cnt, websocketpp::frame::opcode::binary);
+
+        for(int i=0;i<20;i++)
+        {
+            printf("%#x, ", buffer->planes[0].data[i]);
+        }
+
+        // webSocketSendStart = false;
+    }
+    /* qBuffer on the capture plane */
+    if(webSocketSendStart)
+    {
+        if (enc->capture_plane.qBuffer(*v4l2_buf, NULL) < 0)
+        {
+            cerr << "Error while Qing buffer at capture plane" << endl;
+            //abort(ctx);
+            return false;
+        }
     }
 
     /* GOT EOS from encoder. Stop dqthread. */
@@ -243,10 +330,162 @@ jetsonEncoder::jetsonEncoder()
     // c.close(hdl, websocketpp::close::status::normal, "");
 }
 
+jetsonEncoder::jetsonEncoder(bool on):websocketOn(on)
+{
+    int ret = 0;
+    frame_count = 0;
+    set_defaults(&ctx);
+
+    std::time_t tt = std::chrono::system_clock::to_time_t (std::chrono::system_clock::now());
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
+    std::string str = "/home/nvidia/"+ss.str()+".h264";
+    ss.str("");
+    ss << str;
+    ss >> ctx.out_file_path;
+
+    spdlog::debug("ctx.out_file_path:{}", ctx.out_file_path);
+
+    // ctx.out_file_path = "/home/nvidia/"+str+".h264";
+
+    ctx.encoder_pixfmt = V4L2_PIX_FMT_H264;
+
+    ctx.enc = NvVideoEncoder::createVideoEncoder("enc0");
+    TEST_ERROR(!ctx.enc, "Could not create encoder");
+
+    // ctx.out_file = new ofstream(ctx.out_file_path);
+    // TEST_ERROR(!ctx.out_file->is_open(), "Could not open output file");
+
+    /**
+     * It is necessary that Capture Plane format be set before Output Plane
+     * format.
+     * It is necessary to set width and height on the capture plane as well.
+     */
+    ret = ctx.enc->setCapturePlaneFormat(ctx.encoder_pixfmt, ctx.width,
+                                      ctx.height, 2 * 1024 * 1024);
+    TEST_ERROR(ret < 0, "Could not set capture plane format");
+
+    ret = ctx.enc->setOutputPlaneFormat(V4L2_PIX_FMT_YUV420M, ctx.width,
+                                      ctx.height);
+    TEST_ERROR(ret < 0, "Could not set output plane format");
+
+    ret = ctx.enc->setIFrameInterval(25);
+    ret = ctx.enc->setIDRInterval(30);  //ok
+    ret = ctx.enc->setInsertSpsPpsAtIdrEnabled(true);
+    TEST_ERROR(ret < 0, "Could not set setIFrameInterval");
+
+    ret = ctx.enc->setBitrate(ctx.bitrate);
+    TEST_ERROR(ret < 0, "Could not set bitrate");
+
+    ret = ctx.enc->setProfile(V4L2_MPEG_VIDEO_H264_PROFILE_HIGH);
+    TEST_ERROR(ret < 0, "Could not set encoder profile");
+
+    ret = ctx.enc->setLevel(V4L2_MPEG_VIDEO_H264_LEVEL_5_0);
+    TEST_ERROR(ret < 0, "Could not set encoder level");
+
+    ret = ctx.enc->setFrameRate(ctx.fps_n, ctx.fps_d);
+    TEST_ERROR(ret < 0, "Could not set framerate");
+
+    /**
+     * Query, Export and Map the output plane buffers so that we can read
+     * raw data into the buffers
+     */
+    ret = ctx.enc->output_plane.setupPlane(V4L2_MEMORY_MMAP, 10, true, false);
+    TEST_ERROR(ret < 0, "Could not setup output plane");
+
+    /**
+     * Query, Export and Map the capture plane buffers so that we can write
+     * encoded data from the buffers
+     */
+    ret = ctx.enc->capture_plane.setupPlane(V4L2_MEMORY_MMAP, 6, true, false);
+    TEST_ERROR(ret < 0, "Could not setup capture plane");
+
+    /* output plane STREAMON */
+    ret = ctx.enc->output_plane.setStreamStatus(true);
+    TEST_ERROR(ret < 0, "Error in output plane streamon");
+
+    /* capture plane STREAMON */
+    ret = ctx.enc->capture_plane.setStreamStatus(true);
+    TEST_ERROR(ret < 0, "Error in capture plane streamon");
+
+    ctx.enc->capture_plane.setDQThreadCallback(encoder_capture_plane_dq_callback);
+
+    /**
+     * startDQThread starts a thread internally which calls the
+     * encoder_capture_plane_dq_callback whenever a buffer is dequeued
+     * on the plane
+     */
+    ctx.enc->capture_plane.startDQThread(&ctx);
+
+    /* Enqueue all the empty capture plane buffers */
+    for (uint32_t i = 0; i < ctx.enc->capture_plane.getNumBuffers(); i++)
+    {
+        struct v4l2_buffer v4l2_buf;
+        struct v4l2_plane planes[MAX_PLANES];
+
+        memset(&v4l2_buf, 0, sizeof(v4l2_buf));
+        memset(planes, 0, MAX_PLANES * sizeof(struct v4l2_plane));
+
+        v4l2_buf.index = i;
+        v4l2_buf.m.planes = planes;
+
+        ret = ctx.enc->capture_plane.qBuffer(v4l2_buf, NULL);
+        if (ret < 0)
+        {
+            cerr << "Error while queueing buffer at capture plane" << endl;
+            //abort(&ctx);
+            //goto cleanup;
+        }
+    }
+
+    // websocket  client init
+    
+    // if(websocketOn)
+    // {
+    //     c.set_access_channels(websocketpp::log::alevel::all);
+    //     c.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    //     c.clear_access_channels(websocketpp::log::alevel::frame_header);
+
+    //     c.init_asio();
+
+    //     websocketpp::lib::error_code ec;
+    //     con = c.get_connection(weburi, ec);
+    //     con->add_subprotocol("janus-protocol");
+    //     if(ec)
+    //     {
+    //         spdlog::warn("could not create connection because:{}", ec.message());
+    //     }
+
+    //     hdl = con->get_handle();
+    //     c.connect(con);
+    //     std::thread th(&client::run, &c);
+    //     th.detach();
+    // }
+    // sleep(3);
+    // c.send(hdl, "hello", websocketpp::frame::opcode::text);
+    // c.close(hdl, websocketpp::close::status::normal, "");
+
+    // m_endpoint.set_error_channels(websocketpp::log::elevel::all);
+    // m_endpoint.set_access_channels(websocketpp::log::alevel::devel);
+    // m_endpoint.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    // m_endpoint.init_asio();
+    // m_endpoint.set_open_handler(std::bind(&on_open, std::placeholders::_1));
+    // m_endpoint.listen(9002);
+    // m_endpoint.start_accept();
+    // m_endpoint.run();
+
+    if(websocketOn)
+    {
+        std::thread serverTh = std::thread(startServerTh);
+        serverTh.detach();
+    }
+
+}
+
 jetsonEncoder::~jetsonEncoder()
 {
     spdlog::warn("jetsonEncoder destructor ");
-    c.close(hdl, websocketpp::close::status::normal, "");
+    // c.close(hdl, websocketpp::close::status::normal, "");
     if(ctx.enc)
         delete ctx.enc;
 }
@@ -293,11 +532,12 @@ void jetsonEncoder::copyYuvToBuffer(uint8_t *yuv_bytes, NvBuffer &buffer)
 
 int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
 {
+    spdlog::warn("jetsonEncoder::encodeFrame");
     int ret = 0;
     struct v4l2_buffer v4l2_buf;
     struct v4l2_plane planes[MAX_PLANES];
     NvBuffer *buffer = ctx.enc->output_plane.getNthBuffer(frame_count);
-
+    spdlog::warn("jetsonEncoder::529");
     memset(&v4l2_buf, 0, sizeof(v4l2_buf));
     memset(planes, 0, MAX_PLANES * sizeof(struct v4l2_plane));
 
@@ -312,6 +552,7 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
             v4l2_buf.m.planes[0].bytesused = 0;
 
     } else {
+        spdlog::warn("jetsonEncoder::544");
         if (ctx.enc->output_plane.dqBuffer(v4l2_buf, &buffer, nullptr, 10) < 0) {
             cerr << "ERROR while DQing buffer at output plane" << endl;
             //abort(&ctx);
@@ -319,14 +560,14 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
         }
     }
 
-    
+    spdlog::warn("jetsonEncoder::552");
     if (frame_count >= ctx.enc->output_plane.getNumBuffers()) {
         if (yuv_bytes)
             copyYuvToBuffer(yuv_bytes, *buffer);
         else
             v4l2_buf.m.planes[0].bytesused = 0;
     }
-
+    spdlog::warn("ctx.enc->output_plane.qBuffer");
     ret = ctx.enc->output_plane.qBuffer(v4l2_buf, nullptr);
     if (ret < 0) {
         cerr << "Error while queueing buffer at output plane" << endl;
@@ -338,5 +579,20 @@ int jetsonEncoder::encodeFrame(uint8_t *yuv_bytes)
     return ret;
 }
 
+int jetsonEncoder::process(cv::Mat &img)
+{
+    spdlog::warn("jetsonEncoder::process");
+    if(!webSocketSendStart)
+        return RET_OK;
+
+    cv::Mat yuvImg;
+    cv::resize(img, img, cv::Size(1280,720));
+
+    cvtColor(img, yuvImg,CV_BGR2YUV_I420);
+
+    // spdlog::warn("yuvImg size:{}", yuvImg.total()*yuvImg.elemSize());
+
+    encodeFrame(yuvImg.data); 
+}
 
 

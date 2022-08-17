@@ -28,18 +28,20 @@
 #include "yolo_v2_class.hpp"
 #include "Yolo3Detection.h"
 
+#include "yaml-cpp/yaml.h"
 #include "spdlog/spdlog.h"
-
+#include "stitcherglobal.h"
 
 
 class imageProcessor
 {
     public:
-    imageProcessor(std::string net, std::string canname = "can0", int batchsize = 1);
+    imageProcessor();
+    int init(std::string cfgpath);
     cv::Mat Process(cv::Mat &img);
     cv::Mat ProcessOnce(cv::Mat &img, std::vector<int> &ret);
     cv::Mat ProcessOnce(cv::Mat &img);
-    void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
+    // void publishImage(cv::Mat img);     //图像h264编码、UDP发送和视频流存储
     cv::Mat SSR(cv::Mat input);     //图像增强
     cv::Mat ImageDetect(cv::Mat &img, std::vector<int> &detret);     //目标检测
     void ImageDetect(std::vector<cv::Mat> &imgs, std::vector<std::vector<int>> &detret);
@@ -51,7 +53,7 @@ class imageProcessor
     void cut_img(cv::Mat &src_img, std::vector<cv::Mat> &ceil_img);  //将拼接好的图像裁成2*1图像块并存储到vector中
     cv::Mat processImage(std::vector<cv::Mat> &ceil_img);    //调用图像裁剪、检测和检测结果拼接、UDP发送目标信息、CAN发送目标信息
     tk::dnn::Yolo3Detection detNN;
-    jetsonEncoder nvEncoder;
+    // jetsonEncoder nvEncoder;
     // cansender *pCanSender;
     int n_batch;
 };

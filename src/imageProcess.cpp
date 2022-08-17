@@ -239,25 +239,26 @@ cv::Mat imageProcessor::ProcessOnce(cv::Mat &img){
 }
 
 
-void imageProcessor::publishImage(cv::Mat img)
-{
-    cv::Mat yuvImg;
-    cv::resize(img, img, cv::Size(1280,720));
+// void imageProcessor::publishImage(cv::Mat img)
+// {
+//     cv::Mat yuvImg;
+//     cv::resize(img, img, cv::Size(1280,720));
 
-    cvtColor(img, yuvImg,CV_BGR2YUV_I420);
+//     cvtColor(img, yuvImg,CV_BGR2YUV_I420);
 
-    // spdlog::warn("yuvImg size:{}", yuvImg.total()*yuvImg.elemSize());
+//     // spdlog::warn("yuvImg size:{}", yuvImg.total()*yuvImg.elemSize());
 
-    nvEncoder.encodeFrame(yuvImg.data); 
-}
+//     nvEncoder.encodeFrame(yuvImg.data); 
+// }
 
 //Init here
-imageProcessor::imageProcessor(std::string net, std::string canname, int batchsize):n_batch(batchsize) {
-    pthread_t tid;
+imageProcessor::imageProcessor():n_batch(1)
+{
+    // pthread_t tid;
     // canInit();
-    int n_classes = 80;
-    float conf_thresh=0.8;
-    detNN.init(net, n_classes, n_batch, conf_thresh);
+    // int n_classes = 80;
+    // float conf_thresh=0.8;
+    // detNN.init(net, n_classes, n_batch, conf_thresh);
 
     // pCanSender = new cansender(canname.c_str());
 
@@ -265,6 +266,40 @@ imageProcessor::imageProcessor(std::string net, std::string canname, int batchsi
     // if (ret != 0)
     // {
     //    spdlog::warn("pthread_create error: error_code={}", ret);
-    // }
-   spdlog::debug("detNN init completed");
+    // } 
+   
+}
+
+int imageProcessor::init(std::string cfgpath)
+{
+    YAML::Node config;
+    try {
+        config = YAML::LoadFile(cfgpath);
+    } catch (YAML::ParserException &ex) {
+        spdlog::critical("camera cfg yaml:{}  parse failed:{}, can't undistor camera", cfgpath, ex.what());
+        // std::cerr << "!! config parse failed: " << ex.what() << std::endl;
+        // exit(-1);
+    } catch (YAML::BadFile &ex) {
+        spdlog::critical("camera cfg yaml:{} load failed:{}, can't undistor camera", cfgpath, ex.what());
+        // std::cerr << "!! config load failed: " << ex.what() << std::endl;
+        // exit(-1);
+    }
+
+    try{
+        std::string net = config["netpath"].as<string>();
+        n_batch = config["batchSize"].as<int>();
+        int n_classes = 80;
+        float conf_thresh=0.8;
+        detNN.init(net, n_classes, n_batch, conf_thresh);
+    }
+    catch(...)
+    {
+        spdlog::critical("imageProcessor init failed");
+        return RET_ERR;
+    }
+    
+
+    spdlog::debug("imageProcessor init completed");
+
+    return RET_OK;
 }

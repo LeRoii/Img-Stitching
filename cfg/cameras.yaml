@@ -2,6 +2,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx424
+  sttype: default
   fov: 60
   srcsz: 3840
   undistorsz: 1920
@@ -11,6 +12,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx424
+  sttype: default
   fov: 60
   srcsz: 3840
   undistorsz: 960
@@ -20,6 +22,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx390
+  sttype: default
   fov: 60
   srcsz: 1920
   undistorsz: 1920
@@ -29,6 +32,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx390
+  sttype: default
   fov: 60
   srcsz: 1920
   undistorsz: 960
@@ -38,6 +42,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx390
+  sttype: default
   fov: 90
   srcsz: 1920
   undistorsz: 1920
@@ -46,6 +51,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx390
+  sttype: default
   fov: 90
   srcsz: 1920
   undistorsz: 960
@@ -54,6 +60,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx390
+  sttype: default
   fov: 120
   srcsz: 1920
   undistorsz: 1920
@@ -62,6 +69,7 @@ cameras:
  -
   vendor: sensing
   sensor: imx390
+  sttype: default
   fov: 120
   srcsz: 1920
   undistorsz: 960
@@ -71,6 +79,7 @@ cameras:
  -
   vendor: lijing
   sensor: imx390
+  sttype: default
   fov: 60
   srcsz: 1920
   undistorsz: 1920
@@ -80,6 +89,7 @@ cameras:
  -
   vendor: lijing
   sensor: imx390
+  sttype: default
   fov: 60
   srcsz: 1920
   undistorsz: 960
@@ -89,6 +99,7 @@ cameras:
  -
   vendor: lijing
   sensor: imx390
+  sttype: default
   fov: 90
   srcsz: 1920
   undistorsz: 1920
@@ -97,6 +108,7 @@ cameras:
  -
   vendor: lijing
   sensor: imx390
+  sttype: default
   fov: 90
   srcsz: 1920
   undistorsz: 960
@@ -105,6 +117,7 @@ cameras:
  -
   vendor: lijing
   sensor: imx390
+  sttype: default
   fov: 120
   srcsz: 1920
   undistorsz: 1920
@@ -113,6 +126,20 @@ cameras:
  -
   vendor: lijing
   sensor: imx390
+  sttype: 4cam-silver
+  fov: 120
+  srcsz: 1920
+  undistorsz: 960
+  K: [5.697254178623398e+02,0,4.829014673006656e+02,0,5.704662182576785e+02,2.533451302114767e+02,0,0,1]
+  distorParams: [-0.3892, 0.1146, 0, 0]
+  rect: [10,65,945,406]
+#   K: [5.172537738732404e+02, 0, 5.001542937795654e+02, 0, 5.174196002749518e+02, 2.652189095819902e+02,0,0, 1]
+#   distorParams: [-0.33662, 0.0866, 0, 0]
+#   rect: [138,66,742,408]
+ -
+  vendor: lijing
+  sensor: imx390
+  sttype: 4cam-black
   fov: 120
   srcsz: 1920
   undistorsz: 960

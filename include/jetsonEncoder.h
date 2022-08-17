@@ -1,6 +1,7 @@
 #ifndef _JETSON_ENCODER_H_
 #define _JETSON_ENCODER_H_
 
+#include <opencv2/opencv.hpp>
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
@@ -39,8 +40,10 @@ class jetsonEncoder
 {
     public:
     jetsonEncoder();
+    jetsonEncoder(bool on);
     ~jetsonEncoder();
     int encodeFrame(uint8_t *yuv_bytes);
+    int process(cv::Mat &img);
     
     private:
     void set_defaults(context_t * ctx);
@@ -49,6 +52,9 @@ class jetsonEncoder
 
     context_t ctx;
     int frame_count;
+    bool websocketOn;
+
+
 };
 
 #endif

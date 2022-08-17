@@ -237,6 +237,7 @@ int scanKeyboard()
 }
 
 imageProcessor *nvProcessor = nullptr;
+jetsonEncoder *encoder = nullptr;
 
 int main(int argc, char *argv[])
 {
@@ -272,7 +273,7 @@ int main(int argc, char *argv[])
     for(int i=0;i<USED_CAMERA_NUM;i++)
     {
         cameras[i].reset(new nvCam(camcfgs[i]));
-        if(RET_ERR == cameras[i]->init(cameraParamsPath))
+        if(RET_ERR == cameras[i]->init(stitchercfgpath))
         {
             spdlog::warn("camera [{}] init failed!", i);
         }
@@ -284,7 +285,9 @@ int main(int argc, char *argv[])
     for(auto& th:threads)
         th.detach();
 
-    nvProcessor = new imageProcessor(net, canname, batchSize);  
+    nvProcessor = new imageProcessor(); 
+    nvProcessor->init(stitchercfgpath);
+    encoder = new jetsonEncoder(websocketOn);
 
 
     /************************************stitch all *****************************************/
@@ -462,11 +465,11 @@ int main(int argc, char *argv[])
         spdlog::info("concat takes:{} ms", sdkGetTimerValue(&timer));
 
 
-        // if(detect)
-        // {
-        //     ret = nvProcessor->ProcessOnce(ret);
-        //     spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
-        // }
+        if(detect)
+        {
+            ret = nvProcessor->ProcessOnce(ret);
+            spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
+        }
 
         if(!writerInit && savevideo)
         {
@@ -496,7 +499,7 @@ int main(int argc, char *argv[])
 
         // renderer->renderWithUi(ret, oriimg);
         if(websocketOn)
-            nvProcessor->publishImage(final); 
+            encoder->process(final); 
 
         if(savevideo)
         {
@@ -504,7 +507,7 @@ int main(int argc, char *argv[])
             // *oriWriter << ori;
         }
 
-        // cv::imwrite("final.png", stitcherOut[1]);
+        // cv::imwrite("final.png", stitcherOut[1]); 
         // return 0;
 
         // cv::imshow("1", stitcherOut[1]);

@@ -38,7 +38,7 @@ static stCamCfg ymlCameraCfg;
 static std::string cameraParamsPath;
 static bool websocketOn;
 static int websocketPort;
-static std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
+static std::string stitchercfgpath = "/home/nx/code/release/stitcher-imx390cfg.yaml";
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -192,50 +192,50 @@ static int parseYml()
     return RET_OK;
 }
 
-int scanKeyboard()
-{
-  //  struct termios
-  //    {
-  //      tcflag_t c_iflag;		/* input mode flags */
-  //      tcflag_t c_oflag;		/* output mode flags */
-  //      tcflag_t c_cflag;		/* control mode flags */
-  //      tcflag_t c_lflag;		/* local mode flags */
-  //      cc_t c_line;			/* line discipline */
-  //      cc_t c_cc[NCCS];		/* control characters */
-  //      speed_t c_ispeed;		/* input speed */
-  //      speed_t c_ospeed;		/* output speed */
-  //  #define _HAVE_STRUCT_TERMIOS_C_ISPEED 1
-  //  #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
-  //    };
-  while(1 && g_keyboardinput!=113)
-  {
+// int scanKeyboard()
+// {
+//   //  struct termios
+//   //    {
+//   //      tcflag_t c_iflag;		/* input mode flags */
+//   //      tcflag_t c_oflag;		/* output mode flags */
+//   //      tcflag_t c_cflag;		/* control mode flags */
+//   //      tcflag_t c_lflag;		/* local mode flags */
+//   //      cc_t c_line;			/* line discipline */
+//   //      cc_t c_cc[NCCS];		/* control characters */
+//   //      speed_t c_ispeed;		/* input speed */
+//   //      speed_t c_ospeed;		/* output speed */
+//   //  #define _HAVE_STRUCT_TERMIOS_C_ISPEED 1
+//   //  #define _HAVE_STRUCT_TERMIOS_C_OSPEED 1
+//   //    };
+//   while(1 && g_keyboardinput!=113)
+//   {
     
-    struct termios new_settings;
-    struct termios stored_settings;
-    tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
-    new_settings = stored_settings;           //
-    new_settings.c_lflag &= (~ICANON);        //
-    new_settings.c_cc[VTIME] = 0;
-    tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
-    new_settings.c_cc[VMIN] = 1;
-    tcsetattr(STDIN_FILENO,TCSANOW,&new_settings); //
+//     struct termios new_settings;
+//     struct termios stored_settings;
+//     tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+//     new_settings = stored_settings;           //
+//     new_settings.c_lflag &= (~ICANON);        //
+//     new_settings.c_cc[VTIME] = 0;
+//     tcgetattr(STDIN_FILENO,&stored_settings); //获得stdin 输入
+//     new_settings.c_cc[VMIN] = 1;
+//     tcsetattr(STDIN_FILENO,TCSANOW,&new_settings); //
 
-    g_keyboardinput = getchar();
+//     g_keyboardinput = getchar();
 
-    tcsetattr(STDIN_FILENO,TCSANOW,&stored_settings);
+//     tcsetattr(STDIN_FILENO,TCSANOW,&stored_settings);
 
-    // setbit(g_usrcmd, SETTING_ON);
-    // if(g_keyboardinput == 101)  //e
-    //     setbit(g_usrcmd, SETTING_IMGENHANCE);
-    // else if(g_keyboardinput == 100) //d
-    //     reversebit(g_usrcmd, SETTING_DETECTION);
-    // else if(g_keyboardinput == 99)  //c
-    //     reversebit(g_usrcmd, SETTING_CROSS);
-    // else if(g_keyboardinput == 115)  //s
-    //     reversebit(g_usrcmd, SETTING_SAVE);
-    // return g_keyboardinput;
-  }
-}
+//     // setbit(g_usrcmd, SETTING_ON);
+//     // if(g_keyboardinput == 101)  //e
+//     //     setbit(g_usrcmd, SETTING_IMGENHANCE);
+//     // else if(g_keyboardinput == 100) //d
+//     //     reversebit(g_usrcmd, SETTING_DETECTION);
+//     // else if(g_keyboardinput == 99)  //c
+//     //     reversebit(g_usrcmd, SETTING_CROSS);
+//     // else if(g_keyboardinput == 115)  //s
+//     //     reversebit(g_usrcmd, SETTING_SAVE);
+//     // return g_keyboardinput;
+//   }
+// }
 
 imageProcessor *nvProcessor = nullptr;
 jetsonEncoder *encoder = nullptr;
@@ -416,17 +416,17 @@ int main(int argc, char *argv[])
     while(ostitcherDown.init(downImgs, initMode) != 0);
     spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
-	VideoWriter *panoWriter = nullptr;
-	VideoWriter *oriWriter = nullptr;
-    bool writerInit = false;
+	// VideoWriter *panoWriter = nullptr;
+	// VideoWriter *oriWriter = nullptr;
+    // bool writerInit = false;
 
     StopWatchInterface *timer = NULL;
     sdkCreateTimer(&timer);
     sdkResetTimer(&timer);
     sdkStartTimer(&timer);
 
-    std::thread listerner = std::thread(scanKeyboard);
-    listerner.detach();
+    // std::thread listerner = std::thread(scanKeyboard);
+    // listerner.detach();
     
     while(1)
     {
@@ -458,33 +458,33 @@ int main(int argc, char *argv[])
         spdlog::info("concat takes:{} ms", sdkGetTimerValue(&timer));
 
 
-        if(detect)
-        {
+        // if(detect)
+        // {
             ret = nvProcessor->ProcessOnce(ret);
-            spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
-        }
+        //     spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
+        // }
 
-        if(!writerInit && savevideo)
-        {
-             std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
-             struct std::tm * ptm = std::localtime(&tt);
-             stringstream sstr;
-             sstr << std::put_time(ptm,"%F-%H-%M-%S");
-             Size panoSize(ret.size().width, ret.size().height);
-             Size oriSize(ori.size().width, ori.size().height);
-             // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
-            // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
-             panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('D','I','V','X'), videoFps, Size(1280,720));
-             // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
+        // if(!writerInit && savevideo)
+        // {
+        //      std::time_t tt = chrono::system_clock::to_time_t (chrono::system_clock::now());
+        //      struct std::tm * ptm = std::localtime(&tt);
+        //      stringstream sstr;
+        //      sstr << std::put_time(ptm,"%F-%H-%M-%S");
+        //      Size panoSize(ret.size().width, ret.size().height);
+        //      Size oriSize(ori.size().width, ori.size().height);
+        //      // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, panoSize);
+        //     // panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('I','4','2','0'), videoFps, Size(1920,1080));
+        //      panoWriter = new VideoWriter(sstr.str()+"-pano.avi", CV_FOURCC('D','I','V','X'), videoFps, Size(1280,720));
+        //      // oriWriter = new VideoWriter(sstr.str()+"-ori.avi", CV_FOURCC('M', 'J', 'P', 'G'), videoFps, oriSize);
 
-             if (!panoWriter->isOpened())
-             {
-                 spdlog::critical("Can not create video file.");
-                 return -1;
-             }
+        //      if (!panoWriter->isOpened())
+        //      {
+        //          spdlog::critical("Can not create video file.");
+        //          return -1;
+        //      }
 
-             writerInit = true;
-         }
+        //      writerInit = true;
+        //  }
         cv::Mat final;
         final = renderer->render(ret);
         // renderer->render(ret, final);
@@ -495,25 +495,25 @@ int main(int argc, char *argv[])
             // encoder->process(final); 
             encoder->sendBase64(final); 
 
-        if(savevideo)
-        {
-            *panoWriter << final;
-            // *oriWriter << ori;
-        }
+        // if(savevideo)
+        // {
+        //     *panoWriter << final;
+        //     // *oriWriter << ori;
+        // }
 
         // cv::imwrite("final.png", stitcherOut[1]); 
         // return 0;
 
         // cv::imshow("1", stitcherOut[1]);
-        char c = (char)cv::waitKey(1);
-        if(c=='v')
-        {
-            if(panoWriter)
-            {
-                panoWriter->release();
-                return 0;
-            }
-        }
+        // char c = (char)cv::waitKey(1);
+        // if(c=='v')
+        // {
+        //     if(panoWriter)
+        //     {
+        //         panoWriter->release();
+        //         return 0;
+        //     }
+        // }
         
         spdlog::debug("frame [{}], render takes:{} ms", framecnt, sdkGetTimerValue(&timer));
 

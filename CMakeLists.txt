@@ -9,7 +9,7 @@ set(LIB_PANO_MAJOR 1)
 set(LIB_PANO_MINOR 0)
 set(LIB_PANO_PATCH 0)
 
-set(NVINFER_VERSION 7)
+set(NVINFER_VERSION 8)
 
 set(BUILD_testocv OFF CACHE BOOL "build testocv" FORCE)
 set(BUILD_cameracuda OFF CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
@@ -79,8 +79,8 @@ message(STATUS "CUDNN_LIBRARISE:::${CUDNN_LIBRARIES}")
 # add_compile_options(-std=c++14 -g )
 add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
-add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
-# add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
+#add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
+ add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DEXPORT_SO -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DDEV_MODE -DDISTRIBUTED_STRUCT)
 # add_definitions(-DCAM_IMX424 -DDEV_MODE -DCENTRIC_STRUCT)
@@ -203,7 +203,7 @@ message(STATUS "BUILD_master:::::::::: ${BUILD_master}")
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
     ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS} ${CUDNN_LIBRARIES}
-    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN -lkernels 
+    -ltkDNN -lkernels 
     -lboost_system -lboost_random -lboost_thread -lpthread
     )
 endif()

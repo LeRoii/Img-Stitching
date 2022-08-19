@@ -148,3 +148,8 @@ make
 - 标定和拼接用的相机参数写在yml中，不再hardcode
 - 增加nvrenderbase抽象类以支持不同的ui，目前还不完整
 - 增加第三方库websocketpp
+
+08.19.
+- 增加base64编码
+- 拼接结果裁剪参数写入yml，裁剪操作移入stitcher
+- encoder从imageprocessor分离，imageprocessor只做检测

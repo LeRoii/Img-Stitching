@@ -257,7 +257,8 @@ class ocvStitcher
     ocvStitcher(stStitcherCfg cfg):
     m_stitcherCfgPath(cfg),m_imgWidth(cfg.width), m_imgHeight(cfg.height), m_id(cfg.id),num_images(cfg.num_images), 
     match_conf(cfg.matchConf), conf_thresh(cfg.adjusterConf), blend_strength(cfg.blendStrength),
-    cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres),defaultCamParams("")
+    cameraExThres(cfg.stitchercameraExThres), cameraInThres(cfg.stitchercameraInThres),defaultCamParams(""),
+    m_initmode(cfg.initMode)
     {
         finder = makePtr<SurfFeaturesFinder>();
         seam_work_aspect = min(1.0, sqrt(1e5 / (m_imgHeight*m_imgWidth)));
@@ -539,15 +540,15 @@ class ocvStitcher
         //     return initAll(imgs);
         // else
         //     return initSeam(imgs);
-
+        m_initmode = initMode;
         if(enInitALL == initMode)
             return initAll(imgs);
-        else if(enInitByDefault)
+        else if(enInitByDefault == initMode)
         {
             useDefaultCamParams();
             return initSeam(imgs);
         }
-        else if(enInitByCfg)
+        else if(enInitByCfg == initMode)
         {
             if(RET_OK ==initCamParams(m_camCfgPath))
                 return initSeam(imgs);
@@ -863,6 +864,13 @@ class ocvStitcher
 
         Mat result, result_mask;
         blender->blend(result, result_mask);
+
+        if(m_initmode != enInitByDefault)
+        {
+            m_cutParams[0] = 0;
+            m_cutParams[1] = (result.rows - m_cutParams[3])/2;
+            m_cutParams[2] = result.cols;
+        }
 
         spdlog::debug("init ok takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
 #ifdef DEV_MODE
@@ -1194,6 +1202,7 @@ class ocvStitcher
     std::vector<int> m_cutParams;
 
     stStitcherCfg m_stitcherCfgPath;
+    int m_initmode;
 
     // Ptr<Blender> blender;
 

@@ -40,10 +40,11 @@ class jetsonEncoder
 {
     public:
     jetsonEncoder();
-    jetsonEncoder(bool on);
+    jetsonEncoder(bool on, int portnum);
     ~jetsonEncoder();
     int encodeFrame(uint8_t *yuv_bytes);
     int process(cv::Mat &img);
+    int sendBase64(cv::Mat &img);
     
     private:
     void set_defaults(context_t * ctx);

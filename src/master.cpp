@@ -37,7 +37,7 @@ static std::string canname;
 static stCamCfg ymlCameraCfg;
 static std::string cameraParamsPath;
 static bool websocketOn;
-
+static int websocketPort;
 static std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
 
 static bool
@@ -181,6 +181,7 @@ static int parseYml()
 
         weburi = config["websocketurl"].as<string>();
         websocketOn = config["websocketOn"].as<bool>();
+        websocketPort = config["websocketPort"].as<int>();
     }
     catch(...)
     {
@@ -246,14 +247,6 @@ int main(int argc, char *argv[])
 
     if(RET_ERR == parseYml())
         return RET_ERR;
-    
-    int finalcut = 15;
-    if(stitcherinputWidth == 480)
-        finalcut = 15;
-    else if(stitcherinputWidth == 640)
-        finalcut = 40;
-    else if(stitcherinputWidth == 720)
-        finalcut = 35;
 
     nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrenderAlpha *renderer = new nvrenderAlpha(rendercfg);
@@ -287,7 +280,7 @@ int main(int argc, char *argv[])
 
     nvProcessor = new imageProcessor(); 
     nvProcessor->init(stitchercfgpath);
-    encoder = new jetsonEncoder(websocketOn);
+    encoder = new jetsonEncoder(websocketOn, websocketPort);
 
 
     /************************************stitch all *****************************************/
@@ -377,10 +370,10 @@ int main(int argc, char *argv[])
 
     stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 
                             0, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, 
-                            stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath},
+                            stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath, initMode},
                                     stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 
                                     1, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, 
-                                    stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath}};
+                                    stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath, initMode}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);
@@ -499,7 +492,8 @@ int main(int argc, char *argv[])
 
         // renderer->renderWithUi(ret, oriimg);
         if(websocketOn)
-            encoder->process(final); 
+            // encoder->process(final); 
+            encoder->sendBase64(final); 
 
         if(savevideo)
         {

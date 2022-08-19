@@ -100,6 +100,7 @@ struct stStitcherCfg
     float stitchercameraExThres;
     float stitchercameraInThres;
     std::string cfgPath;
+    int initMode;
 };
 
 struct stSysStatus

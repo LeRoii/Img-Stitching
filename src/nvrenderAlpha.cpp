@@ -96,13 +96,13 @@ cv::Mat nvrenderAlpha::renderocv(cv::Mat &img)
 
 cv::Mat nvrenderAlpha::render(cv::Mat &img)
 {
-    std::time_t tt = std::chrono::system_clock::to_time_t (std::chrono::system_clock::now());
-    // struct std::tm * ptm = std::localtime(&tt);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
-    std::string str = ss.str();
-    // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-    cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
+    // std::time_t tt = std::chrono::system_clock::to_time_t (std::chrono::system_clock::now());
+    // // struct std::tm * ptm = std::localtime(&tt);
+    // std::stringstream ss;
+    // ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
+    // std::string str = ss.str();
+    // // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
+    // cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
     if(m_mode == RENDER_EGL)
         return renderegl(img);
@@ -155,7 +155,7 @@ cv::Mat nvrenderAlpha::fit2final(cv::Mat &input)
     
     if(input.cols == 1920 && input.rows == 1080)
     {
-        // input.copyTo(output); 
+        input.copyTo(canvas); 
         return input;
     }
     // int offsetX, offsetY, h, w;
@@ -163,8 +163,8 @@ cv::Mat nvrenderAlpha::fit2final(cv::Mat &input)
     cv::Mat tmp;
     if(!fitsizeok)
     {
-        maxHeight = 720;
-        maxWidth = 1280;
+        maxHeight = nvbufferHeight;
+        maxWidth = nvbufferWidth;
         fitscale = 1;
         if(input.cols > maxWidth)
         {

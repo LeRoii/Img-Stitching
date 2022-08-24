@@ -875,7 +875,7 @@ public:
             cv::cvtColor(tmp, tmp, cv::COLOR_RGBA2RGB);
             // m_distoredImg = tmp.clone();
             // // /*undistored*********/
-
+            // tmp  = cv::imread("/home/nvidia/ssd/data/lj120fov-960/1-ori1852.png");
             // spdlog::trace("read frame before remap takes :{} ms", sdkGetTimerValue(&timer));
             cv::remap(tmp, m_undistoredImg, m_mapx, m_mapy, cv::INTER_CUBIC);
 

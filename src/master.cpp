@@ -38,7 +38,12 @@ static stCamCfg ymlCameraCfg;
 static std::string cameraParamsPath;
 static bool websocketOn;
 static int websocketPort;
-static std::string stitchercfgpath = "/home/nx/code/release/stitcher-imx390cfg.yaml";
+
+#ifdef DEV_MODE
+static std::string stitchercfgpath = "../cfg/stitcher-imx390cfg.yaml";
+#else
+static std::string stitchercfgpath = "/etc/panorama/stitcher-imx390cfg.yaml";
+#endif
 
 static bool
 parse_cmdline(int argc, char **argv)
@@ -51,7 +56,7 @@ parse_cmdline(int argc, char **argv)
         return true;
     }
     string cfgpath;
-    while ((c = getopt(argc, argv, "sdievoc:")) != -1)
+    while ((c = getopt(argc, argv, "sdev")) != -1)
     {
         switch (c)
         {
@@ -61,25 +66,11 @@ parse_cmdline(int argc, char **argv)
             case 'd':
                 detect = true;
                 break;
-            case 'i':
-                initonline = true;
-                break;
             case 'e':
                 start_ssr = true;
                 break;
             case  'v':
                 savevideo = true;
-                break;
-            case 'o':
-                displayori = true;
-                break;
-            case 'c':
-                cfgpath = optarg;
-                spdlog::info("cfg path:{}", cfgpath);
-                if(std::string::npos == cfgpath.find(".yaml"))
-                    spdlog::warn("input cfgpath invalid, use default");
-                else
-                    stitchercfgpath = cfgpath;
                 break;
             default:
                 break;
@@ -281,92 +272,6 @@ int main(int argc, char *argv[])
     nvProcessor = new imageProcessor(); 
     nvProcessor->init(stitchercfgpath);
     encoder = new jetsonEncoder(websocketOn, websocketPort);
-
-
-    /************************************stitch all *****************************************/
-    {
-    // vector<Mat> imgs(8);
-
-    // ocvStitcher stitcherall(stitcherinputWidth, stitcherinputHeight, 3);
-
-    // vector<Mat> imgss;
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/5.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/6.png"));
-    // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/7.png"));
-    // // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/8.png"));
-
-    // do{
-    //     imgs.clear();
-    //     for(int i=0;i<USED_CAMERA_NUM;i++)
-    //     {
-    //         cameras[i]->read_frame();
-    //         imgs.push_back(cameras[i]->m_ret);
-    //     }
-    //     serverCap();
-    //     imgs.push_back(downImgs[2]);
-    //     imgs.push_back(downImgs[3]);
-
-        
-    // }
-    // while(stitcherall.init(imgs, initonline) != 0);
-
-    // // ocvStitcher ostitcherUp(960/2, 540/2, 1);
-    // // ocvStitcher ostitcherDown(960/2, 540/2, 2);
-    // // ocvStitcher ostitcherUp(stitcherinputWidth, stitcherinputHeight, 1);
-    // // ocvStitcher ostitcherDown(stitcherinputWidth, stitcherinputHeight, 2);
-
-    // std::vector<std::thread> threads;
-    // for(int i=0;i<USED_CAMERA_NUM;i++)
-    //     threads.push_back(std::thread(&nvCam::run, cameras[i].get()));
-    // for(auto& th:threads)
-    //     th.detach();
-
-    // while(1)
-    // {
-    //     Mat ret;
-    //     imgs.clear();
-    //     spdlog::debug("start loop");
-    //     auto t = cv::getTickCount();
-    //     auto all = cv::getTickCount();
-
-    //     std::thread server(serverCap);
-    //     cameras[0]->getFrame(imgs[0]);
-    //     cameras[1]->getFrame(imgs[1]);
-    //     cameras[2]->getFrame(imgs[2]);
-    //     cameras[3]->getFrame(imgs[3]);
-    //     cameras[4]->getFrame(imgs[4]);
-    //     cameras[5]->getFrame(imgs[5]);
-    //     imgs[6] = downImgs[2];
-    //     imgs[7] = downImgs[3];
-
-    //     // imgss.clear();
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/1.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/2.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/3.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/4.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/5.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/6.png"));
-    //     // imgss.push_back(imread("/home/nvidia/ssd/code/0929IS/2222/7.png"));
-
-    //     spdlog::debug("master cap fini");
-    //     server.join();
-    //     spdlog::debug("slave cap fini");
-
-    //     spdlog::info("read takes : {:03.3f} ms", ((getTickCount() - t) / getTickFrequency()) * 1000);
-    //     t = cv::getTickCount();
-
-    //     stitcherall.process(imgs, ret);
-
-    //     imshow("ret", ret);
-    //     waitKey(1);
-    //     spdlog::info("******all takes: {:03.3f} ms", ((getTickCount() - all) / getTickFrequency()) * 1000);
-    // }
-    }
-    /************************************stitch all end*****************************************/
 
     stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 
                             0, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, 

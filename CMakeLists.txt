@@ -9,7 +9,7 @@ set(LIB_PANO_MAJOR 1)
 set(LIB_PANO_MINOR 0)
 set(LIB_PANO_PATCH 0)
 
-set(NVINFER_VERSION 8)
+set(NVINFER_VERSION 7)
 
 set(BUILD_testocv OFF CACHE BOOL "build testocv" FORCE)
 set(BUILD_cameracuda OFF CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
@@ -18,7 +18,7 @@ set(BUILD_master2 OFF CACHE BOOL "build master2, dev app for 2 cams panorama" FO
 set(BUILD_replay OFF CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
 set(BUILD_replay2 OFF CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
 set(BUILD_camshow OFF CACHE BOOL "build camshow, 8 camera disp app" FORCE)
-set(BUILD_camshow4cam OFF CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
+set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
 set(BUILD_camshow_2 OFF CACHE BOOL "build camshow-2, 2 camera disp app" FORCE)
 set(BUILD_panocam OFF CACHE BOOL "build panocam, panorama so" FORCE)
 set(BUILD_demo OFF CACHE BOOL "build demo, panorama so test app" FORCE)
@@ -27,7 +27,7 @@ set(BUILD_slave OFF CACHE BOOL "build slave, 8 panorama slave app" FORCE)
 set(BUILD_slaveshow OFF CACHE BOOL "build BUILD_slaveshow, 11 panorama slaveshow app" FORCE)
 
 set(BUILD_sti OFF CACHE BOOL "build sti, opencv stitching test app" FORCE)
-set(BUILD_sd OFF CACHE BOOL "build sd, origin opencv stitching app" FORCE)
+set(BUILD_sd ON CACHE BOOL "build sd, origin opencv stitching app" FORCE)
 set(BUILD_mo OFF CACHE BOOL "build mo, modified opencv stitching app" FORCE)
 set(BUILD_server OFF CACHE BOOL "build server, udp server" FORCE)
 
@@ -79,8 +79,8 @@ message(STATUS "CUDNN_LIBRARISE:::${CUDNN_LIBRARIES}")
 # add_compile_options(-std=c++14 -g )
 add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
-#add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
- add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
+add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
+# add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DEXPORT_SO -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DDEV_MODE -DDISTRIBUTED_STRUCT)
 # add_definitions(-DCAM_IMX424 -DDEV_MODE -DCENTRIC_STRUCT)
@@ -203,7 +203,7 @@ message(STATUS "BUILD_master:::::::::: ${BUILD_master}")
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
     ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS} ${CUDNN_LIBRARIES}
-    -ltkDNN -lkernels 
+    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN -lkernels 
     -lboost_system -lboost_random -lboost_thread -lpthread
     )
 endif()
@@ -265,7 +265,8 @@ endif()
 # Build camshow4cam 
 #-------------------------------------------------------------------------------
 if(BUILD_camshow4cam)
-    add_executable(camshow4cam src/camshow4cam.cpp src/imageProcess.cpp src/PracticalSocket.cpp  src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
+    add_executable(camshow4cam src/camshow4cam.cpp src/imageProcess.cpp src/PracticalSocket.cpp  
+    src/nvrenderbase.cpp src/nvrenderAlpha.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
     target_link_libraries(camshow4cam  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 

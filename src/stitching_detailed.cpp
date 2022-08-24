@@ -140,7 +140,7 @@ bool try_cuda = false;
 double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
-float conf_thresh = 0.7f;
+float conf_thresh = 0.3f;
 string features_type = "surf";
 string matcher_type = "homography";
 string estimator_type = "homography";
@@ -404,7 +404,7 @@ int main(int argc, char* argv[])
     //     return retval;
 
     // Check if have enough images
-    int num_images = 4;//static_cast<int>(img_names.size());
+    int num_images = 2;//static_cast<int>(img_names.size());
     if (num_images < 2)
     {
         LOGLN("Need more images");
@@ -445,15 +445,15 @@ int main(int argc, char* argv[])
     vector<Size> full_img_sizes(num_images);
     double seam_work_aspect = 1;
 
-    // img_names.push_back("1.png");
-    // img_names.push_back("2.png");
+    img_names.push_back("./1/1.png");
+    img_names.push_back("./1/2.png");
     // img_names.push_back("3.png");
     // img_names.push_back("4.png");
 
-    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/0.png");
-    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/1.png");
-    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/2.png");
-    img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/3.png");
+    // img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/0.png");
+    // img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/1.png");
+    // img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/2.png");
+    // img_names.push_back("/home/nvidia/ssd/code/Img-Stitching/2222/4cam/1/3.png");
 
     for (int i = 0; i < num_images; ++i)
     {

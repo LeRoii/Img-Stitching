@@ -63,4 +63,4 @@ websocketOn: true
 websocketPort: 9002
 
 # detection switch
-detection: false
+detection: true

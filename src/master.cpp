@@ -35,6 +35,7 @@ static int imgcut = 0;
 static std::string net;
 static std::string canname;
 static stCamCfg ymlCameraCfg;
+static stStitcherCfg ymlStitcherCfg;
 static std::string cameraParamsPath;
 static bool websocketOn;
 static int websocketPort;
@@ -132,6 +133,18 @@ static int parseYml()
         ymlCameraCfg.vendor = config["vendor"].as<string>();
         ymlCameraCfg.sensor = config["sensor"].as<string>();
         ymlCameraCfg.fov = config["fov"].as<int>();
+
+        // ymlStitcherCfg.width = ymlCameraCfg.outPutWidth;
+        // ymlStitcherCfg.height = ymlCameraCfg.outPutHeight;
+        // ymlStitcherCfg.id = 0;
+        // ymlStitcherCfg.num_images = config["num_images"].as<int>();
+        // ymlStitcherCfg.matchConf = config["stitcherMatchConf"].as<float>();
+        // ymlStitcherCfg.adjusterConf = config["stitcherAdjusterConf"].as<float>();
+        // ymlStitcherCfg.blendStrength = config["stitcherBlenderStrength"].as<float>();
+        // ymlStitcherCfg.stitchercameraExThres = config["stitcherCameraExThres"].as<float>();
+        // ymlStitcherCfg.stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
+        // ymlStitcherCfg.cfgpath = 
+        // ymlStitcherCfg.initMode = 
 
         imgcut = config["imgcut"].as<int>();
         num_images = config["num_images"].as<int>();
@@ -273,18 +286,19 @@ int main(int argc, char *argv[])
     nvProcessor->init(stitchercfgpath);
     encoder = new jetsonEncoder(websocketOn, websocketPort);
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 
-                            0, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, 
-                            stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath, initMode},
-                                    stStitcherCfg{ymlCameraCfg.outPutWidth, ymlCameraCfg.outPutHeight, 
-                                    1, num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, 
-                                    stitcherCameraExThres, stitcherCameraInThres, stitchercfgpath, initMode}};
+    ocvStitcher ostitcherUp;
+    ocvStitcher ostitcherDown;
 
-    ocvStitcher ostitcherUp(stitchercfg[0]);
-    ocvStitcher ostitcherDown(stitchercfg[1]);
-
-    ostitcherUp.init();
-    ostitcherDown.init();
+    if(RET_ERR == ostitcherUp.init(stitchercfgpath))
+    {
+        spdlog::critical("stitcher init failed, check yml parameters");
+        return RET_ERR;
+    }
+    if(RET_ERR == ostitcherDown.init(stitchercfgpath))
+    {
+        spdlog::critical("stitcher init failed, check yml parameters");
+        return RET_ERR;
+    }
 
     int failnum = 0;
     do{

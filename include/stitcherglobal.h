@@ -71,7 +71,6 @@ struct stCamCfg
     bool undistor;
 	int id;
     char name[20];
-    // int vendor;
     std::string vendor;
     std::string sensor;
     int fov;

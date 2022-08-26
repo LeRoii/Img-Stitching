@@ -61,3 +61,6 @@ batchSize: 1
 websocketurl: "ws://localhost:9002"
 websocketOn: true
 websocketPort: 9002
+
+# detection switch
+detection: false

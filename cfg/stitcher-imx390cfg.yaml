@@ -23,8 +23,8 @@ imgcut: 40
 cameraparams: "/home/nvidia/ssd/code/Img-Stitching/cfg/cameras.yaml"
 
 # parameters for renderer
-renderWidth: 10
-renderHeight: 10
+renderWidth: 960
+renderHeight: 540
 renderX: 0
 renderY: 0
 renderBufWidth: 1920
@@ -61,3 +61,6 @@ batchSize: 1
 websocketurl: "ws://localhost:9002"
 websocketOn: false
 websocketPort: 9002
+
+# detection
+detection: false

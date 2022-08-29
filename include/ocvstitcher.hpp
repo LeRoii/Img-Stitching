@@ -400,7 +400,7 @@ class ocvStitcher
             // std::cout<<"angle:"<<endl<<defaultAngle<<endl<<estimatedAngle<<endl;
             if(diff > m_stitcherCfgPath.stitchercameraExThres)
             {
-                spdlog::warn("environment is not suitable for calibration, init failed");
+                spdlog::warn("environment is not suitable for calibration, use default parameters");
                 return RET_ERR;
             }
             
@@ -411,7 +411,7 @@ class ocvStitcher
             spdlog::debug("camera[{}] intrinsic diff:{}", i, diff);
             if(diff > m_stitcherCfgPath.stitchercameraInThres)
             {
-                spdlog::warn("environment is not suitable for calibration, init failed");
+                spdlog::warn("environment is not suitable for calibration, use default parameters");
                 return RET_ERR;
             }
         }
@@ -588,13 +588,72 @@ class ocvStitcher
             spdlog::critical("invalid init mode, exit");
             return RET_ERR;
         }
+    }
+    int calibration(const vector<Mat> &imgs)
+    {
+        // m_stitcherCfgPath.initMode = calibMode;
+        // if(enInitALL == initMode)
+        //     return initAll(imgs);
+        // else if(enInitByDefault == initMode)
+        // {
+        //     useDefaultCamParams();
+        //     return initSeam(imgs);
+        // }
+        // else if(enInitByCfg == initMode)
+        // {
+        //     if(RET_OK ==initCamParams(m_stitcherCfgPath.cfgPath))
+        //         return initSeam(imgs);
+        //     else
+        //         return initAll(imgs);
+        // }
+        // else
+        // {
+        //     spdlog::critical("invalid init mode, exit");
+        //     return RET_ERR;
+        // }
+        spdlog::debug("stitcher [{}] calibration", m_stitcherCfgPath.id);
+        int calibRet = RET_ERR;
+        int failedNum = 0;
 
+        do{
+            if(enInitALL == m_stitcherCfgPath.initMode)
+                calibRet = initAll(imgs);
+            else if(enInitByDefault == m_stitcherCfgPath.initMode)
+            {
+                useDefaultCamParams();
+                calibRet = initSeam(imgs);
+            }
+            else if(enInitByCfg == m_stitcherCfgPath.initMode)
+            {
+                if(RET_OK ==initCamParams(m_stitcherCfgPath.cfgPath))
+                    calibRet = initSeam(imgs);
+                else
+                    calibRet = initAll(imgs);
+            }
+            else
+            {
+                spdlog::critical("invalid calibration mode, exit");
+                return RET_ERR;
+            }
 
+            failedNum++;
+            if(failedNum > 5)
+            {
+                spdlog::warn("calibration failed due to environment, use default parameters");
+                m_stitcherCfgPath.initMode = enInitByDefault;
+            }
+        }
+        while(calibRet != RET_OK);
+
+        spdlog::debug("stitcher [{}] calibration complete", m_stitcherCfgPath.id);
+        return RET_OK;
     }
 
-    int initAll(vector<Mat> &imgs)
+    
+
+    int initAll(const vector<Mat> &imgs)
     {
-        spdlog::debug("***********stitcher {} init start**************", m_stitcherCfgPath.id);
+        spdlog::debug("***********stitcher {} calibration start**************", m_stitcherCfgPath.id);
         auto t = getTickCount();
         auto app_start_time = getTickCount();
         vector<ImageFeatures> features(m_stitcherCfgPath.num_images);
@@ -635,7 +694,7 @@ class ocvStitcher
         if (!(*estimator)(features, pairwise_matches, cameras))
         {
             spdlog::critical("Homography estimation failed.");
-            return -1;
+            return RET_ERR;
         }
 
         // LOGLN("***********after estimator**************" << ((getTickCount() - t) / getTickFrequency()) * 1000 << " ms");
@@ -662,7 +721,7 @@ class ocvStitcher
         if (!(*adjuster)(features, pairwise_matches, cameras))
         {
             spdlog::critical("Camera parameters adjusting failed.");
-            return -1;
+            return RET_ERR;
         }
 
         //  for (size_t i = 0; i < cameras.size(); ++i)
@@ -729,6 +788,10 @@ class ocvStitcher
             camK[i] = cameras[i].K().clone();
             warped_image_scale = estimated_warped_image_scale;
            }
+       }
+       else
+       {
+            return RET_ERR;
        }
 #ifdef DEV_MODE
         /*save camera parsms*/
@@ -905,9 +968,9 @@ class ocvStitcher
         imwrite(to_string(m_stitcherCfgPath.id)+"_ocv.png", result);
 #endif
 
-        return 0;
+        return RET_OK;
     }
-    int initSeam(vector<Mat> &imgs)
+    int initSeam(const vector<Mat> &imgs)
     {
         spdlog::debug("***********init seam start**************");
         auto t = getTickCount();

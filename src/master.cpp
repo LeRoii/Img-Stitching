@@ -186,6 +186,8 @@ static int parseYml()
         weburi = config["websocketurl"].as<string>();
         websocketOn = config["websocketOn"].as<bool>();
         websocketPort = config["websocketPort"].as<int>();
+
+        detect = config["detection"].as<bool>();
     }
     catch(...)
     {
@@ -266,7 +268,6 @@ int main(int argc, char *argv[])
 
     static std::shared_ptr<nvCam> cameras[CAMERA_NUM];
     
-    
     for(int i=0;i<USED_CAMERA_NUM;i++)
     {
         cameras[i].reset(new nvCam(camcfgs[i]));
@@ -300,40 +301,50 @@ int main(int argc, char *argv[])
         return RET_ERR;
     }
 
-    int failnum = 0;
-    do{
-        upImgs.clear();
-        for(int i=0;i<num_images;i++)
-        {
-            cameras[i]->getFrame(upImgs[i], false);
-        }
-
-        failnum++;
-        if(failnum > 5)
-        {
-            spdlog::warn("initalization failed due to environment, use default parameters");
-            initMode = 2;
-        }
+    for(int i=0;i<num_images;i++)
+    {
+        cameras[i]->getFrame(upImgs[i], false);
+        cameras[i+num_images]->getFrame(downImgs[i], false);
     }
-    while(ostitcherUp.init(upImgs, initMode) != 0);
-    spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
 
-    do{
-        downImgs.clear();
-        for(int i=0;i<num_images;i++)
-        {
-            cameras[i+num_images]->getFrame(downImgs[i], false);
-        }
+    ostitcherUp.calibration(upImgs);
+    ostitcherDown.calibration(downImgs);
 
-        failnum++;
-        if(failnum > 5)
-        {
-            spdlog::warn("initalization failed due to environment, use default parameters");
-            initMode = 2;
-        }
-    }
-    while(ostitcherDown.init(downImgs, initMode) != 0);
-    spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
+    // int failnum = 0;
+    // do{
+    //     upImgs.clear();
+    //     for(int i=0;i<num_images;i++)
+    //     {
+    //         cameras[i]->getFrame(upImgs[i], false);
+            
+    //     }
+
+    //     failnum++;
+    //     if(failnum > 5)
+    //     {
+    //         spdlog::warn("initalization failed due to environment, use default parameters");
+    //         initMode = 2;
+    //     }
+    // }
+    // while(ostitcherUp.init(upImgs, initMode) != 0);
+    // spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
+
+    // do{
+    //     downImgs.clear();
+    //     for(int i=0;i<num_images;i++)
+    //     {
+    //         cameras[i+num_images]->getFrame(downImgs[i], false);
+    //     }
+
+    //     failnum++;
+    //     if(failnum > 5)
+    //     {
+    //         spdlog::warn("initalization failed due to environment, use default parameters");
+    //         initMode = 2;
+    //     }
+    // }
+    // while(ostitcherDown.init(downImgs, initMode) != 0);
+    // spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
 	// VideoWriter *panoWriter = nullptr;
 	// VideoWriter *oriWriter = nullptr;
@@ -377,11 +388,11 @@ int main(int argc, char *argv[])
         spdlog::info("concat takes:{} ms", sdkGetTimerValue(&timer));
 
 
-        // if(detect)
-        // {
+        if(detect)
+        {
             ret = nvProcessor->ProcessOnce(ret);
-        //     spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
-        // }
+            spdlog::debug("detect takes:{} ms", sdkGetTimerValue(&timer));
+        }
 
         // if(!writerInit && savevideo)
         // {

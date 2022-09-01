@@ -363,8 +363,8 @@ int main(int argc, char *argv[])
 
         // renderer->renderWithUi(ret, oriimg);
         if(websocketOn)
-            // encoder->process(final); 
-            encoder->sendBase64(final); 
+            encoder->process(final); 
+            // encoder->sendBase64(final); 
 
         // if(savevideo)
         // {

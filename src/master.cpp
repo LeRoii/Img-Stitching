@@ -134,18 +134,6 @@ static int parseYml()
         ymlCameraCfg.sensor = config["sensor"].as<string>();
         ymlCameraCfg.fov = config["fov"].as<int>();
 
-        // ymlStitcherCfg.width = ymlCameraCfg.outPutWidth;
-        // ymlStitcherCfg.height = ymlCameraCfg.outPutHeight;
-        // ymlStitcherCfg.id = 0;
-        // ymlStitcherCfg.num_images = config["num_images"].as<int>();
-        // ymlStitcherCfg.matchConf = config["stitcherMatchConf"].as<float>();
-        // ymlStitcherCfg.adjusterConf = config["stitcherAdjusterConf"].as<float>();
-        // ymlStitcherCfg.blendStrength = config["stitcherBlenderStrength"].as<float>();
-        // ymlStitcherCfg.stitchercameraExThres = config["stitcherCameraExThres"].as<float>();
-        // ymlStitcherCfg.stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
-        // ymlStitcherCfg.cfgpath = 
-        // ymlStitcherCfg.initMode = 
-
         imgcut = config["imgcut"].as<int>();
         num_images = config["num_images"].as<int>();
 
@@ -157,19 +145,8 @@ static int parseYml()
         renderBufHeight = config["renderBufHeight"].as<int>();
 
         USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
-        net = config["netpath"].as<string>();
 
-        canname = config["canname"].as<string>();
         renderMode = config["renderMode"].as<int>();
-
-        stitcherMatchConf = config["stitcherMatchConf"].as<float>();
-        stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
-        stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
-        stitcherCameraExThres = config["stitcherCameraExThres"].as<float>();
-        stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
-
-        batchSize = config["batchSize"].as<int>();
-        initMode = config["initMode"].as<int>();
 
         std::string loglvl = config["loglvl"].as<string>();
         if(loglvl == "critical")
@@ -307,44 +284,17 @@ int main(int argc, char *argv[])
         cameras[i+num_images]->getFrame(downImgs[i], false);
     }
 
-    ostitcherUp.calibration(upImgs);
-    ostitcherDown.calibration(downImgs);
+    if(RET_ERR == ostitcherUp.calibration(upImgs))
+    {
+        spdlog::critical("stitcher calibration failed");
+        return RET_ERR;
+    }
+    if(RET_ERR == ostitcherDown.calibration(upImgs))
+    {
+        spdlog::critical("stitcher calibration failed");
+        return RET_ERR;
+    }
 
-    // int failnum = 0;
-    // do{
-    //     upImgs.clear();
-    //     for(int i=0;i<num_images;i++)
-    //     {
-    //         cameras[i]->getFrame(upImgs[i], false);
-            
-    //     }
-
-    //     failnum++;
-    //     if(failnum > 5)
-    //     {
-    //         spdlog::warn("initalization failed due to environment, use default parameters");
-    //         initMode = 2;
-    //     }
-    // }
-    // while(ostitcherUp.init(upImgs, initMode) != 0);
-    // spdlog::info("up init ok!!!!!!!!!!!!!!!!!!!!");
-
-    // do{
-    //     downImgs.clear();
-    //     for(int i=0;i<num_images;i++)
-    //     {
-    //         cameras[i+num_images]->getFrame(downImgs[i], false);
-    //     }
-
-    //     failnum++;
-    //     if(failnum > 5)
-    //     {
-    //         spdlog::warn("initalization failed due to environment, use default parameters");
-    //         initMode = 2;
-    //     }
-    // }
-    // while(ostitcherDown.init(downImgs, initMode) != 0);
-    // spdlog::info("down init ok!!!!!!!!!!!!!!!!!!!!");
 
 	// VideoWriter *panoWriter = nullptr;
 	// VideoWriter *oriWriter = nullptr;

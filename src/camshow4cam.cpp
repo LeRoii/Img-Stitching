@@ -114,14 +114,6 @@ static int parseYml()
         canname = config["canname"].as<string>();
         renderMode = config["renderMode"].as<int>();
 
-        stitcherMatchConf = config["stitcherMatchConf"].as<float>();
-        stitcherAdjusterConf = config["stitcherAdjusterConf"].as<float>();
-        stitcherBlenderStrength = config["stitcherBlenderStrength"].as<float>();
-        stitcherCameraExThres = config["stitcherCameraExThres"].as<float>();
-        stitcherCameraInThres = config["stitcherCameraInThres"].as<float>();
-
-        batchSize = config["batchSize"].as<int>();
-        initMode = config["initMode"].as<int>();
 
         auto camDispIdx = config["camDispIdx"].as<string>();
 

@@ -18,17 +18,6 @@ const unsigned char STATUS_VERIFICATION_FAILED = 0xE0;
 const unsigned char STATUS_INITALIZATION_FAILED = 0xE1;
 
 extern int vendor;
-extern int camSrcWidth;
-extern int camSrcHeight;
-
-extern int distorWidth;
-extern int distorHeight;
-
-extern int undistorWidth;
-extern int undistorHeight;
-
-extern int stitcherinputWidth;
-extern int stitcherinputHeight;
 extern short int num_images;
 
 extern int renderWidth;
@@ -46,17 +35,6 @@ extern int renderBufWidth;
 extern int renderBufHeight;
 
 extern int USED_CAMERA_NUM;
-extern bool undistor;
-
-extern float stitcherMatchConf;
-extern float stitcherAdjusterConf;
-extern float stitcherBlenderStrength;
-extern float stitcherCameraExThres;
-extern float stitcherCameraInThres;
-
-extern int batchSize;
-extern int initMode;
-
 
 struct stCamCfg
 {

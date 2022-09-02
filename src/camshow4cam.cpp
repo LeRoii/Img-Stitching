@@ -23,17 +23,11 @@ int framecnt = 0;
 
 bool saveret = false;
 bool detect = false;
-bool initonline = false;
 bool start_ssr = false;
 bool savevideo = false;
-bool displayori = false;
 int videoFps = 10;
 
-static int imgcut = 0;
-static std::string net;
-static std::string canname;
 static stCamCfg ymlCameraCfg;
-static std::string cameraParamsPath;
 static bool websocketOn;
 static int websocketPort;
 
@@ -84,7 +78,6 @@ static int parseYml()
     try
     {
         YAML::Node config = YAML::LoadFile(stitchercfgpath);
-        cameraParamsPath = config["cameraparams"].as<string>();
         ymlCameraCfg.camSrcWidth = config["camsrcwidth"].as<int>();
         ymlCameraCfg.camSrcHeight = config["camsrcheight"].as<int>();
         ymlCameraCfg.distoredWidth = config["distorWidth"].as<int>();
@@ -98,9 +91,6 @@ static int parseYml()
         ymlCameraCfg.sensor = config["sensor"].as<string>();
         ymlCameraCfg.fov = config["fov"].as<int>();
 
-        imgcut = config["imgcut"].as<int>();
-        num_images = config["num_images"].as<int>();
-
         renderWidth = config["renderWidth"].as<int>();
         renderHeight = config["renderHeight"].as<int>();
         renderX = config["renderX"].as<int>();
@@ -109,9 +99,7 @@ static int parseYml()
         renderBufHeight = config["renderBufHeight"].as<int>();
 
         USED_CAMERA_NUM = config["USED_CAMERA_NUM"].as<int>();
-        net = config["netpath"].as<string>();
 
-        canname = config["canname"].as<string>();
         renderMode = config["renderMode"].as<int>();
 
 
@@ -147,9 +135,6 @@ static int parseYml()
         else
             spdlog::set_level(spdlog::level::debug);
 
-        weburi = config["websocketurl"].as<string>();
-        websocketOn = config["websocketOn"].as<bool>();
-        websocketPort = config["websocketPort"].as<int>();
     }
     catch(...)
     {

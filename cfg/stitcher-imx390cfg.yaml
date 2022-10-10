@@ -1,7 +1,7 @@
 # camera vendor, 0:sensing, 1:lijing
 vendor: lijing
 sensor: imx390
-sttype: 4cam-silver
+sttype: 4cam-black
 # camsrc is the origin size of camera, can only be 3840x2160(for imx424b) or 1920x1080(for imx390)
 camsrcwidth: 1920
 camsrcheight: 1080
@@ -51,7 +51,7 @@ stitcherCameraExThres: 30e2
 stitcherCameraInThres: 500e2
 
 # init mode, 1:initall, 2:use default, init seam, 3:read cfg, init seam
-initMode: 1
+initMode: 2
 
 # parameters for detector
 batchSize: 1
@@ -59,7 +59,7 @@ batchSize: 1
 # websocket dst url
 # websocketurl: "ws://192.168.168.171:9002" # "ws://localhost:9002"
 websocketurl: "ws://localhost:9002"
-websocketOn: true
+websocketOn: false
 websocketPort: 9002
 
 # detection

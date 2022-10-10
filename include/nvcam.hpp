@@ -707,7 +707,7 @@ public:
                 // }
 
                 auto distorParams = cam["distorParams"];
-                for(int mi=0;mi<3;mi++)
+                for(int mi=0;mi<4;mi++)
                 {
                     m_cameraDistorParams.at<double>(0,mi) = distorParams[mi].as<double>();
                     spdlog::debug("parse camera m_cameraDistorParams:{}", distorParams[mi].as<double>());

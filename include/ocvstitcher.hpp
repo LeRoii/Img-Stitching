@@ -611,7 +611,7 @@ class ocvStitcher
         //     spdlog::critical("invalid init mode, exit");
         //     return RET_ERR;
         // }
-        spdlog::debug("stitcher [{}] calibration", m_stitcherCfgPath.id);
+        spdlog::debug("***********stitcher [{}] calibration***********", m_stitcherCfgPath.id);
         int calibRet = RET_ERR;
         int failedNum = 0;
 
@@ -836,8 +836,8 @@ class ocvStitcher
 
             seamfinder_warper->warp(masks[i], K, cameraR[i], INTER_NEAREST, BORDER_CONSTANT, masks_warped[i]);
 #ifdef DEV_MODE
-            imwrite(std::to_string(i)+"-images_warped.png", images_warped[i]);
-            imwrite(std::to_string(i)+"-masks_warped.png", masks_warped[i]);
+            imwrite(std::to_string(m_stitcherCfgPath.id)+"-"+std::to_string(i)+"-images_warped.png", images_warped[i]);
+            imwrite(std::to_string(m_stitcherCfgPath.id)+"-"+std::to_string(i)+"-masks_warped.png", masks_warped[i]);
 #endif
             // LOGLN("****first warp:" << i << ":\n m_corners  " << m_corners[i] << "\n size:" << m_sizes[i]);
         }
@@ -963,7 +963,9 @@ class ocvStitcher
             m_cutParams[2] = result.cols;
         }
 
-        spdlog::debug("init ok takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+        spdlog::debug("stitcher [{}] calibration ok takes : {} ms", m_stitcherCfgPath.id, ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+        spdlog::debug("stitcher [{}], cut params:[{},{},{},{}]",m_stitcherCfgPath.id, m_cutParams[0],m_cutParams[1],
+        m_cutParams[2],m_cutParams[3]);
 #ifdef DEV_MODE
         imwrite(to_string(m_stitcherCfgPath.id)+"_ocv.png", result);
 #endif
@@ -1126,7 +1128,9 @@ class ocvStitcher
         Mat result, result_mask;
         blender->blend(result, result_mask);
 
-        spdlog::debug("init ok takes : {} ms", ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+        spdlog::debug("stitcher [{}] calibration ok takes : {} ms", m_stitcherCfgPath.id, ((getTickCount() - app_start_time) / getTickFrequency()) * 1000);
+        spdlog::debug("stitcher [{}], cut params:[{},{},{},{}]",m_stitcherCfgPath.id, m_cutParams[0],m_cutParams[1],m_cutParams[2],m_cutParams[3]);
+
 #ifdef DEV_MODE
         imwrite(to_string(m_stitcherCfgPath.id)+"_ocv.png", result);
 #endif

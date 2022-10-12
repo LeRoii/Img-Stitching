@@ -293,18 +293,18 @@ int main(int argc, char *argv[])
 
         static bool fitsizeok = false;
         cv::Mat final;
-        if(!fitsizeok)
-        {
-            int maxWidth = 1280;
-            double fitscale = 1;
-            if(ret.cols > maxWidth)
-            {
-                fitscale = maxWidth * 1.0 / ret.cols;
-            }
-            cv::resize(ret, final, cv::Size(), fitscale, fitscale);
-            fitsizeok = true;
-        }
-        cv::resize(ret, final, cv::Size(), fitscale, fitscale);
+        // if(!fitsizeok)
+        // {
+        //     int maxWidth = 1280;
+        //     double fitscale = 1;
+        //     if(ret.cols > maxWidth)
+        //     {
+        //         fitscale = maxWidth * 1.0 / ret.cols;
+        //     }
+        //     cv::resize(ret, final, cv::Size(), fitscale, fitscale);
+        //     fitsizeok = true;
+        // }
+        // cv::resize(ret, final, cv::Size(), fitscale, fitscale);
 
         if(websocketOn)
             // encoder->process(final); 

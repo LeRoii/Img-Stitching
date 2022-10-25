@@ -15,7 +15,7 @@ set(BUILD_testocv OFF CACHE BOOL "build testocv" FORCE)
 set(BUILD_cameracuda OFF CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
 set(BUILD_master ON CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
 set(BUILD_master2 OFF CACHE BOOL "build master2, dev app for 2 cams panorama" FORCE)
-set(BUILD_replay OFF CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
+set(BUILD_replay ON CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
 set(BUILD_replay2 OFF CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
 set(BUILD_camshow OFF CACHE BOOL "build camshow, 8 camera disp app" FORCE)
 set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
@@ -79,8 +79,8 @@ message(STATUS "CUDNN_LIBRARISE:::${CUDNN_LIBRARIES}")
 # add_compile_options(-std=c++14 -g )
 add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
-add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
-# add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
+# add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
+add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DEXPORT_SO -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DDEV_MODE -DDISTRIBUTED_STRUCT)
 # add_definitions(-DCAM_IMX424 -DDEV_MODE -DCENTRIC_STRUCT)
@@ -225,12 +225,15 @@ endif()
 # Build replay 
 #-------------------------------------------------------------------------------
 if(BUILD_replay)
-    add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES})
+    add_executable(replay src/replay.cpp src/imageProcess.cpp src/PracticalSocket.cpp 
+    src/nvrenderbase.cpp src/nvrenderAlpha.cpp  src/nvrender.cpp src/stitcherglobal.cpp 
+    ${NVENCODER_SOURCE} ${COMMONCLSFILES})
     target_link_libraries(replay  -lyaml-cpp
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
     -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
     ${CUDA_LIBRARIES} ${GLUT_LIBRARY} ${OpenCV_LIBS}
-    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN -lkernels 
+    -lboost_system -lboost_random -lboost_thread -lpthread
     )
 endif()
 

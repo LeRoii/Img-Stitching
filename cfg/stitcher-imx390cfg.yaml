@@ -13,8 +13,8 @@ distorHeight: 1080
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-outPutWidth: 960 # 800 # 720 #640
-outPutHeight: 540 # 450 # 405 #360
+outPutWidth: 720 # 800 # 720 #640
+outPutHeight: 405 # 450 # 405 #360
 fov: 120
 
 imgcut: 40

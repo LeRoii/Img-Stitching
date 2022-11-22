@@ -1,6 +1,6 @@
 #include "nvrenderbase.h"
 
-nvrenderbase::nvrenderbase(const nvrenderCfg &cfg):
+nvrenderbase::nvrenderbase(const stNvrenderCfg &cfg):
 nvbufferWidth(cfg.bufferw), nvbufferHeight(cfg.bufferh),m_mode(cfg.mode)
 {
     NvBufferCreateParams bufparams = {0};

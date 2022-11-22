@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
     else if(stitcherinputWidth == 640)
         finalcut = 40;
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    stNvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))

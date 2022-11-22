@@ -5,7 +5,7 @@
 static int offsetX, offsetY, h, w;
 static double fitscale;
 
-nvrenderBeta::nvrenderBeta(const nvrenderCfg &cfg):nvrenderbase(cfg)
+nvrenderBeta::nvrenderBeta(const stNvrenderCfg &cfg):nvrenderbase(cfg)
 {
     drawIndicator();
 }

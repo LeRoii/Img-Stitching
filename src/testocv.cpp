@@ -625,7 +625,7 @@
 // int main()
 // {
 //     spdlog::set_level(spdlog::level::debug);
-//     nvrenderCfg rendercfg{1920,1080,1920,1080,0,0};
+//     stNvrenderCfg rendercfg{1920,1080,1920,1080,0,0};
 //     cv::Mat mat = cv::imread("../img1.png");
 //     cv::cvtColor(mat, mat, cv::COLOR_RGB2RGBA);
 //     nvrender *renderer = new nvrender(rendercfg);

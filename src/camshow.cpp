@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
     else
         spdlog::set_level(spdlog::level::debug);
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    stNvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
 
 

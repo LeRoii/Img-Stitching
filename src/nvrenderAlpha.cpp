@@ -5,7 +5,7 @@
 static int offsetX, offsetY, h, w;
 static double fitscale;
 
-nvrenderAlpha::nvrenderAlpha(const nvrenderCfg &cfg):nvrenderbase(cfg)
+nvrenderAlpha::nvrenderAlpha(const stNvrenderCfg &cfg):nvrenderbase(cfg)
 {
     // drawIndicator();
     canvas.setTo(0);

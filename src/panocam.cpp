@@ -4,7 +4,7 @@
 panocam::panocam(std::string yamlpath):
     pimpl{std::make_unique<panocamimpl>(yamlpath)}
 {
-    // nvrenderCfg rendercfg{1920, 1080, 1920/2, 1080/2, 0, 0};
+    // stNvrenderCfg rendercfg{1920, 1080, 1920/2, 1080/2, 0, 0};
     // pRenderer = new nvrender(rendercfg);
 
 }

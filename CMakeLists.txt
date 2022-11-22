@@ -13,12 +13,12 @@ set(NVINFER_VERSION 7)
 
 set(BUILD_testocv OFF CACHE BOOL "build testocv" FORCE)
 set(BUILD_cameracuda OFF CACHE BOOL "build nvidia camera v4l2 cuda" FORCE)
-set(BUILD_master ON CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
+set(BUILD_master OFF CACHE BOOL "build master, dev app for 8 cams panorama" FORCE)
 set(BUILD_master2 OFF CACHE BOOL "build master2, dev app for 2 cams panorama" FORCE)
-set(BUILD_replay ON CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
+set(BUILD_replay OFF CACHE BOOL "build replay, debug app for 8 cams panorama" FORCE)
 set(BUILD_replay2 OFF CACHE BOOL "build replay2, debug app for 2 cams panorama" FORCE)
 set(BUILD_camshow OFF CACHE BOOL "build camshow, 8 camera disp app" FORCE)
-set(BUILD_camshow4cam ON CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
+set(BUILD_camshow4cam OFF CACHE BOOL "build camshow4cam, 4 camera disp app" FORCE)
 set(BUILD_camshow_2 OFF CACHE BOOL "build camshow-2, 2 camera disp app" FORCE)
 set(BUILD_panocam OFF CACHE BOOL "build panocam, panorama so" FORCE)
 set(BUILD_demo OFF CACHE BOOL "build demo, panorama so test app" FORCE)
@@ -27,9 +27,10 @@ set(BUILD_slave OFF CACHE BOOL "build slave, 8 panorama slave app" FORCE)
 set(BUILD_slaveshow OFF CACHE BOOL "build BUILD_slaveshow, 11 panorama slaveshow app" FORCE)
 
 set(BUILD_sti OFF CACHE BOOL "build sti, opencv stitching test app" FORCE)
-set(BUILD_sd ON CACHE BOOL "build sd, origin opencv stitching app" FORCE)
+set(BUILD_sd OFF CACHE BOOL "build sd, origin opencv stitching app" FORCE)
 set(BUILD_mo OFF CACHE BOOL "build mo, modified opencv stitching app" FORCE)
 set(BUILD_server OFF CACHE BOOL "build server, udp server" FORCE)
+set(BUILD_panoagent ON CACHE BOOL "build panoagent" FORCE)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
@@ -79,8 +80,8 @@ message(STATUS "CUDNN_LIBRARISE:::${CUDNN_LIBRARIES}")
 # add_compile_options(-std=c++14 -g )
 add_compile_options(-std=c++14 -pthread)
 # add_definitions(-DDEBUG)
-# add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
-add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
+add_definitions(-DCAM_IMX390 -DDEV_MODE -DCENTRIC_STRUCT)
+# add_definitions(-DCAM_IMX390 -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DEXPORT_SO -DCENTRIC_STRUCT)
 # add_definitions(-DCAM_IMX390 -DDEV_MODE -DDISTRIBUTED_STRUCT)
 # add_definitions(-DCAM_IMX424 -DDEV_MODE -DCENTRIC_STRUCT)
@@ -362,3 +363,21 @@ if(BUILD_slaveshow)
     ${OpenCV_LIBS} 
     )
 endif()
+
+#-------------------------------------------------------------------------------
+# Build panoagent 
+#-------------------------------------------------------------------------------
+if(BUILD_panoagent)
+    add_executable(panoagent src/panoagent.cpp src/agentfactory.cpp src/imageProcess.cpp src/PracticalSocket.cpp  
+    src/nvrenderbase.cpp src/nvrenderAlpha.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
+    target_link_libraries(panoagent  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
+    -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  
+    -L/usr/lib/aarch64-linux-gnu/ -lv4l2 -lEGL -lGLESv2 -lX11 
+    ${CUDA_LIBRARIES} ${GLUT_LIBRARY}
+    ${OpenCV_LIBS}
+    -L${CMAKE_CURRENT_SOURCE_DIR}/cfg/ -ltkDNN
+    -lboost_system -lboost_random -lboost_thread -lpthread
+    )
+endif()
+
+

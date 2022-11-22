@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
     renderX = config["renderX"].as<int>();
     renderY = config["renderY"].as<int>();
     renderMode = RENDER_EGL;
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    stNvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     pRenderer = new nvrender(rendercfg);
 
     cv::Mat screen = cv::Mat(renderBufHeight, renderBufWidth, CV_8UC3);

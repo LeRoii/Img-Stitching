@@ -156,7 +156,7 @@ panocamimpl::panocamimpl(std::string yamlpath):framecnt(0)
 
     pImgProc = new imageProcessor(net, canname, batchSize);
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    stNvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
 #if EXPORT_SO
     m_pRenderer = new nvrender(rendercfg);
 #endif

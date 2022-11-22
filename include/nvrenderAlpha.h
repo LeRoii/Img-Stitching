@@ -6,7 +6,7 @@
 class nvrenderAlpha : public nvrenderbase
 {
 public:
-    nvrenderAlpha(const nvrenderCfg &cfg);
+    nvrenderAlpha(const stNvrenderCfg &cfg);
     ~nvrenderAlpha();
 
     void drawIndicator();

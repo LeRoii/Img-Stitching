@@ -4,7 +4,7 @@
 static int offsetX, offsetY, h, w;
 static double fitscale;
 
-nvrender::nvrender(nvrenderCfg cfg):nvbufferWidth(cfg.bufferw), nvbufferHeight(cfg.bufferh),
+nvrender::nvrender(stNvrenderCfg cfg):nvbufferWidth(cfg.bufferw), nvbufferHeight(cfg.bufferh),
 m_mode(cfg.mode)
 {
     NvBufferCreateParams bufparams = {0};

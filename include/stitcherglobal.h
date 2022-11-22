@@ -54,7 +54,7 @@ struct stCamCfg
     int fov;
 };
 
-struct nvrenderCfg
+struct stNvrenderCfg
 {
     int bufferw;
     int bufferh;
@@ -94,6 +94,16 @@ struct stSysStatus
     int zoomPointY;
     stSysStatus():deviceStatus(0),cameraStatus(0xff),zoomTrigger(false),crossTrigger(false), \
         saveTrigger(false),detectionTrigger(false),enhancementTrigger(false),displayMode(0xCA){}
+};
+
+struct stAgentCfg
+{
+    std::string weburi;
+    bool websocketOn;
+    int websocketPort;
+    bool detection;
+    bool imgEnhancement;
+    int usedCamNum;
 };
 
 enum enStitcherInitMode

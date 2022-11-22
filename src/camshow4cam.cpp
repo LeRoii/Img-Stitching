@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     if(RET_ERR == parseYml())
         return RET_ERR;
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    stNvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrenderAlpha *renderer = new nvrenderAlpha(rendercfg);
 
     stCamCfg camcfgs[CAMERA_NUM];

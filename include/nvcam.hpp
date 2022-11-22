@@ -643,15 +643,31 @@ public:
         // NvBufferDestroy(retNvbuf[1].dmabuff_fd);
     }
 
-    nvCam(stCamCfg &camcfg):m_cfg(camcfg)
+    // nvCam(stCamCfg &camcfg):m_cfg(camcfg)
+    // {
+    //     m_cameraK = cv::Mat(3, 3, CV_64FC1);
+    //     m_cameraDistorParams = cv::Mat(1, 4, CV_64FC1);
+
+    //     spdlog::debug("************nvCam constructor************\n camsrcwidth:{},camsrcheight:{},distorWidth:{},distorHeight:{},\
+    //     undistorWidth:{},undistorHeight:{},outPutWidth{},outPutHeight:{}",m_cfg.camSrcWidth,\
+    //     m_cfg.camSrcHeight, m_cfg.distoredWidth, m_cfg.distoredHeight, m_cfg.undistoredWidth,\
+    //     m_cfg.undistoredHeight, m_cfg.outPutWidth, m_cfg.outPutHeight);
+    //     spdlog::debug("cam [{}] init complete", m_cfg.id);
+    // }
+
+    nvCam(int id)
     {
         m_cameraK = cv::Mat(3, 3, CV_64FC1);
         m_cameraDistorParams = cv::Mat(1, 4, CV_64FC1);
 
-        spdlog::debug("************nvCam constructor************\n camsrcwidth:{},camsrcheight:{},distorWidth:{},distorHeight:{},\
-        undistorWidth:{},undistorHeight:{},outPutWidth{},outPutHeight:{}",m_cfg.camSrcWidth,\
-        m_cfg.camSrcHeight, m_cfg.distoredWidth, m_cfg.distoredHeight, m_cfg.undistoredWidth,\
-        m_cfg.undistoredHeight, m_cfg.outPutWidth, m_cfg.outPutHeight);
+        std::string str = "/dev/video";
+        strcpy(m_cfg.name, (str+std::to_string(id)).c_str());
+        m_cfg.id = id;
+
+        // spdlog::debug("************nvCam constructor************\n camsrcwidth:{},camsrcheight:{},distorWidth:{},distorHeight:{},\
+        // undistorWidth:{},undistorHeight:{},outPutWidth{},outPutHeight:{}",m_cfg.camSrcWidth,\
+        // m_cfg.camSrcHeight, m_cfg.distoredWidth, m_cfg.distoredHeight, m_cfg.undistoredWidth,\
+        // m_cfg.undistoredHeight, m_cfg.outPutWidth, m_cfg.outPutHeight);
         spdlog::debug("cam [{}] init complete", m_cfg.id);
     }
 
@@ -671,6 +687,19 @@ public:
             // std::cerr << "!! config load failed: " << ex.what() << std::endl;
             // exit(-1);
         }
+
+        m_cfg.camSrcWidth = config["camsrcwidth"].as<int>();
+        m_cfg.camSrcHeight = config["camsrcheight"].as<int>();
+        m_cfg.distoredWidth = config["distorWidth"].as<int>();
+        m_cfg.distoredHeight = config["distorHeight"].as<int>();
+        m_cfg.undistoredWidth = config["undistorWidth"].as<int>();
+        m_cfg.undistoredHeight = config["undistorHeight"].as<int>();
+        m_cfg.outPutWidth = config["outPutWidth"].as<int>();
+        m_cfg.outPutHeight = config["outPutHeight"].as<int>();
+        m_cfg.undistor = config["undistor"].as<bool>();
+        m_cfg.vendor = config["vendor"].as<std::string>();
+        m_cfg.sensor = config["sensor"].as<std::string>();
+        m_cfg.fov = config["fov"].as<int>();
 
         auto cameraCfgYmlPath = config["cameraparams"].as<string>();
         YAML::Node cameraCfgNode = YAML::LoadFile(cameraCfgYmlPath);

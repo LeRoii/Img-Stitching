@@ -12,7 +12,7 @@
 class nvrenderbase
 {
 public:
-    nvrenderbase(const nvrenderCfg &cfg);
+    nvrenderbase(const stNvrenderCfg &cfg);
     virtual ~nvrenderbase();
     virtual void drawIndicator() = 0;
     virtual cv::Mat render(cv::Mat &img) = 0;

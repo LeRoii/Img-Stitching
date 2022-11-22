@@ -11,7 +11,7 @@
 class nvrender
 {
 public:
-    nvrender(nvrenderCfg cfg);
+    nvrender(stNvrenderCfg cfg);
     ~nvrender();
     void render(unsigned char *data);
     void drawIndicator();

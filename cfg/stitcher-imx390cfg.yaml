@@ -34,7 +34,7 @@ renderMode: 0
 
 num_images: 2
 
-USED_CAMERA_NUM: 4
+USED_CAMERA_NUM: 2
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"
 camcfgpath: "../cfg/390camcfg/"
 # camcfgpath: "/home/nvidia/ssd/code/Img-Stitching/cfg/390camcfg/"

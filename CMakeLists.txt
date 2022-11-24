@@ -368,7 +368,7 @@ endif()
 # Build panoagent 
 #-------------------------------------------------------------------------------
 if(BUILD_panoagent)
-    add_executable(panoagent src/panoagent.cpp src/agentfactory.cpp src/imageProcess.cpp src/PracticalSocket.cpp  
+    add_executable(panoagent src/panoagent.cpp src/agent.cpp src/agentfactory.cpp src/imageProcess.cpp src/PracticalSocket.cpp  
     src/nvrenderbase.cpp src/nvrenderAlpha.cpp src/nvrender.cpp src/stitcherglobal.cpp ${NVENCODER_SOURCE} ${COMMONCLSFILES} )
     target_link_libraries(panoagent  ${OPENGL_LIBRARY} ${OpenCV_LIBS} ${CUDA_LIBRARIES}  -lyaml-cpp
     -L/usr/lib/aarch64-linux-gnu/tegra/ -lnvbuf_utils  

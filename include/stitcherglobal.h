@@ -104,6 +104,7 @@ struct stAgentCfg
     bool detection;
     bool imgEnhancement;
     int usedCamNum;
+    int camDispIdx;
 };
 
 enum enStitcherInitMode

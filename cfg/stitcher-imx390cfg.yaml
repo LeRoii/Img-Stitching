@@ -1,5 +1,7 @@
 # camera vendor, 0:sensing, 1:lijing
-vendor: 1
+vendor: lijing
+sensor: imx390
+sttype: 4cam-black
 # camsrc is the origin size of camera, can only be 3840x2160(for imx424b) or 1920x1080(for imx390)
 camsrcwidth: 1920
 camsrcheight: 1080
@@ -11,41 +13,54 @@ distorHeight: 1080
 undistor: true
 undistorWidth: 960
 undistorHeight: 540
-stitcherinputWidth: 640
-stitcherinputHeight: 360
+outPutWidth: 720 # 800 # 720 #640
+outPutHeight: 405 # 450 # 405 #360
+fov: 120
+
+imgcut: 40
+
+# camera params path
+cameraparams: "/home/nvidia/ssd/code/Img-Stitching/cfg/cameras.yaml"
 
 # parameters for renderer
-renderWidth: 1920
-renderHeight: 1080
+renderWidth: 960
+renderHeight: 540
 renderX: 0
 renderY: 0
 renderBufWidth: 1920
 renderBufHeight: 1080
-# 0 for egl, 1 for opencv
-renderMode: 1
+# 0 for egl, 1 for opencv(deprecated), 2 for no display
+renderMode: 0
 
-USED_CAMERA_NUM: 8
-# netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1.rt"
-# netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs1_new.rt"
+num_images: 2
+
+USED_CAMERA_NUM: 2
 netpath: "/home/nvidia/ssd/model/yolo4_berkeley_fp16_bs4.rt"
-# netpath: "/home/nvidia/ssd/model/yolo4tiny_fp16.rt"
-# netpath: "/home/nvidia/ssd/model/yolo4_kitti_fp16_bs4.rt"
 camcfgpath: "../cfg/390camcfg/"
 # camcfgpath: "/home/nvidia/ssd/code/Img-Stitching/cfg/390camcfg/"
 canname: "can0" 
-showall: true
+camDispIdx: "a"
 
 loglvl: "debug"
 
 # parameters for stitcher
 stitcherMatchConf: 0.3
 stitcherAdjusterConf: 0.7
-stitcherBlenderStrength: 0
-stitcherCameraExThres: 30
-stitcherCameraInThres: 100
+stitcherBlenderStrength: 1
+stitcherCameraExThres: 30e2
+stitcherCameraInThres: 500e2
 
 # init mode, 1:initall, 2:use default, init seam, 3:read cfg, init seam
-initMode: 1
+initMode: 2
 
 # parameters for detector
 batchSize: 1
+
+# websocket dst url
+# websocketurl: "ws://192.168.168.171:9002" # "ws://localhost:9002"
+websocketurl: "ws://localhost:9002"
+websocketOn: false
+websocketPort: 9002
+
+# detection
+detection: false

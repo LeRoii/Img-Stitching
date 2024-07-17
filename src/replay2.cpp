@@ -190,6 +190,8 @@ int main(int argc, char *argv[])
     undistorHeight = config["undistorHeight"].as<int>();
     stitcherinputWidth = config["stitcherinputWidth"].as<int>();
     stitcherinputHeight = config["stitcherinputHeight"].as<int>();
+    num_images = config["num_images"].as<short int>();
+
 
     renderWidth = config["renderWidth"].as<int>();
     renderHeight = config["renderHeight"].as<int>();
@@ -233,7 +235,7 @@ int main(int argc, char *argv[])
     else if(stitcherinputWidth == 640)
         finalcut = 40;
 
-    nvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
+    stNvrenderCfg rendercfg{renderBufWidth, renderBufHeight, renderWidth, renderHeight, renderX, renderY, renderMode};
     nvrender *renderer = new nvrender(rendercfg);
 
     if(RET_ERR == parse_cmdline(argc, argv))
@@ -242,8 +244,8 @@ int main(int argc, char *argv[])
     if (detect)
         nvProcessor = new imageProcessor(net, canname, batchSize);  
 
-    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
-                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
+    stStitcherCfg stitchercfg[2] = {stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 1,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath},
+                                    stStitcherCfg{stitcherinputWidth, stitcherinputHeight, 2,num_images, stitcherMatchConf, stitcherAdjusterConf, stitcherBlenderStrength, stitcherCameraExThres, stitcherCameraInThres, cfgpath}};
 
     ocvStitcher ostitcherUp(stitchercfg[0]);
     ocvStitcher ostitcherDown(stitchercfg[1]);

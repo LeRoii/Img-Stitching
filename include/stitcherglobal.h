@@ -7,6 +7,7 @@ const int SLAVE_PCIE_UDP_PACK_SIZE = 60000;
 // const int SLAVE_PCIE_UDP_PACK_SIZE = 10000;
 const int RENDER_EGL = 0;
 const int RENDER_OCV = 1;
+const int RENDER_NONE = 2;
 const int CAMERA_NUM = 8;
 const int SLAVE_PCIE_UDP_BUF_LEN = 65540;
 const int RET_OK = 0;
@@ -17,17 +18,7 @@ const unsigned char STATUS_VERIFICATION_FAILED = 0xE0;
 const unsigned char STATUS_INITALIZATION_FAILED = 0xE1;
 
 extern int vendor;
-extern int camSrcWidth;
-extern int camSrcHeight;
-
-extern int distorWidth;
-extern int distorHeight;
-
-extern int undistorWidth;
-extern int undistorHeight;
-
-extern int stitcherinputWidth;
-extern int stitcherinputHeight;
+extern short int num_images;
 
 extern int renderWidth;
 extern int renderHeight;
@@ -37,23 +28,13 @@ extern int renderMode;
 
 extern std::string UDP_PORT;
 extern std::string UDP_SERVADD;
+extern std::string weburi;
 
 // output render buffer, in general it's fixed
 extern int renderBufWidth; 
 extern int renderBufHeight;
 
 extern int USED_CAMERA_NUM;
-extern bool undistor;
-
-extern float stitcherMatchConf;
-extern float stitcherAdjusterConf;
-extern float stitcherBlenderStrength;
-extern float stitcherCameraExThres;
-extern float stitcherCameraInThres;
-
-extern int batchSize;
-extern int initMode;
-
 
 struct stCamCfg
 {
@@ -63,15 +44,17 @@ struct stCamCfg
 	int distoredHeight;
 	int undistoredWidth;
 	int undistoredHeight;
-	int retWidth;
-	int retHeight;
+	int outPutWidth;
+	int outPutHeight;
     bool undistor;
 	int id;
     char name[20];
-    int vendor;
+    std::string vendor;
+    std::string sensor;
+    int fov;
 };
 
-struct nvrenderCfg
+struct stNvrenderCfg
 {
     int bufferw;
     int bufferh;
@@ -86,13 +69,15 @@ struct stStitcherCfg
 {
     int width;
     int height;
-    int id;
+    short int id;
+    short int num_images;
     float matchConf;
     float adjusterConf;
     float blendStrength;
     float stitchercameraExThres;
     float stitchercameraInThres;
     std::string cfgPath;
+    int initMode;
 };
 
 struct stSysStatus
@@ -109,6 +94,17 @@ struct stSysStatus
     int zoomPointY;
     stSysStatus():deviceStatus(0),cameraStatus(0xff),zoomTrigger(false),crossTrigger(false), \
         saveTrigger(false),detectionTrigger(false),enhancementTrigger(false),displayMode(0xCA){}
+};
+
+struct stAgentCfg
+{
+    std::string weburi;
+    bool websocketOn;
+    int websocketPort;
+    bool detection;
+    bool imgEnhancement;
+    int usedCamNum;
+    int camDispIdx;
 };
 
 enum enStitcherInitMode

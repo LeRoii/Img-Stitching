@@ -1,7 +1,10 @@
 #include "nvrender.h"
 #include <chrono>
 
-nvrender::nvrender(nvrenderCfg cfg):nvbufferWidth(cfg.bufferw), nvbufferHeight(cfg.bufferh),
+static int offsetX, offsetY, h, w;
+static double fitscale;
+
+nvrender::nvrender(stNvrenderCfg cfg):nvbufferWidth(cfg.bufferw), nvbufferHeight(cfg.bufferh),
 m_mode(cfg.mode)
 {
     NvBufferCreateParams bufparams = {0};
@@ -78,10 +81,10 @@ void nvrender::drawIndicator()
     {
         longStartX = indicatorStartX+i*102;
         cv::line(canvas, cv::Point(longStartX, uplongStartY), cv::Point(longStartX, uplongEndY), color, lineSickness);
-        if(i==0)
-            cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-        else
-            cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        // if(i==0)
+        //     cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-10, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        // else
+        //     cv::putText(canvas, std::to_string(i*10), cv::Point(longStartX-20, uplongStartY-10), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         if(i == 18)
             continue;
         for(int j=0;j<4;j++)
@@ -95,10 +98,10 @@ void nvrender::drawIndicator()
     {
         longStartX = indicatorStartX+i*102;
         cv::line(canvas, cv::Point(longStartX, downlongStartY), cv::Point(longStartX, downlongEndY), color, lineSickness);
-        if(i==0)
-            cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
-        else
-            cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        // if(i==0)
+        //     cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-10, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
+        // else
+        //     cv::putText(canvas, std::to_string(180+i*10), cv::Point(longStartX-20, downlongEndY+30), cv::FONT_HERSHEY_SIMPLEX, fontScale, color, fontSickness);
         if(i == 18)
             continue;
         for(int j=0;j<4;j++)
@@ -173,7 +176,7 @@ void nvrender::renderocv(cv::Mat &img, cv::Mat &final)
 {
     fit2final(img, canvas);
     cv::imshow("final", canvas);
-    final  = canvas.clone();
+    // final  = canvas.clone();
     // cv::waitKey(1);
 }
 
@@ -185,13 +188,14 @@ void nvrender::render(cv::Mat &img)
     ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
     std::string str = ss.str();
     // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-    cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
+    // cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
-    cv::Mat tmp;
-    if(m_mode == RENDER_EGL)
-        renderegl(img);
-    else if(m_mode == RENDER_OCV)
-        renderocv(img, tmp);
+    renderegl(img);
+    // cv::Mat tmp;
+    // if(m_mode == RENDER_EGL)
+    //     renderegl(img);
+    // else if(m_mode == RENDER_OCV)
+    //     renderocv(img, tmp);
 }
 
 void nvrender::render(cv::Mat &img, cv::Mat &final)
@@ -202,7 +206,7 @@ void nvrender::render(cv::Mat &img, cv::Mat &final)
     ss << std::put_time(std::localtime(&tt), "%F-%H-%M-%S");
     std::string str = ss.str();
     // std::cout << "Now (local time): " << std::put_time(ptm,"%F-%H-%M-%S") << '\n';
-    cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
+    // cv::putText(img, str, cv::Point(20, 30), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(230, 235, 232 ), 2);
 
     if(m_mode == RENDER_EGL)
         renderegl(img);
@@ -216,3 +220,8 @@ void nvrender::renderimgs(cv::Mat &img, cv::Mat &inner, int x, int y)
     render(img);
 }
 
+// void nvrender::renderWithUi(cv::Mat &pano, cv::Mat &ori)
+// {
+//     // pano.copyTo(canvas(cv::Rect(0, 10, pano.cols, pano.rows)));
+//     // ori.copyTo(canvas(cv::Rect()))
+// }

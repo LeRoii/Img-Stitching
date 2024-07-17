@@ -1,6 +1,7 @@
 #ifndef _JETSON_ENCODER_H_
 #define _JETSON_ENCODER_H_
 
+#include <opencv2/opencv.hpp>
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
@@ -35,42 +36,15 @@ typedef struct
 } context_t;
 
 
-typedef struct
-{
-    int target_header;
-    int target_id[200];
-    int target_x[200];
-    int target_y[200];
-    int target_w[200];
-    int target_h[200];
-    int target_class[200];
-    int target_prob[200];
-    int target_num;
-    float target_velocity[200];
-} targetInfo;
-
-struct controlData
-{
-    bool use_ssr;
-    bool use_flip;
-    bool use_detect;
-    int contrast;
-    int bright;
-    controlData():use_ssr(false),use_flip(false),use_detect(false){}
-};
-
-
-
-
-
 class jetsonEncoder
 {
     public:
     jetsonEncoder();
+    jetsonEncoder(bool on, int portnum);
     ~jetsonEncoder();
     int encodeFrame(uint8_t *yuv_bytes);
-    int pubTargetData(targetInfo  target_data);
-    controlData getControlData();
+    int process(cv::Mat &img);
+    int sendBase64(cv::Mat &img);
     
     private:
     void set_defaults(context_t * ctx);
@@ -79,6 +53,9 @@ class jetsonEncoder
 
     context_t ctx;
     int frame_count;
+    bool websocketOn;
+
+
 };
 
 #endif

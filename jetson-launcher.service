@@ -1,0 +1,18 @@
+[Unit]
+Description=launcher 4cams
+
+
+[Service]
+Type=simple
+#ExecStartPre=/usr/bin/python -u /usr/local/bin/configure-camera/cam_cfg.py
+#ExecStart=/home/nvidia/pano.sh
+#ExecStart=/usr/bin/python -u /usr/local/bin/configure-camera/cam_cfg.py
+#ExecStart=/home/nvidia/code/0929IS/build/slave
+ExecStart=/home/nx/launcherv1.sh
+#Restart=on-failure
+RestartSec=5s
+
+
+[Install]
+WantedBy=multi-user.target
+

@@ -11,8 +11,11 @@
 #include <fstream>
 #include <iomanip>
 #include <signal.h>
-#include <stdlib.h>    
+#include <stdlib.h>
+#ifdef __linux__    
 #include <unistd.h>
+#endif
+
 #include <mutex>
 
 #include "NvInfer.h"
@@ -36,7 +39,7 @@ public:
 	float *getLabels() { return mLabels.data(); }
 	int getBatchesRead() const { return mBatchCount; }
 	int getBatchSize() const { return mBatchSize; }
-	nvinfer1::DimsNCHW getDims() const { return mDims; }
+	nvinfer1::Dims4 getDims() const { return mDims; }
 	float* getFileBatch() { return &mFileBatch[0]; }
 	float* getFileLabels() { return &mFileLabels[0]; }
 	void readInListFile(const std::string& dataFilePath, std::vector<std::string>& mListIn);
@@ -52,7 +55,7 @@ private:
 	int mFileBatchPos{ 0 };
 	int mImageSize{ 0 };
 
-	nvinfer1::DimsNCHW mDims;
+	nvinfer1::Dims4 mDims;
 	std::vector<float> mBatch;
 	std::vector<float> mLabels;
 	std::vector<float> mFileBatch;

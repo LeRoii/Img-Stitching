@@ -4,7 +4,10 @@
 #include <iostream>
 #include <signal.h>
 #include <stdlib.h>    
+#ifdef __linux__
 #include <unistd.h>
+#endif 
+
 #include <mutex>
 #include "utils.h"
 
@@ -14,7 +17,7 @@
 
 #include "tkdnn.h"
 
-// #define OPENCV_CUDACONTRIB //if OPENCV has been compiled with CUDA and contrib.
+//#define OPENCV_CUDACONTRIB //if OPENCV has been compiled with CUDA and contrib.
 
 #ifdef OPENCV_CUDACONTRIB
 #include <opencv2/cudawarping.hpp>
@@ -138,9 +141,8 @@ class DetectionNN {
                 TKDNN_TSTOP
                 if(save_times) *times<<t_ns<<"\n";
             }
-        }      
-
-        /**
+        }  
+                /**
          * Method to draw bounding boxes and labels on a frame.
          * 
          * @param frames original frame to draw bounding box on.
@@ -259,14 +261,18 @@ class DetectionNN {
 #endif
             }
             
-        }
+        }    
 
+        /**
+         * Method to draw bounding boxes and labels on a frame.
+         * 
+         * @param frames original frame to draw bounding box on.
+         */
         void draw(std::vector<cv::Mat>& frames) {
             tk::dnn::box b;
             int x0, w, x1, y0, h, y1;
             int objClass;
             std::string det_class;
-
             int baseline = 0;
             float font_scale = 0.5;
             int thickness = 2;   
@@ -280,7 +286,6 @@ class DetectionNN {
                     y0   		= b.y;
                     y1   		= b.y + b.h;
                     det_class 	= classesNames[b.cl];
-
 
                     // draw rectangle
                     cv::rectangle(frames[bi], cv::Point(x0, y0), cv::Point(x1, y1), colors[b.cl], 2); 
